@@ -79,3 +79,36 @@ methods and penalizes an all-fried table.
 v1: Chinese menus only, three verified restaurants. The persona is updated to a Chinese
 restaurant with a user who does not read Chinese, so the parsing step has clear value.
 Korean menus, ordering, payment and personalization are out of scope.
+
+## 12. Frontend is React + Vite, and the plan is drawn as an order slip
+
+The first frontend was plain HTML. It is now a Vite + React + Tailwind app in `web/`, built
+from the AI Studio prototype's feature set (edit the party, keep / swap / remove dishes, a
+screen to show the waiter, copy-for-the-group-chat) but redrawn: the plan is rendered as the
+restaurant's paper order slip on a jade page, Chinese dish names lead, evidence tiers are
+written as words ("peanuts, on the menu", "pork, usually", "shellfish? ask") and vermilion is
+reserved for a real allergy match, the stamp and the one primary button.
+
+Why: the prototype's client-side rule engine and Gemini server duplicated the backend and the
+LLM stage, against the division of trust. The frontend now only renders what `/api/plan`
+returns. The prototype's engine was not merged; the backend owner may read it for heuristics.
+
+## 13. The plan request carries inline diners and kept / removed dishes
+
+`/api/plan` accepts `diners` (edited or ad-hoc people, sent inline) next to `diner_ids`, plus
+`locked_dish_ids` and `excluded_dish_ids`. `TableRequest` carries the last two to the
+optimizer.
+
+Why: at the table people change their minds ("actually I'm vegan tonight") and the orderer
+swaps dishes one at a time. Both are cheap to express as constraints and keep the frontend
+free of any selection logic.
+
+## 2026-09-21 — English recommendation workspace
+
+- Make the recommended courses the primary workspace; move party settings into a drawer and reserve the paper ticket for the final order. Keep jade, cream, and red as the shared visual language.
+- Show all interface text and dish labels in English, including the waiter ticket.
+- Keep completed plans paired with the exact menu, diners, and settings that produced them. Changes invalidate order actions until a new request succeeds; late responses cannot replace newer choices.
+- Keep eligibility on the API, including menu browsing and swap filtering. Course counts and dining styles are ranking preferences; individual coverage, budget, and portions remain requirements.
+- Use a bounded, dependency-free search for small menus (up to 40 dishes). It returns a constraint-valid order or a proven conflict; an exhausted search with no valid incumbent returns a retryable error, never a false infeasibility claim. Do not claim global optimality.
+- Generate explanations from actual selected dishes and diner eligibility. Variety is not a satisfaction or nutrition score.
+- Menu imports extract explicit English names and prices, using optional local Tesseract for images. Never invent ingredients, prices, or dietary flags. Edits stay in the browser session and require human review before planning; no external AI service receives menu images.

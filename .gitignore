@@ -6,3 +6,5 @@ __pycache__/
 .ruff_cache/
 .DS_Store
 .claude/
+web/node_modules/
+web/dist/
