@@ -1,0 +1,300 @@
+{
+  "restaurant_id": "sample_sichuan",
+  "restaurant_name": "Sample Sichuan Kitchen (fictional)",
+  "cuisine": "chinese_sichuan",
+  "source": "sample",
+  "currency": "USD",
+  "verified": true,
+  "dishes": [
+    {
+      "id": "garlic_pork_belly",
+      "name_zh": "蒜泥白肉",
+      "name_en": "Sliced Pork Belly in Garlic Sauce",
+      "price": 13.95,
+      "description_raw": "Sliced pork belly with garlic chili sauce",
+      "category": "cold_appetizer",
+      "cooking_method": "poach",
+      "spice_level": 2,
+      "portion": "small",
+      "main_ingredients": [
+        {"name": "pork belly", "tier": "menu"},
+        {"name": "garlic", "tier": "menu"},
+        {"name": "chili oil", "tier": "inferred"}
+      ],
+      "allergens": [
+        {"allergen": "soy", "tier": "inferred", "confidence": 0.8, "reason": "soy sauce in the dressing"},
+        {"allergen": "sesame", "tier": "unknown", "confidence": 0.4, "reason": "some kitchens add sesame oil or seeds"}
+      ],
+      "is_vegetarian": false,
+      "is_vegan": false,
+      "contains_pork": true,
+      "contains_beef": false,
+      "confirm_with_staff": []
+    },
+    {
+      "id": "mapo_tofu",
+      "name_zh": "麻婆豆腐",
+      "name_en": "Mapo Tofu",
+      "price": 14.95,
+      "description_raw": "Soft tofu in spicy chili bean sauce",
+      "category": "braise_or_stew",
+      "cooking_method": "braise",
+      "spice_level": 3,
+      "portion": "medium",
+      "main_ingredients": [
+        {"name": "tofu", "tier": "menu"},
+        {"name": "ground pork", "tier": "inferred", "note": "traditional recipe; many kitchens omit on request"},
+        {"name": "doubanjiang (chili bean paste)", "tier": "menu"}
+      ],
+      "allergens": [
+        {"allergen": "soy", "tier": "menu", "confidence": 0.95, "reason": "tofu and bean paste"},
+        {"allergen": "wheat", "tier": "unknown", "confidence": 0.5, "reason": "chili bean paste often contains wheat"}
+      ],
+      "is_vegetarian": null,
+      "is_vegan": null,
+      "contains_pork": null,
+      "contains_beef": false,
+      "confirm_with_staff": ["Is the mapo tofu made with ground pork? Can it be made without?"]
+    },
+    {
+      "id": "yuxiang_shredded_pork",
+      "name_zh": "鱼香肉丝",
+      "name_en": "Yu Xiang Shredded Pork",
+      "price": 16.95,
+      "description_raw": "Shredded pork with wood ear and bamboo shoot in garlic sauce",
+      "category": "stir_fry",
+      "cooking_method": "stir_fry",
+      "spice_level": 1,
+      "portion": "medium",
+      "main_ingredients": [
+        {"name": "pork", "tier": "menu"},
+        {"name": "wood ear mushroom", "tier": "menu"},
+        {"name": "bamboo shoot", "tier": "menu", "note": "'fish-fragrant' names the sauce style; there is no fish"}
+      ],
+      "allergens": [
+        {"allergen": "soy", "tier": "inferred", "confidence": 0.85, "reason": "soy sauce in the sauce"},
+        {"allergen": "wheat", "tier": "inferred", "confidence": 0.6, "reason": "soy sauce and starch thickener"}
+      ],
+      "is_vegetarian": false,
+      "is_vegan": false,
+      "contains_pork": true,
+      "contains_beef": false,
+      "confirm_with_staff": []
+    },
+    {
+      "id": "kung_pao_chicken",
+      "name_zh": "宫保鸡丁",
+      "name_en": "Kung Pao Chicken",
+      "price": 16.95,
+      "description_raw": "Diced chicken with peanuts and dried chili",
+      "category": "stir_fry",
+      "cooking_method": "stir_fry",
+      "spice_level": 2,
+      "portion": "medium",
+      "main_ingredients": [
+        {"name": "chicken", "tier": "menu"},
+        {"name": "peanuts", "tier": "menu"},
+        {"name": "dried chili", "tier": "menu"}
+      ],
+      "allergens": [
+        {"allergen": "peanut", "tier": "menu", "confidence": 0.98, "reason": "peanuts listed on the menu"},
+        {"allergen": "soy", "tier": "inferred", "confidence": 0.85, "reason": "soy sauce"},
+        {"allergen": "wheat", "tier": "inferred", "confidence": 0.6, "reason": "soy sauce"}
+      ],
+      "is_vegetarian": false,
+      "is_vegan": false,
+      "contains_pork": false,
+      "contains_beef": false,
+      "confirm_with_staff": []
+    },
+    {
+      "id": "dry_fried_string_beans",
+      "name_zh": "干煸四季豆",
+      "name_en": "Dry-Fried String Beans",
+      "price": 13.95,
+      "description_raw": "Wok-fried string beans with preserved vegetable",
+      "category": "stir_fry",
+      "cooking_method": "dry_fry",
+      "spice_level": 1,
+      "portion": "medium",
+      "main_ingredients": [
+        {"name": "string beans", "tier": "menu"},
+        {"name": "preserved mustard (ya cai)", "tier": "menu"},
+        {"name": "minced pork", "tier": "inferred", "note": "traditional; sometimes omitted"}
+      ],
+      "allergens": [
+        {"allergen": "soy", "tier": "inferred", "confidence": 0.7, "reason": "soy sauce"}
+      ],
+      "is_vegetarian": null,
+      "is_vegan": null,
+      "contains_pork": null,
+      "contains_beef": false,
+      "confirm_with_staff": ["Do the dry-fried string beans contain minced pork?"]
+    },
+    {
+      "id": "garlic_seasonal_greens",
+      "name_zh": "蒜蓉时蔬",
+      "name_en": "Garlic Seasonal Greens",
+      "price": 12.95,
+      "description_raw": "Stir-fried seasonal greens with garlic",
+      "category": "stir_fry",
+      "cooking_method": "stir_fry",
+      "spice_level": 0,
+      "portion": "medium",
+      "main_ingredients": [
+        {"name": "leafy greens", "tier": "menu"},
+        {"name": "garlic", "tier": "menu"}
+      ],
+      "allergens": [],
+      "is_vegetarian": true,
+      "is_vegan": true,
+      "contains_pork": false,
+      "contains_beef": false,
+      "confirm_with_staff": ["Are the greens cooked with oil and garlic only, no oyster sauce or chicken stock?"]
+    },
+    {
+      "id": "di_san_xian",
+      "name_zh": "地三鲜",
+      "name_en": "Three Treasures (Potato, Eggplant, Pepper)",
+      "price": 13.95,
+      "description_raw": "Potato, eggplant and green pepper in brown sauce",
+      "category": "stir_fry",
+      "cooking_method": "stir_fry",
+      "spice_level": 0,
+      "portion": "medium",
+      "main_ingredients": [
+        {"name": "potato", "tier": "menu"},
+        {"name": "eggplant", "tier": "menu"},
+        {"name": "green pepper", "tier": "menu"}
+      ],
+      "allergens": [
+        {"allergen": "soy", "tier": "inferred", "confidence": 0.8, "reason": "brown sauce is soy based"},
+        {"allergen": "shellfish", "tier": "unknown", "confidence": 0.3, "reason": "some kitchens use oyster sauce in the brown sauce"}
+      ],
+      "is_vegetarian": true,
+      "is_vegan": true,
+      "contains_pork": false,
+      "contains_beef": false,
+      "confirm_with_staff": ["Is the brown sauce made with oyster sauce?"]
+    },
+    {
+      "id": "dry_pot_cauliflower",
+      "name_zh": "干锅花菜",
+      "name_en": "Dry Pot Cauliflower",
+      "price": 14.95,
+      "description_raw": "Cauliflower in dry pot",
+      "category": "stir_fry",
+      "cooking_method": "dry_pot",
+      "spice_level": 2,
+      "portion": "large",
+      "main_ingredients": [
+        {"name": "cauliflower", "tier": "menu"},
+        {"name": "pork belly", "tier": "inferred", "note": "standard in dry pot dishes"}
+      ],
+      "allergens": [
+        {"allergen": "soy", "tier": "inferred", "confidence": 0.8, "reason": "soy sauce and bean paste"}
+      ],
+      "is_vegetarian": null,
+      "is_vegan": null,
+      "contains_pork": null,
+      "contains_beef": false,
+      "confirm_with_staff": ["Does the dry pot cauliflower include pork belly?"]
+    },
+    {
+      "id": "boiled_fish_chili_oil",
+      "name_zh": "水煮鱼",
+      "name_en": "Boiled Fish in Chili Oil",
+      "price": 26.95,
+      "description_raw": "Sliced fish fillet and bean sprouts in chili oil broth",
+      "category": "braise_or_stew",
+      "cooking_method": "poach",
+      "spice_level": 3,
+      "portion": "large",
+      "main_ingredients": [
+        {"name": "fish fillet", "tier": "menu"},
+        {"name": "bean sprouts", "tier": "menu"},
+        {"name": "chili oil", "tier": "menu"}
+      ],
+      "allergens": [
+        {"allergen": "fish", "tier": "menu", "confidence": 0.99, "reason": "fish fillet"},
+        {"allergen": "soy", "tier": "inferred", "confidence": 0.8, "reason": "bean paste and soy sauce"}
+      ],
+      "is_vegetarian": false,
+      "is_vegan": false,
+      "contains_pork": false,
+      "contains_beef": false,
+      "confirm_with_staff": []
+    },
+    {
+      "id": "hot_and_sour_soup",
+      "name_zh": "酸辣汤",
+      "name_en": "Hot and Sour Soup",
+      "price": 9.95,
+      "description_raw": "Hot and sour soup",
+      "category": "soup",
+      "cooking_method": "simmer",
+      "spice_level": 1,
+      "portion": "shared",
+      "main_ingredients": [
+        {"name": "tofu", "tier": "inferred"},
+        {"name": "egg", "tier": "inferred"},
+        {"name": "wood ear mushroom", "tier": "inferred"},
+        {"name": "pork", "tier": "inferred", "note": "shredded pork is standard"}
+      ],
+      "allergens": [
+        {"allergen": "egg", "tier": "inferred", "confidence": 0.9, "reason": "egg ribbons are standard"},
+        {"allergen": "soy", "tier": "inferred", "confidence": 0.8, "reason": "tofu and soy sauce"},
+        {"allergen": "wheat", "tier": "inferred", "confidence": 0.5, "reason": "soy sauce and vinegar"}
+      ],
+      "is_vegetarian": null,
+      "is_vegan": false,
+      "contains_pork": null,
+      "contains_beef": false,
+      "confirm_with_staff": ["Is the hot and sour soup made with pork or chicken stock?"]
+    },
+    {
+      "id": "dan_dan_noodles",
+      "name_zh": "担担面",
+      "name_en": "Dan Dan Noodles",
+      "price": 11.95,
+      "description_raw": "Noodles with minced pork and sesame chili sauce",
+      "category": "staple",
+      "cooking_method": "boil",
+      "spice_level": 2,
+      "portion": "individual",
+      "main_ingredients": [
+        {"name": "wheat noodles", "tier": "menu"},
+        {"name": "minced pork", "tier": "menu"},
+        {"name": "sesame paste", "tier": "menu"}
+      ],
+      "allergens": [
+        {"allergen": "wheat", "tier": "menu", "confidence": 0.98, "reason": "wheat noodles"},
+        {"allergen": "sesame", "tier": "menu", "confidence": 0.95, "reason": "sesame sauce listed"},
+        {"allergen": "peanut", "tier": "inferred", "confidence": 0.6, "reason": "the sauce often includes peanut"}
+      ],
+      "is_vegetarian": false,
+      "is_vegan": false,
+      "contains_pork": true,
+      "contains_beef": false,
+      "confirm_with_staff": []
+    },
+    {
+      "id": "steamed_rice",
+      "name_zh": "白饭",
+      "name_en": "Steamed Rice",
+      "price": 2.0,
+      "description_raw": null,
+      "category": "staple",
+      "cooking_method": "steam",
+      "spice_level": 0,
+      "portion": "individual",
+      "main_ingredients": [{"name": "rice", "tier": "menu"}],
+      "allergens": [],
+      "is_vegetarian": true,
+      "is_vegan": true,
+      "contains_pork": false,
+      "contains_beef": false,
+      "confirm_with_staff": []
+    }
+  ]
+}

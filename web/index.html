@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Michelin · Order for the table</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Michelin <span class="zh">拼桌点菜助手</span></h1>
+    <p class="tagline">Pick the restaurant, pick who's eating, set a budget. We find an order that works for everyone, or tell you exactly why none does.</p>
+  </header>
+
+  <main>
+    <section class="panel" id="setup">
+      <div class="field">
+        <label for="menu">Restaurant</label>
+        <select id="menu"></select>
+        <p class="hint" id="menu-hint"></p>
+      </div>
+
+      <div class="field">
+        <label>Who is at the table?</label>
+        <div id="diners" class="diners"></div>
+      </div>
+
+      <div class="field row">
+        <div>
+          <label for="budget">Budget per person (USD, all-in)</label>
+          <input id="budget" type="number" min="10" max="200" step="1" value="25">
+        </div>
+        <div>
+          <label for="min-dishes">Dishes each person can eat</label>
+          <input id="min-dishes" type="number" min="1" max="4" step="1" value="2">
+        </div>
+      </div>
+
+      <details>
+        <summary>Assumptions</summary>
+        <div class="row">
+          <div><label for="tax">Sales tax</label><input id="tax" type="number" step="0.00125" value="0.08875"></div>
+          <div><label for="tip">Tip</label><input id="tip" type="number" step="0.01" value="0.18"></div>
+        </div>
+        <label class="check"><input id="explain" type="checkbox"> Generate one-line reasons with Claude (server needs an API key)</label>
+      </details>
+
+      <p class="hint" id="cap-hint"></p>
+      <button id="plan" class="primary">Plan the table</button>
+    </section>
+
+    <section id="result" hidden></section>
+  </main>
+
+  <template id="dish-card">
+    <article class="card">
+      <h3 class="name-en"></h3>
+      <p class="name-zh"></p>
+      <p class="meta"></p>
+      <p class="reason"></p>
+      <p class="ok-for"></p>
+      <ul class="flags"></ul>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>

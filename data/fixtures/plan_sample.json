@@ -1,0 +1,37 @@
+{
+  "items": [
+    {"dish_id": "kung_pao_chicken", "quantity": 1, "edible_by": ["li", "ben", "chen", "eva"],
+     "reason": "Chicken for the table; Dan skips it because the menu lists peanuts."},
+    {"dish_id": "garlic_seasonal_greens", "quantity": 1, "edible_by": ["li", "amy", "ben", "chen", "dan", "eva"],
+     "reason": "A vegetable everyone can share, including Amy."},
+    {"dish_id": "di_san_xian", "quantity": 1, "edible_by": ["li", "amy", "ben", "chen", "dan", "eva"],
+     "reason": "Second vegetarian dish so Amy has two options; confirm the sauce for Ben."},
+    {"dish_id": "yuxiang_shredded_pork", "quantity": 1, "edible_by": ["li", "ben", "chen", "dan", "eva"],
+     "reason": "Mild pork stir-fry that suits Chen's spice limit."},
+    {"dish_id": "boiled_fish_chili_oil", "quantity": 1, "edible_by": ["li", "ben", "chen", "dan", "eva"],
+     "reason": "The large shared dish; fish for Ben, heat for Li."},
+    {"dish_id": "hot_and_sour_soup", "quantity": 1, "edible_by": ["li", "ben", "chen", "dan", "eva"],
+     "reason": "Soup for the table; ask about the stock before Amy has any."},
+    {"dish_id": "steamed_rice", "quantity": 6, "edible_by": ["li", "amy", "ben", "chen", "dan", "eva"],
+     "reason": "One bowl each."}
+  ],
+  "subtotal": 109.70,
+  "tax": 9.74,
+  "tip": 19.75,
+  "total": 139.19,
+  "per_person": 23.20,
+  "variety_score": 0.61,
+  "checks": [
+    {"name": "allergies", "passed": true, "detail": "No chosen dish carries a menu- or inferred-tier flag for anyone's allergy."},
+    {"name": "diets", "passed": true, "detail": "Amy (vegetarian) can eat 2 non-staple dishes."},
+    {"name": "coverage", "passed": true, "detail": "Every diner can eat at least 2 non-staple dishes."},
+    {"name": "budget", "passed": true, "detail": "Subtotal $109.70 is under the $118.23 cap; total $139.19 of $150.00."},
+    {"name": "portions", "passed": true, "detail": "6.3 portion units for 6 people (target 5.4 to 7.8)."}
+  ],
+  "confirm_with_staff": [
+    "Are the greens cooked with oil and garlic only, no oyster sauce or chicken stock?",
+    "Is the brown sauce made with oyster sauce?",
+    "Three Treasures (Potato, Eggplant, Pepper): some kitchens use oyster sauce in the brown sauce (someone is allergic to shellfish)",
+    "Is the hot and sour soup made with pork or chicken stock?"
+  ]
+}

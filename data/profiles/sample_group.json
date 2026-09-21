@@ -1,0 +1,8 @@
+[
+  {"id": "li", "name": "Li", "allergies": [], "diets": [], "max_spice": 3, "dislikes": [], "likes": ["spicy"]},
+  {"id": "amy", "name": "Amy", "allergies": [], "diets": ["vegetarian"], "max_spice": 2, "dislikes": [], "likes": ["tofu"]},
+  {"id": "ben", "name": "Ben", "allergies": ["shellfish"], "diets": [], "max_spice": null, "dislikes": [], "likes": ["fish"]},
+  {"id": "chen", "name": "Chen", "allergies": [], "diets": [], "max_spice": 1, "dislikes": ["cilantro"], "likes": []},
+  {"id": "dan", "name": "Dan", "allergies": ["peanut"], "diets": [], "max_spice": null, "dislikes": [], "likes": ["chicken"]},
+  {"id": "eva", "name": "Eva", "allergies": [], "diets": [], "max_spice": null, "dislikes": [], "likes": []}
+]
