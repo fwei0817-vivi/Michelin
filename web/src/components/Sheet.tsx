@@ -1,8 +1,9 @@
 import { X } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
 
-export function Sheet({ title, onClose, children, wide = false, drawer = false }: {
-  title: string; onClose: () => void; children: ReactNode; wide?: boolean; drawer?: boolean;
+/** A drawer from the right. Every panel uses it, so the menu, the table and the ticket behave alike. */
+export function Sheet({ title, onClose, children, wide = false }: {
+  title: string; onClose: () => void; children: ReactNode; wide?: boolean;
 }) {
   const panel = useRef<HTMLDivElement>(null);
   const close = useRef(onClose);
@@ -26,8 +27,8 @@ export function Sheet({ title, onClose, children, wide = false, drawer = false }
     document.addEventListener("keydown", onKey);
     return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prevOverflow; if (previous?.isConnected) previous.focus(); };
   }, []);
-  return <div className={`overlay ${drawer ? "overlay-drawer" : ""}`} onClick={onClose}>
-    <div ref={panel} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()} className={`dialog ${wide ? "dialog-wide" : ""} ${drawer ? "dialog-drawer" : ""}`}>
+  return <div className="overlay" onClick={onClose}>
+    <div ref={panel} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()} className={`dialog ${wide ? "dialog-wide" : ""}`}>
       <div className="dialog-heading"><h2>{title}</h2><button type="button" className="icon-btn" onClick={onClose} aria-label="Close"><X size={20}/></button></div>
       {children}
     </div>

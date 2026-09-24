@@ -69,6 +69,12 @@ export function dinerSummary(p: DinerProfile): string {
   return parts.join(", ");
 }
 
+/** "David", "David and Tom", "David, Amy and Tom". */
+export function listNames(names: string[]): string {
+  if (names.length <= 1) return names.join("");
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
 export function dishName(d: Dish): string {
   return d.name_en || d.id.replaceAll("_", " ");
 }
@@ -92,4 +98,16 @@ export const CATEGORY_LABEL: Record<string, string> = {
   cold_appetizer: "Cold dishes", stir_fry: "From the wok", braise_or_stew: "Braises & stews",
   soup: "Soup", staple: "Rice & noodles", dessert: "Dessert", drink: "Drinks", other: "Other",
 };
+/** Short pass / fail labels for Plan.checks. Allergy and diet wording stays at "recorded": a pass
+ *  means no recorded conflict, never that a dish is free of something. */
+export function checkLabel(name: string, passed: boolean, minDishes: number): string {
+  const labels: Record<string, [string, string]> = {
+    allergies: ["No recorded allergy conflicts", "Allergy conflict"],
+    diets: ["Recorded diets met", "Diet conflict"],
+    coverage: [`Everyone has ${minDishes}+ options`, `Not everyone has ${minDishes}+ options`],
+    budget: ["Within budget", "Over budget"],
+    portions: ["Portions fit the table", "Portions off target"],
+  };
+  return labels[name]?.[passed ? 0 : 1] ?? name;
+}
 export const currencySymbol = (currency: string) => currency === "USD" ? "$" : currency === "CNY" ? "¥" : `${currency} `;

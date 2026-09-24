@@ -1,47 +1,345 @@
 import { useState } from "react";
-import { ArrowLeftRight, ArrowRight, CircleHelp, Flame, Leaf, LockKeyhole, Plus, RefreshCw, Trash2, Users } from "lucide-react";
-import { CATEGORY_LABEL, currencySymbol, dishName, flagWording, money } from "../lib/format";
+import { ArrowLeftRight, Check, ChevronDown, CircleHelp, Flame, Leaf, LockKeyhole, Plus, RefreshCw, Trash2, UnlockKeyhole, UserX, Users, X } from "lucide-react";
+import { CATEGORY_LABEL, checkLabel, currencySymbol, dishName, flagWording, listNames, money } from "../lib/format";
 import { dishQuestions, heatNote } from "../lib/dietary";
+import { DISH_PHOTOS } from "../lib/dishPhotos";
 import { Coverage } from "./Coverage";
-import type { DinerProfile, DiningSettings, Menu, Plan } from "../types";
+import type { DinerProfile, DiningSettings, Dish, Menu, Plan, PlanItem } from "../types";
 
-export function Ticket({ menu, plan, diners, settings, locked, stale, loading, onLock, onSwap, onRemove, onAdd, onPlan, onOrder, canOrder, onParty }: {
-  menu: Menu; plan: Plan; diners: DinerProfile[]; settings: DiningSettings; locked: string[];
-  stale: boolean; loading: boolean; onLock: (id: string) => void; onSwap: (id: string) => void;
-  onRemove: (id: string) => void; onAdd: () => void; onPlan: () => void; onOrder: () => void;
-  canOrder: boolean; onParty: () => void;
-}) {
+interface Props {
+  menu: Menu;
+  plan: Plan;
+  diners: DinerProfile[];
+  settings: DiningSettings;
+  locked: string[];
+  stale: boolean;
+  loading: boolean;
+  onLock: (id: string) => void;
+  onSwap: (id: string) => void;
+  onRemove: (id: string) => void;
+  onAdd: () => void;
+  onPlan: () => void;
+  onOrder: () => void;
+  canOrder: boolean;
+  onParty: () => void;
+}
+
+const SPICE = ["", "Mild", "Medium", "Hot"];
+
+export function Ticket({ menu, plan, diners, settings, locked, stale, loading, onLock, onSwap, onRemove, onAdd, onPlan, onOrder, canOrder, onParty }: Props) {
   const [filter, setFilter] = useState("all");
-  const byId = Object.fromEntries(menu.dishes.map(d => [d.id, d]));
-  const items = plan.items.filter(i => byId[i.dish_id]);
+  const [open, setOpen] = useState<string[]>([]);
+  const byId: Record<string, Dish> = Object.fromEntries(menu.dishes.map((d) => [d.id, d]));
+  const items = plan.items.filter((i) => byId[i.dish_id]);
   const cur = currencySymbol(menu.currency);
-  const remaining = settings.budget * diners.length - plan.total;
-  const categories = [...new Set(items.map(i => byId[i.dish_id].category))];
+  const remaining = settings.budget - plan.per_person;
+  const over = remaining < 0;
+  const questions = plan.confirm_with_staff.length;
+  const failed = plan.checks.filter((c) => !c.passed);
+  const disabled = loading || stale;
+  const categories = [...new Set(items.map((i) => byId[i.dish_id].category))];
   const actualFilter = filter === "all" || categories.includes(filter) ? filter : "all";
-  const visible = items.filter(i => actualFilter === "all" || byId[i.dish_id].category === actualFilter);
-  const failed = plan.checks.filter(c => !c.passed);
-  return <div className="dashboard" aria-busy={loading}>
-    <div className="plan-heading"><div><div className="eyebrow">YOUR SHARED TABLE <span> / STEP 3 OF 3</span></div><h1>A little of everything.<br className="mobile-break"/><em> Something for everyone.</em></h1><p>{menu.restaurant_name} <span>·</span> {diners.length} diners <span>·</span> {items.length} dishes to share</p></div><button className="btn btn-outline" onClick={onPlan} disabled={loading}><RefreshCw size={16} className={loading ? "spin" : ""}/>{loading ? "Finding ideas…" : "Refresh suggestions"}</button></div>
-    {failed.length > 0 && <div className="notice error-notice" role="status"><CircleHelp size={18}/><div>{failed.map(c => <p key={c.name}>{c.detail}</p>)}</div></div>}
-    <div className="plan-layout"><div className="course-column">
-      <div className="courses-toolbar"><div className="course-tabs" role="group" aria-label="Filter recommended dishes"><button className={actualFilter === "all" ? "active" : ""} aria-pressed={actualFilter === "all"} onClick={() => setFilter("all")}>All dishes <span>{items.length}</span></button>{categories.map(c => <button key={c} aria-pressed={actualFilter === c} className={actualFilter === c ? "active" : ""} onClick={() => setFilter(c)}>{CATEGORY_LABEL[c] ?? c}<span>{items.filter(i => byId[i.dish_id].category === c).length}</span></button>)}</div></div>
-      <p className="course-hint"><LockKeyhole size={13}/>Keep a dish to hold onto it when suggestions refresh.</p>
-      <div className="dish-grid">{visible.map(item => {
-        const d = byId[item.dish_id], kept = locked.includes(d.id);
-        const notFor = diners.filter(p => !item.edible_by.includes(p.id));
-        const questions = dishQuestions(d, diners);
-        const heat = heatNote(d, diners.filter(p => item.edible_by.includes(p.id)));
-        return <article key={d.id} className={`dish-card ${kept ? "dish-kept" : ""}`} aria-label={dishName(d)}>
-          <div className="dish-topline"><span className="dish-category">{CATEGORY_LABEL[d.category] ?? d.category}</span>{kept && <span className="kept-label"><LockKeyhole size={12}/>Kept</span>}<span className="dish-number">{String(items.findIndex(i=>i.dish_id===d.id)+1).padStart(2,"0")}</span></div>
-          <div className="dish-card-heading"><div><h2>{dishName(d)}</h2>{d.name_zh && <p className="dish-chinese" lang="zh">{d.name_zh}</p>}</div><div className="dish-price">{money((d.price ?? 0)*item.quantity,cur)}<small>{item.quantity > 1 ? `${item.quantity} × ${money(d.price,cur)}` : "1 plate"}</small></div></div>
-          <div className="dish-tags">{d.is_vegetarian === true && <span className="tag-green"><Leaf size={13}/>{d.is_vegan ? "Vegan" : "Vegetarian"}</span>}{d.spice_level > 0 && <span className="tag-heat"><Flame size={13}/>{["","Mild","Medium","Hot"][d.spice_level]}</span>}{d.cooking_method && <span>{d.cooking_method.replaceAll("_"," ")}</span>}</div>
-          <div className="dish-suitability"><p className="matched-line"><Users size={14}/>{item.edible_by.length}/{diners.length} match recorded requirements</p>{notFor.length > 0 && <p className="excluded-line">Not for {notFor.map(p=>p.name).join(", ")}</p>}{questions.length > 0 && <div className="kitchen-flag"><CircleHelp size={15}/><span><strong>Kitchen check needed</strong><small>{questions[0]}</small></span></div>}{heat && <p className="heat-note"><Flame size={13}/>{heat}</p>}</div>
-          <details className="dish-details"><summary>Why this dish & ingredient notes</summary><p>{item.reason || "Adds another option to your shared table."}</p>{d.allergens.length > 0 && <p>{d.allergens.map(flagWording).join(" · ")}</p>}{questions.slice(1).map(q=><p key={q}>{q}</p>)}</details>
-          <div className="dish-actions"><button className={`dish-action ${kept ? "kept" : ""}`} aria-label={`${kept ? "Unkeep" : "Keep"} ${dishName(d)}`} aria-pressed={kept} onClick={()=>onLock(d.id)} disabled={loading||stale}><LockKeyhole size={15}/>{kept ? "Kept" : "Keep dish"}</button><div><button className="dish-action swap-action" aria-label={`Swap ${dishName(d)}`} onClick={()=>onSwap(d.id)} disabled={loading||stale}><ArrowLeftRight size={15}/>Swap</button><button className="dish-action remove-action" aria-label={`Remove ${dishName(d)}`} title={`Remove ${dishName(d)}`} onClick={()=>onRemove(d.id)} disabled={loading||stale}><Trash2 size={16}/></button></div></div>
-        </article>;
-      })}<button className="add-course-card" onClick={onAdd} disabled={loading||stale}><span><Plus size={24}/></span><strong>Something else in mind?</strong><small>Find another dish on the menu</small></button></div>
-      <section id="staff-questions" className="staff-section"><div><CircleHelp size={21}/><h2>Before the first bite</h2><span>{plan.confirm_with_staff.length} TO CHECK</span></div><p>Ask the restaurant about these ingredients. Matching the recorded preferences does not confirm how a dish is prepared.</p>{plan.confirm_with_staff.length ? <ol>{plan.confirm_with_staff.map(q=><li key={q}>{q}</li>)}</ol> : <p>No specific questions were recorded. Confirm dietary needs with the restaurant.</p>}</section>
-    </div><aside className="order-sidebar"><section className="order-summary" aria-label="Order summary"><div className="summary-heading"><h2>Your order</h2><span>{items.length} dishes</span></div><div className="summary-total"><strong>{money(plan.total,cur)}</strong><span>estimated total</span></div><p className="summary-per-person">{money(plan.per_person,cur)} per person <span>· incl. tax & tip</span></p><div className={`budget-status ${remaining < 0 ? "over-budget" : ""}`}><span>{remaining >= 0 ? `${money(remaining,cur)} within budget` : `${money(-remaining,cur)} over budget`}</span><div className="budget-track"><span style={{width:`${Math.max(0,Math.min(100,100*plan.total/(settings.budget*diners.length)))}%`}}/></div><small>Budget for the table: {money(settings.budget*diners.length,cur)}</small></div><details className="cost-details"><summary>Price breakdown</summary><dl><dt>Menu subtotal</dt><dd>{money(plan.subtotal,cur)}</dd><dt>Tax ({Number((settings.tax*100).toFixed(3))}%)</dt><dd>{money(plan.tax,cur)}</dd><dt>Tip ({Number((settings.tip*100).toFixed(2))}%)</dt><dd>{money(plan.tip,cur)}</dd></dl></details>{plan.confirm_with_staff.length > 0 && <a className="summary-check" href="#staff-questions"><CircleHelp size={17}/><span>{plan.confirm_with_staff.length} kitchen questions to review</span><ArrowRight size={15}/></a>}<button className="btn btn-primary order-cta" onClick={onOrder} disabled={!canOrder}>View order ticket <ArrowRight size={17}/></button><p className="ticket-note">A list to share with your server. No order is placed.</p><button className="text-button edit-table" onClick={onParty}><Users size={15}/>Edit people & budget</button></section><Coverage menu={menu} plan={plan} diners={diners} minDishes={settings.minDishes}/><details className="plan-details"><summary>How this plan was balanced</summary><p>{items.length} dishes against a target of {settings.dishCount}. Variety score: {Math.round(plan.variety_score*100)}/100, based on categories, ingredients and cooking methods.</p></details></aside></div>
-    <div className="mobile-order-bar"><div><strong>{money(plan.total,cur)}</strong><small>{money(plan.per_person,cur)} / person</small></div><button className="btn btn-primary" disabled={!canOrder} onClick={onOrder}>Order ticket <ArrowRight size={16}/></button></div>
-  </div>;
+  const visible = items.filter((i) => actualFilter === "all" || byId[i.dish_id].category === actualFilter);
+  const toggleOpen = (id: string) => setOpen((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  return (
+    <div className="plan" aria-busy={loading}>
+      <div className="plan-head">
+        <div>
+          <p className="plan-sub">
+            {menu.restaurant_name}, {diners.length} {diners.length === 1 ? "diner" : "diners"}
+          </p>
+          <h1>{items.length} dishes to share</h1>
+        </div>
+        {!stale && (
+          <button className="btn btn-outline" onClick={onPlan} disabled={loading}>
+            <RefreshCw size={15} className={loading ? "spin" : ""} />
+            {loading ? "Finding dishes…" : "Refresh suggestions"}
+          </button>
+        )}
+      </div>
+
+      {failed.length > 0 && (
+        <div className="notice error-notice" role="status">
+          <X size={17} />
+          <div>
+            {failed.map((c) => (
+              <p key={c.name}>{c.detail}</p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="plan-grid">
+        <div className="plan-main">
+          <div>
+            <div className="courses-toolbar">
+              <div className="course-tabs" role="group" aria-label="Filter recommended dishes">
+                <button className={actualFilter === "all" ? "active" : ""} aria-pressed={actualFilter === "all"} onClick={() => setFilter("all")}>
+                  All dishes <span>{items.length}</span>
+                </button>
+                {categories.map((c) => (
+                  <button key={c} className={actualFilter === c ? "active" : ""} aria-pressed={actualFilter === c} onClick={() => setFilter(c)}>
+                    {CATEGORY_LABEL[c] ?? c}
+                    <span>{items.filter((i) => byId[i.dish_id].category === c).length}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="course-hint">
+                <LockKeyhole size={13} />
+                Keep a dish to hold onto it when suggestions refresh.
+              </p>
+            </div>
+            <div className="dish-grid">
+              {visible.map((item) => (
+                <DishCard
+                  key={item.dish_id}
+                  item={item}
+                  dish={byId[item.dish_id]}
+                  diners={diners}
+                  cur={cur}
+                  kept={locked.includes(item.dish_id)}
+                  expanded={open.includes(item.dish_id)}
+                  disabled={disabled}
+                  onToggle={toggleOpen}
+                  onLock={onLock}
+                  onSwap={onSwap}
+                  onRemove={onRemove}
+                />
+              ))}
+              <button className="add-course-card" onClick={onAdd} disabled={disabled}>
+                <span>
+                  <Plus size={20} />
+                </span>
+                <strong>Something else in mind?</strong>
+                <small>Find another dish on the menu</small>
+              </button>
+            </div>
+            {visible.some((i) => DISH_PHOTOS[i.dish_id]) && (
+              <p className="photo-note">
+                Photos show similar dishes from Wikimedia Commons, for illustration. They are not this restaurant's food and say nothing about ingredients.
+              </p>
+            )}
+          </div>
+
+          <section id="ask-server" className="sheet ask" aria-labelledby="ask-heading">
+            <h2 id="ask-heading">Ask your server before you order</h2>
+            <p>Matching everyone's recorded needs says nothing about how a dish is cooked. These questions come from the menu wording; the order ticket repeats them.</p>
+            {questions > 0 ? (
+              <ol>
+                {plan.confirm_with_staff.map((q) => (
+                  <li key={q}>{q}</li>
+                ))}
+              </ol>
+            ) : (
+              <p>No specific questions came up. Still tell your server about any allergies at the table.</p>
+            )}
+          </section>
+
+          <Coverage menu={menu} plan={plan} diners={diners} minDishes={settings.minDishes} />
+
+          <details className="plan-how">
+            <summary>How this plan was checked</summary>
+            <ul>
+              {plan.checks.map((c) => (
+                <li key={c.name}>
+                  <strong>{checkLabel(c.name, c.passed, settings.minDishes)}.</strong> {c.detail}
+                </li>
+              ))}
+            </ul>
+            <p>
+              {items.length} dishes against a target of {settings.dishCount}. Variety score {Math.round(plan.variety_score * 100)} of 100, from categories, ingredients and cooking methods.
+            </p>
+          </details>
+        </div>
+
+        <aside className="bill" aria-label="Your order">
+          <h2>Your order, {items.length} dishes</h2>
+          <p className="bill-total">
+            <strong>{money(plan.per_person, cur)}</strong>
+            <span>per person</span>
+          </p>
+          <p className="bill-table">{money(plan.total, cur)} for the table, tax and tip included</p>
+          <div className={`bill-budget ${over ? "over" : ""}`}>
+            <div className="bill-track">
+              <span style={{ width: `${Math.max(0, Math.min(100, (100 * plan.per_person) / settings.budget))}%` }} />
+            </div>
+            {over
+              ? `${money(-remaining, cur)} over your ${money(settings.budget, cur)} budget`
+              : `${money(remaining, cur)} under your ${money(settings.budget, cur)} budget`}
+          </div>
+          <ul className="bill-checks" aria-label="Plan checks">
+            {plan.checks.map((c) => (
+              <li key={c.name} className={c.passed ? "" : "failed"}>
+                {c.passed ? <Check size={14} /> : <X size={14} />}
+                {checkLabel(c.name, c.passed, settings.minDishes)}
+              </li>
+            ))}
+          </ul>
+          <details className="bill-breakdown">
+            <summary>Price breakdown</summary>
+            <dl>
+              <dt>Menu prices</dt>
+              <dd>{money(plan.subtotal, cur)}</dd>
+              <dt>Tax ({Number((settings.tax * 100).toFixed(3))}%)</dt>
+              <dd>{money(plan.tax, cur)}</dd>
+              <dt>Tip ({Number((settings.tip * 100).toFixed(2))}%)</dt>
+              <dd>{money(plan.tip, cur)}</dd>
+            </dl>
+          </details>
+          {questions > 0 && (
+            <a className="bill-ask" href="#ask-server">
+              {questions} {questions === 1 ? "question" : "questions"} for your server
+            </a>
+          )}
+          <button className="btn btn-light" onClick={onOrder} disabled={!canOrder}>
+            View order ticket
+          </button>
+          <p className="bill-note">Show it to your server. Nothing is ordered from here.</p>
+          <button className="text-button light" onClick={onParty}>
+            Edit people and budget
+          </button>
+        </aside>
+      </div>
+
+      <div className="mobile-bar">
+        <div>
+          <strong>
+            {money(plan.per_person, cur)} <span>per person</span>
+          </strong>
+          <small>{money(plan.total, cur)} for the table</small>
+        </div>
+        <button className="btn btn-light" disabled={!canOrder} onClick={onOrder}>
+          Order ticket
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function DishCard({ item, dish, diners, cur, kept, expanded, disabled, onToggle, onLock, onSwap, onRemove }: {
+  item: PlanItem;
+  dish: Dish;
+  diners: DinerProfile[];
+  cur: string;
+  kept: boolean;
+  expanded: boolean;
+  disabled: boolean;
+  onToggle: (id: string) => void;
+  onLock: (id: string) => void;
+  onSwap: (id: string) => void;
+  onRemove: (id: string) => void;
+}) {
+  const name = dishName(dish);
+  const notFor = diners.filter((p) => !item.edible_by.includes(p.id));
+  const heat = heatNote(dish, diners.filter((p) => item.edible_by.includes(p.id)));
+  const questions = dishQuestions(dish, diners);
+  const photo = DISH_PHOTOS[dish.id];
+  const panelId = `dish-panel-${dish.id}`;
+  return (
+    <article className={`dish-card ${kept ? "dish-kept" : ""} ${photo ? "has-photo" : ""}`} aria-label={name}>
+      {photo && <img className="dish-photo" src={photo.src} alt="" width={80} height={80} loading="lazy" />}
+      <div className="dish-card-heading">
+        <h2>{name}</h2>
+        <p className="dish-sub">
+          <span className="dish-price">
+            {money((dish.price ?? 0) * item.quantity, cur)}
+            {item.quantity > 1 && (
+              <small>
+                {" "}
+                ({item.quantity} × {money(dish.price, cur)})
+              </small>
+            )}
+          </span>
+          {dish.name_zh && <span lang="zh">{dish.name_zh}</span>}
+        </p>
+      </div>
+      <div className="dish-tags">
+        {kept && (
+          <span className="tag-kept">
+            <LockKeyhole size={12} />
+            Kept
+          </span>
+        )}
+        {dish.is_vegetarian === true && (
+          <span>
+            <Leaf size={12} />
+            {dish.is_vegan ? "Vegan" : "Vegetarian"}
+          </span>
+        )}
+        {dish.spice_level > 0 && (
+          <span>
+            <Flame size={12} />
+            {SPICE[dish.spice_level]}
+          </span>
+        )}
+        {dish.cooking_method && <span>{dish.cooking_method.replaceAll("_", " ")}</span>}
+        {notFor.length === 0 && (
+          <span title="Matches every diner's recorded requirements">
+            <Users size={12} />
+            Matches all {diners.length}
+          </span>
+        )}
+      </div>
+      {(notFor.length > 0 || heat) && (
+        <div className="dish-notes">
+          {notFor.length > 0 && (
+            <p className="not-for">
+              <UserX size={13} />
+              <span>Not for {listNames(notFor.map((p) => p.name))}</span>
+            </p>
+          )}
+          {heat && (
+            <p>
+              <Flame size={13} />
+              <span>{heat}</span>
+            </p>
+          )}
+        </div>
+      )}
+      <div className="dish-panel" id={panelId} hidden={!expanded}>
+        {questions.map((q) => (
+          <p key={q} className="dish-question">
+            <CircleHelp size={13} />
+            <span>{q}</span>
+          </p>
+        ))}
+        <p>{item.reason || "Adds another option to your shared table."}</p>
+        {dish.allergens.length > 0 && <p className="dish-flags">{dish.allergens.map(flagWording).join(" · ")}</p>}
+        {photo && (
+          <p className="dish-flags">
+            Photo of a similar dish, for illustration:{" "}
+            <a href={photo.source} target="_blank" rel="noreferrer">
+              {photo.author}
+            </a>
+            , {photo.license}.
+          </p>
+        )}
+      </div>
+      <div className="dish-foot">
+        <button className={`dish-more ${questions.length ? "has-check" : ""}`} aria-expanded={expanded} aria-controls={panelId} onClick={() => onToggle(dish.id)}>
+          {questions.length > 0 && <CircleHelp size={14} />}
+          {questions.length ? `${questions.length} kitchen ${questions.length === 1 ? "check" : "checks"}` : "Details"}
+          <ChevronDown size={14} />
+        </button>
+        <button
+          className={`dish-action ${kept ? "kept" : ""}`}
+          aria-label={`Keep ${name}`}
+          title={kept ? "Kept when suggestions refresh" : "Keep this dish"}
+          aria-pressed={kept}
+          onClick={() => onLock(dish.id)}
+          disabled={disabled}
+        >
+          {kept ? <LockKeyhole size={15} /> : <UnlockKeyhole size={15} />}
+        </button>
+        <button className="dish-action swap-action" aria-label={`Swap ${name}`} onClick={() => onSwap(dish.id)} disabled={disabled}>
+          <ArrowLeftRight size={14} />
+          Swap
+        </button>
+        <button className="dish-action remove-action" aria-label={`Remove ${name}`} title={`Remove ${name}`} onClick={() => onRemove(dish.id)} disabled={disabled}>
+          <Trash2 size={15} />
+        </button>
+      </div>
+    </article>
+  );
 }

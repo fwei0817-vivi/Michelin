@@ -1,5 +1,5 @@
 import type { DinerProfile, Dish } from "../types";
-import { ALLERGEN_LABEL } from "./format";
+import { ALLERGEN_LABEL, listNames } from "./format";
 
 /** Open questions are not confirmations. Keep them visible alongside eligibility. */
 export function dishQuestions(dish: Dish, diners: DinerProfile[]): string[] {
@@ -14,5 +14,5 @@ export function dishQuestions(dish: Dish, diners: DinerProfile[]): string[] {
 
 export function heatNote(dish: Dish, diners: DinerProfile[]): string | null {
   const affected = diners.filter(p => p.max_spice != null && dish.spice_level > p.max_spice);
-  return affected.length ? `Spicier than ${affected.map(p => p.name).join(", ")}'s preference` : null;
+  return affected.length ? `Spicier than ${listNames(affected.map(p => p.name))} ${affected.length === 1 ? "prefers" : "prefer"}` : null;
 }

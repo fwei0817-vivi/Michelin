@@ -12,7 +12,7 @@ interface Props {
 }
 
 const chip = (on: boolean) =>
-  `rounded-full border px-3 py-1.5 text-sm ${on ? "border-slip bg-slip text-ink" : "border-celadon/40 text-celadon hover:border-celadon"}`;
+  `rounded-full border px-3 py-1.5 text-sm ${on ? "border-brand bg-brand text-surface" : "border-line-strong text-fg-2 hover:border-fg-3"}`;
 
 export function DinerSheet({ diner, existingIds, onSave, onRemove, onClose }: Props) {
   const [name, setName] = useState(diner?.name ?? "");
@@ -42,17 +42,17 @@ export function DinerSheet({ diner, existingIds, onSave, onRemove, onClose }: Pr
         }}
       >
         <label className="block text-sm">
-          <span className="text-celadon">Name</span>
+          <span className="text-fg-2">Name</span>
           <input
             autoFocus={!diner}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-transparent bg-booth-deep px-3 py-2 text-slip focus:border-celadon focus:outline-none"
+            className="field"
           />
         </label>
 
         <fieldset>
-          <legend className="text-sm text-celadon">Allergies</legend>
+          <legend className="text-sm text-fg-2">Allergies</legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {ALLERGENS.map((a) => (
               <button key={a} type="button" aria-pressed={allergies.includes(a)} onClick={() => setAllergies(toggle(allergies, a))} className={chip(allergies.includes(a))}>
@@ -63,7 +63,7 @@ export function DinerSheet({ diner, existingIds, onSave, onRemove, onClose }: Pr
         </fieldset>
 
         <fieldset>
-          <legend className="text-sm text-celadon">Diet</legend>
+          <legend className="text-sm text-fg-2">Diet</legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {DIETS.map((d) => (
               <button key={d} type="button" aria-pressed={diets.includes(d)} onClick={() => setDiets(toggle(diets, d))} className={chip(diets.includes(d))}>
@@ -71,13 +71,13 @@ export function DinerSheet({ diner, existingIds, onSave, onRemove, onClose }: Pr
               </button>
             ))}
           </div>
-          <p className="mt-2 text-xs text-celadon-dim">
+          <p className="mt-2 text-xs text-fg-3">
             Recorded conflicts exclude a dish for this person. Unknown ingredients remain questions to confirm with the kitchen.
           </p>
         </fieldset>
 
         <fieldset>
-          <legend className="text-sm text-celadon">Heat</legend>
+          <legend className="text-sm text-fg-2">Heat</legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {SPICE_LABEL.map((label, i) => (
               <button key={label} type="button" aria-pressed={spice === i} onClick={() => setSpice(spice === i ? null : i)} className={chip(spice === i)}>
@@ -85,43 +85,43 @@ export function DinerSheet({ diner, existingIds, onSave, onRemove, onClose }: Pr
               </button>
             ))}
           </div>
-          <p className="mt-2 text-xs text-celadon-dim">Heat and dislikes affect preferences. Spicier dishes may still appear, with a note.</p>
+          <p className="mt-2 text-xs text-fg-3">Heat and dislikes affect preferences. Spicier dishes may still appear, with a note.</p>
         </fieldset>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block text-sm">
-            <span className="text-celadon">Dislikes</span>
+            <span className="text-fg-2">Dislikes</span>
             <input
               value={dislikes}
               onChange={(e) => setDislikes(e.target.value)}
               placeholder="cilantro, offal"
-              className="mt-1 w-full rounded-lg border border-transparent bg-booth-deep px-3 py-2 text-slip placeholder:text-celadon-dim focus:border-celadon focus:outline-none"
+              className="field"
             />
           </label>
           <label className="block text-sm">
-            <span className="text-celadon">Likes</span>
+            <span className="text-fg-2">Likes</span>
             <input
               value={likes}
               onChange={(e) => setLikes(e.target.value)}
               placeholder="tofu, spicy"
-              className="mt-1 w-full rounded-lg border border-transparent bg-booth-deep px-3 py-2 text-slip placeholder:text-celadon-dim focus:border-celadon focus:outline-none"
+              className="field"
             />
           </label>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+        <div className="drawer-footer flex flex-wrap items-center justify-between gap-3">
           {diner ? (
-            <button type="button" onClick={() => onRemove(diner.id)} className="text-sm text-celadon hover:text-slip">
+            <button type="button" onClick={() => onRemove(diner.id)} className="text-sm text-fg-2 hover:text-danger">
               Not eating tonight
             </button>
           ) : (
             <span />
           )}
           <div className="flex gap-3">
-            <button type="button" onClick={onClose} className="rounded-full px-4 py-2 text-sm text-celadon hover:text-slip">
+            <button type="button" onClick={onClose} className="btn btn-outline">
               Cancel
             </button>
-            <button type="submit" disabled={!name.trim()} className="rounded-full bg-slip px-5 py-2 text-sm font-semibold text-ink disabled:opacity-50">
+            <button type="submit" disabled={!name.trim()} className="btn btn-primary">
               Save
             </button>
           </div>
