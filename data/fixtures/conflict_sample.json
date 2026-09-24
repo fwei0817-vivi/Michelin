@@ -1,8 +1,8 @@
 {
-  "message": "No order satisfies every hard constraint at $15.00 per person for 6 people (menu-price cap $70.94). Amy needs 2 vegetarian dishes and everyone needs enough food, which does not fit.",
+  "message": "No order satisfies every hard constraint at $15.00 per person for 6 people (menu-price cap $70.94). David needs 2 vegetarian dishes and everyone needs enough food, which does not fit.",
   "relaxations": [
     {"kind": "budget", "description": "Raise the budget to $21.00 per person", "diner_id": null, "new_value": 21.0},
     {"kind": "coverage", "description": "Require 1 dish per person instead of 2", "diner_id": null, "new_value": 1},
-    {"kind": "diet", "description": "Drop the vegetarian constraint for Amy (she would need to confirm)", "diner_id": "amy", "new_value": null}
+    {"kind": "diet", "description": "Drop the vegetarian constraint for David (he would need to confirm)", "diner_id": "david", "new_value": null}
   ]
 }

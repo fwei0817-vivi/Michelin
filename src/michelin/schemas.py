@@ -135,7 +135,11 @@ class TableRequest(BaseModel):
     tax_rate: float = 0.08875  # NYC sales tax
     tip_rate: float = 0.18
     min_dishes_per_person: int = 2  # non-staple dishes each diner must be able to eat
+    dish_count_target: int | None = Field(default=None, ge=1, le=20)
+    style_preference: str = "balanced"
     include_staple: bool = True  # add one staple (rice) per person
+    locked_dish_ids: list[str] = Field(default_factory=list)  # user pinned these, must stay
+    excluded_dish_ids: list[str] = Field(default_factory=list)  # user removed these, must not appear
 
     @property
     def n_diners(self) -> int:
