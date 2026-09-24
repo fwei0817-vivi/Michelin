@@ -51,7 +51,8 @@ export function WaiterView({ menu, plan, diners, onClose }: Props) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-[28px] font-semibold leading-tight">{menu.restaurant_name}</h2>
-            <p className="mt-1 text-ink-soft">Table of {n}</p>
+            <p className="mt-1 text-ink-soft">Table of {n} · {plan.items.length} dishes to share</p>
+            <p className="mt-2 text-xs text-ink-soft print:hidden">Show this list to your server. This preview does not place an order.</p>
           </div>
           <button type="button" onClick={onClose} className="rounded-full border border-ink/30 px-4 py-2 text-sm hover:border-ink print:hidden">
             Back
@@ -65,10 +66,11 @@ export function WaiterView({ menu, plan, diners, onClose }: Props) {
             return (
               <li key={d.id} className="flex items-baseline justify-between gap-4 py-3">
                 <div>
-                  <p className="text-[30px] font-semibold leading-tight">{dishName(d)}</p>
-
+                  <p className="text-[23px] font-semibold leading-tight">{dishName(d)}</p>
+                  {d.name_zh && <p className="mt-1 text-sm text-ink-soft" lang="zh">{d.name_zh}</p>}
+                  <p className="mt-2 text-xs text-ink-soft">{i.quantity} × {money(d.price, cur)}</p>
                 </div>
-                <p className="tnum text-[30px] leading-tight">{i.quantity}</p>
+                <p className="tnum text-lg font-semibold whitespace-nowrap">{money((d.price ?? 0) * i.quantity, cur)}</p>
               </li>
             );
           })}
@@ -85,7 +87,8 @@ export function WaiterView({ menu, plan, diners, onClose }: Props) {
           </section>
         )}
 
-        <p className="tnum mt-7 text-ink-soft">
+        <dl className="ticket-costs"><dt>Menu subtotal</dt><dd>{money(plan.subtotal, cur)}</dd><dt>Tax</dt><dd>{money(plan.tax, cur)}</dd><dt>Tip</dt><dd>{money(plan.tip, cur)}</dd></dl>
+        <p className="tnum mt-4 text-ink-soft">
           {money(plan.total, cur)} with tax and tip, {money(plan.per_person, cur)} each
         </p>
 

@@ -1,18 +1,16 @@
-import { BookOpen, ChevronDown, ReceiptText, SlidersHorizontal, UtensilsCrossed, Users } from "lucide-react";
+import { BookOpen, ReceiptText, Users, UtensilsCrossed } from "lucide-react";
 import type { Menu, DiningSettings } from "../types";
-import { currencySymbol, money } from "../lib/format";
 
-export function TopBar({ menu, count, settings, total, onMenu, onParty, onOrder, canOrder }: {
+export function TopBar({ menu, count, onMenu, onParty, onOrder, canOrder }: {
   menu: Menu | null; count: number; settings: DiningSettings; total?: number;
   onMenu: () => void; onParty: () => void; onOrder: () => void; canOrder: boolean;
 }) {
   return <header className="topbar"><div className="topbar-inner">
-    <div className="brand"><span className="brand-mark"><UtensilsCrossed size={22}/></span><div><p>Michelin<span className="brand-note">FOR THE TABLE</span></p>
-      <button className="restaurant-link" onClick={onMenu}><BookOpen size={13}/>{menu?.restaurant_name ?? "Choose a restaurant"}<ChevronDown size={13}/></button>
-    </div></div>
-    <div className="nav-actions"><span className="nav-total">{count} diners <span>·</span> {money(total ?? settings.budget * count, currencySymbol(menu?.currency ?? "USD"))}{total == null ? " budget" : " total"}</span>
-      <button className="btn btn-quiet" onClick={onParty} aria-label="Party & budget"><SlidersHorizontal size={16}/><span className="desktop-label">Party & budget</span><Users size={16} className="mobile-label"/></button>
-      <button className="btn btn-paper" onClick={onOrder} disabled={!canOrder}><ReceiptText size={16}/><span>Order ticket</span></button>
-    </div>
+    <div className="brand"><span className="brand-mark"><UtensilsCrossed size={23}/></span><div><p>Michelin<span className="brand-note">GOOD FOOD, TOGETHER.</span></p><span className="brand-caption">A place for everyone at the table</span></div></div>
+    <nav className="nav-actions" aria-label="Meal controls">
+      <button className="btn btn-quiet" onClick={onMenu} disabled={!menu}><BookOpen size={17}/><span>Menu</span></button>
+      <button className="btn btn-quiet" onClick={onParty} disabled={!menu}><Users size={17}/><span>Your table<span className="guest-count"> · {count}</span></span></button>
+      {canOrder && <button className="btn btn-paper header-ticket" onClick={onOrder}><ReceiptText size={17}/><span>Order ticket</span></button>}
+    </nav>
   </div></header>;
 }

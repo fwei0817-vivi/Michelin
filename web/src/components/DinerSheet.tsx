@@ -72,7 +72,7 @@ export function DinerSheet({ diner, existingIds, onSave, onRemove, onClose }: Pr
             ))}
           </div>
           <p className="mt-2 text-xs text-celadon-dim">
-            Allergies and diet are hard limits: a dish that might break one is never counted for this person.
+            Recorded conflicts exclude a dish for this person. Unknown ingredients remain questions to confirm with the kitchen.
           </p>
         </fieldset>
 
@@ -85,7 +85,7 @@ export function DinerSheet({ diner, existingIds, onSave, onRemove, onClose }: Pr
               </button>
             ))}
           </div>
-          <p className="mt-2 text-xs text-celadon-dim">Heat and dislikes only change the ranking, never safety.</p>
+          <p className="mt-2 text-xs text-celadon-dim">Heat and dislikes affect preferences. Spicier dishes may still appear, with a note.</p>
         </fieldset>
 
         <div className="grid gap-4 sm:grid-cols-2">
