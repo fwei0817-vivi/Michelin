@@ -10,8 +10,8 @@ import math
 import time
 
 from michelin.explain import explain
-from michelin.plan.budget import subtotal_cap, totals
-from michelin.plan.edibility import edible_by, open_questions
+from michelin.plan.budget import cents, subtotal_cap, totals
+from michelin.plan.edibility import assessment, edible_by, open_questions
 from michelin.plan.portions import required_range, units
 from michelin.plan.score import variety_score
 from michelin.schemas import Check, Conflict, Menu, Plan, PlanItem, Relaxation, TableRequest
@@ -41,7 +41,7 @@ def _search(menu: Menu, req: TableRequest, *, budget: bool = True, min_cost: boo
     choices = [d for d in available if d.category.value != "staple" and eligible[d.id]]
     choices.sort(key=lambda d: (d.id not in locked, -len(eligible[d.id]), d.price))
     m = len(choices)
-    costs = [round(d.price * 100) for d in choices]
+    costs = [cents(d.price) for d in choices]
     weights = [round(units(d) * 100) for d in choices]
     masks = [[int(p.id in eligible[d.id]) for p in req.diners] for d in choices]
     suffix = [[0] * n for _ in range(m + 1)]
@@ -50,7 +50,7 @@ def _search(menu: Menu, req: TableRequest, *, budget: bool = True, min_cost: boo
         suffix[i] = [a + b for a, b in zip(suffix[i + 1], masks[i])]
         unit_suffix[i] = unit_suffix[i + 1] + weights[i]
     lo, hi = (round(v * 100) for v in required_range(n))
-    base_cost = sum(round(d.price * 100) * n for d in base)
+    base_cost = sum(cents(d.price) * n for d in base)
     best, best_score, best_cost = None, -float("inf"), float("inf")
     deadline, complete, nodes = time.monotonic() + 2.5, True, 0
 
@@ -113,6 +113,15 @@ def _search(menu: Menu, req: TableRequest, *, budget: bool = True, min_cost: boo
 
 
 def solve(menu: Menu, request: TableRequest) -> Plan | Conflict:
+    if (
+        not menu.verified
+        or menu.currency != "USD"
+        or any(d.price is None for d in menu.dishes)
+        or len({d.id for d in menu.dishes}) != len(menu.dishes)
+    ):
+        return Conflict(
+            code="missing_information", message="Review menu, currency, IDs and prices first."
+        )
     selected, complete = _search(menu, request)
     if selected is None:
         if not complete:
@@ -122,7 +131,7 @@ def solve(menu: Menu, request: TableRequest) -> Plan | Conflict:
         relaxations = []
         cheapest, _ = _search(menu, request, budget=False, min_cost=True)
         if cheapest:
-            amount = sum(d.price * qty for d, qty in cheapest)
+            amount = sum(cents(d.price) * qty for d, qty in cheapest) / 100
             price = (
                 math.ceil(
                     totals(amount, request.n_diners, request.tax_rate, request.tip_rate).total
@@ -152,13 +161,24 @@ def solve(menu: Menu, request: TableRequest) -> Plan | Conflict:
                         description=f"Allow at least {lower.min_dishes_per_person} non-staple dishes per diner.",
                     )
                 )
+        uncertain = any(
+            assessment(d, p)["status"] == "requires_confirmation"
+            for d in menu.dishes
+            for p in request.diners
+        )
         return Conflict(
-            message="No order meets the current budget, portions, dietary coverage, and kept dishes. Review the options below, or change your kept dishes or menu.",
+            code="missing_information" if uncertain else "no_solution",
+            message=(
+                "A validated order was not found and some dietary evidence is unresolved; confirm with staff. "
+                if uncertain
+                else ""
+            )
+            + "No order meets the current budget, portions, dietary coverage, and kept dishes. Review the options below, or change your kept dishes or menu.",
             relaxations=relaxations,
         )
     dishes = [d for d, _ in selected]
     t = totals(
-        sum(d.price * qty for d, qty in selected),
+        sum(cents(d.price) * qty for d, qty in selected) / 100,
         request.n_diners,
         request.tax_rate,
         request.tip_rate,

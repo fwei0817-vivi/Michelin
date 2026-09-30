@@ -12,23 +12,35 @@ import json
 import os
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from michelin.explain import explain
 from michelin.plan.budget import subtotal_cap, totals
-from michelin.plan.edibility import blocking_allergens, blocking_diets, edible_by, open_questions
+from michelin.plan.edibility import assessment, edible_by, open_questions
 from michelin.plan.optimizer import solve
 from michelin.plan.portions import required_range, total_units
 from michelin.plan.score import variety_score
-from michelin.schemas import Check, Conflict, DinerProfile, Menu, Plan, PlanItem, TableRequest
+from michelin.plan.validation import validate_order
+from michelin.profiles import ProfileStore
+from michelin.schemas import (
+    Check,
+    Conflict,
+    DinerProfile,
+    Menu,
+    Plan,
+    PlanItem,
+    TableRequest,
+    validate_money,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 MENU_DIR = Path(os.environ.get("MICHELIN_MENU_DIR", ROOT / "data/menus"))
 PROFILE_DIR = Path(os.environ.get("MICHELIN_PROFILE_DIR", ROOT / "data/profiles"))
+PROFILE_DB = Path(os.environ.get("MICHELIN_PROFILE_DB", ROOT / "data/local/profiles.sqlite3"))
 WEB_DIST = Path(os.environ.get("MICHELIN_WEB_DIST", ROOT / "web/dist"))
 FIXTURE_DIR = ROOT / "data/fixtures"
 MOCK = os.environ.get("MICHELIN_MOCK", "") not in ("", "0", "false")
@@ -79,10 +91,11 @@ class PlanRequest(BaseModel):
     menu_id: str
     diner_ids: list[str] = Field(default_factory=list)  # saved profiles, by id
     diners: list[DinerProfile] = Field(default_factory=list)  # edited or ad-hoc, sent inline
-    budget_per_person: float = Field(gt=0)
+    budget_per_person: float = Field(gt=0, allow_inf_nan=False)
+    _budget_cents = field_validator("budget_per_person")(validate_money)
     tax_rate: float = Field(default=0.08875, ge=0, le=0.3)
     tip_rate: float = Field(default=0.18, ge=0, le=0.4)
-    min_dishes_per_person: int = Field(default=2, ge=1)
+    min_dishes_per_person: int = Field(default=2, ge=1, le=40, strict=True)
     locked_dish_ids: list[str] = Field(default_factory=list)
     excluded_dish_ids: list[str] = Field(default_factory=list)
     menu_override: Menu | None = None
@@ -94,6 +107,10 @@ class PlanRequest(BaseModel):
     def _someone_is_eating(self) -> PlanRequest:
         if not self.diner_ids and not self.diners:
             raise ValueError("diner_ids or diners must name at least one diner")
+        if len({p.id for p in self.diners}) != len(self.diners):
+            raise ValueError("Inline diner IDs must be unique")
+        if len(set(self.diner_ids) | {p.id for p in self.diners}) > 6:
+            raise ValueError("At most six diners are supported")
         return self
 
 
@@ -137,13 +154,72 @@ def get_menu(slug: str) -> Menu:
 
 
 @app.get("/api/profiles", response_model=list[DinerProfile])
-def list_profiles() -> list[DinerProfile]:
-    return list(load_profiles().values())
+def list_profiles(x_profile_scope: str | None = Header(default=None)) -> list[DinerProfile]:
+    return list(_profiles(x_profile_scope).values())
 
 
-def _resolve_diners(req: PlanRequest) -> list[DinerProfile]:
+def _scope(scope):
+    import re
+
+    if not scope or not re.fullmatch(r"[A-Za-z0-9_-]{1,100}", scope):
+        raise HTTPException(422, "Supply X-Profile-Scope (1–100 letters, digits, _ or -).")
+    return scope
+
+
+def _profiles(scope):
+    return load_profiles() if scope is None else ProfileStore(PROFILE_DB).list(_scope(scope))
+
+
+class ProfileWrite(BaseModel):
+    profile: DinerProfile
+    expected_revision: int = Field(ge=0, strict=True)
+
+
+@app.post("/api/profiles", status_code=201)
+def create_profile(profile: DinerProfile, x_profile_scope: str | None = Header(default=None)):
+    return _save_profile(profile, 0, x_profile_scope)
+
+
+def _save_profile(profile, revision, scope):
+    try:
+        revision = ProfileStore(PROFILE_DB).save(_scope(scope), profile, revision)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return {"profile": profile, "revision": revision}
+
+
+@app.get("/api/profiles/{person_id}/history")
+def profile_history(person_id: str, x_profile_scope: str | None = Header(default=None)):
+    rows = ProfileStore(PROFILE_DB).history(_scope(x_profile_scope), person_id)
+    if not rows:
+        raise HTTPException(404, "Unknown person in this scope")
+    return rows
+
+
+@app.get("/api/profiles/{person_id}")
+def get_profile(person_id: str, x_profile_scope: str | None = Header(default=None)):
+    return profile_history(person_id, x_profile_scope)[-1]
+
+
+@app.put("/api/profiles/{person_id}")
+def update_profile(
+    person_id: str, body: ProfileWrite, x_profile_scope: str | None = Header(default=None)
+):
+    if person_id != body.profile.id or body.expected_revision < 1:
+        raise HTTPException(422, "Keep the person ID stable and supply the current revision.")
+    return _save_profile(body.profile, body.expected_revision, x_profile_scope)
+
+
+@app.delete("/api/profiles/{person_id}")
+def delete_profile(person_id: str, x_profile_scope: str | None = Header(default=None)):
+    if not ProfileStore(PROFILE_DB).delete(_scope(x_profile_scope), person_id):
+        raise HTTPException(404, "Unknown person in this scope")
+    return {"deleted": True}
+
+
+def _resolve_diners(req: PlanRequest, scope: str | None = None) -> list[DinerProfile]:
     """Inline diners win over saved profiles with the same id; order follows the request."""
-    profiles = load_profiles()
+    profiles = _profiles(scope)
     inline = {d.id: d for d in req.diners}
     missing = [d for d in req.diner_ids if d not in profiles and d not in inline]
     if missing:
@@ -153,16 +229,27 @@ def _resolve_diners(req: PlanRequest) -> list[DinerProfile]:
     for d in list(req.diners) + [profiles[i] for i in req.diner_ids if i not in inline]:
         if d.id not in seen:
             seen.add(d.id)
+            if scope is not None and d.id in inline and d.id in profiles:
+                saved = profiles[d.id]
+                d = d.model_copy(
+                    update={
+                        key: getattr(saved, key)
+                        for key in ("likes", "dislikes", "max_spice")
+                        if key not in d.model_fields_set
+                    }
+                )
             out.append(d)
     return out
 
 
 @app.post("/api/plan", response_model=PlanResponse)
-def plan(req: PlanRequest) -> PlanResponse:
+def plan(req: PlanRequest, x_profile_scope: str | None = Header(default=None)) -> PlanResponse:
     menus = load_menus()
     if req.menu_override is None and req.menu_id not in menus:
         raise HTTPException(404, f"unknown menu {req.menu_id!r}")
     menu = req.menu_override or menus[req.menu_id]
+    if menu.currency != "USD":
+        raise HTTPException(422, "Only USD menus are supported.")
     if not menu.verified:
         raise HTTPException(422, "Review and verify the menu before planning.")
     if len(menu.dishes) > 40 or len({d.id for d in menu.dishes}) != len(menu.dishes):
@@ -176,7 +263,7 @@ def plan(req: PlanRequest) -> PlanResponse:
 
     request = TableRequest(
         menu_id=req.menu_id,
-        diners=_resolve_diners(req),
+        diners=_resolve_diners(req, x_profile_scope),
         budget_per_person=req.budget_per_person,
         tax_rate=req.tax_rate,
         tip_rate=req.tip_rate,
@@ -198,11 +285,44 @@ def plan(req: PlanRequest) -> PlanResponse:
 
     if isinstance(result, Conflict):
         return PlanResponse(kind="conflict", conflict=result, subtotal_cap=cap)
+    try:
+        result = Plan.model_validate(result)
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(502, "Planner returned malformed output.") from exc
+    before = result.model_dump(exclude={"items"})
+    original_items = [i.model_dump(exclude={"reason"}) for i in result.items]
     if req.explain:
         try:
             result = explain(result, menu, request)
         except NotImplementedError as e:
             raise HTTPException(501, f"explain not implemented: {e}") from e
+        except Exception as e:
+            raise HTTPException(502, "Explanation failed; no order returned.") from e
+    try:
+        result = Plan.model_validate(result)
+        if before != result.model_dump(exclude={"items"}) or original_items != [
+            i.model_dump(exclude={"reason"}) for i in result.items
+        ]:
+            raise ValueError("Explanation altered the order")
+        report = validate_order(menu, request, result.items)
+        if not report["valid"]:
+            return PlanResponse(
+                kind="conflict",
+                subtotal_cap=cap,
+                conflict=Conflict(
+                    code="order_validation_failed",
+                    message="Order failed independent validation: "
+                    + "; ".join(r["detail"] for r in report["reasons"]),
+                ),
+            )
+        if any(getattr(result, k) != v for k, v in report["totals"].items()):
+            raise ValueError("Incorrect totals")
+        if any(
+            i.edible_by != edible_by(menu.dish(i.dish_id), request.diners) for i in result.items
+        ):
+            raise ValueError("Incorrect diner eligibility")
+    except (ValueError, TypeError, KeyError, AttributeError) as exc:
+        raise HTTPException(502, "Planner or explanation returned invalid output.") from exc
     return PlanResponse(kind="plan", plan=result, subtotal_cap=cap)
 
 
@@ -274,21 +394,26 @@ def evaluate_menu(req: EvaluateRequest) -> dict:
         d.id: {
             "edible_by": edible_by(d, req.diners),
             "blocked_for": {
-                p.id: [
-                    f"Contains or usually contains {a.value.replace('_', ' ')}"
-                    for a in blocking_allergens(d, p)
-                ]
-                + [
-                    f"Does not meet confirmed {diet.value.replace('_', ' ')} requirements"
-                    for diet in blocking_diets(d, p)
-                ]
+                p.id: assessment(d, p)["reasons"]
                 for p in req.diners
                 if p.id not in edible_by(d, [p])
             },
+            "assessments": {p.id: assessment(d, p) for p in req.diners},
             "questions": open_questions(d, req.diners),
         }
         for d in req.menu.dishes
     }
+
+
+class OrderValidationRequest(BaseModel):
+    menu: Menu
+    request: TableRequest
+    items: list[PlanItem] = Field(max_length=40)
+
+
+@app.post("/api/order/validate")
+def order_validation(body: OrderValidationRequest):
+    return validate_order(body.menu, body.request, body.items)
 
 
 # ---------------------------------------------------------------------------

@@ -70,3 +70,47 @@ Additional API fields on `POST /api/plan`: `menu_override`, `dish_count_target` 
 and `style_preference` (`balanced`, `lighter`, `favorites`).
 `POST /api/menu/evaluate` takes `{menu, diners}` and returns per-dish eligibility and questions.
 `POST /api/menu/parse` takes `{text}` or `{image_base64}` and returns extracted text and dishes.
+
+## Backend history and validation (2026-09-30)
+
+Profile history is an opt-in local prototype. Set `MICHELIN_PROFILE_DB` to a writable SQLite
+path (default `data/local/profiles.sqlite3`, git-ignored). No service or credentials are needed.
+Send `X-Profile-Scope: synthetic-group-a` consistently for stored profiles and planning:
+
+- `POST /api/profiles`: a `DinerProfile`; creates revision 1, duplicate ID gives 409.
+- `GET /api/profiles`: current profiles in that scope; without a scope returns existing samples.
+- `GET /api/profiles/{id}` and `GET /api/profiles/{id}/history`: latest/all snapshots.
+- `PUT /api/profiles/{id}`: `{profile: DinerProfile, expected_revision: 1}` replaces the
+  full profile and appends a revision; stale revisions give 409. Keep stable person IDs.
+- `DELETE /api/profiles/{id}`: erases that person's current profile and complete history.
+
+All person routes require a scope. Scoped lookups never fall back to another scope or the
+sample group. The header is a namespace, **not authentication**: use only synthetic data in
+this prototype until a trusted identity/access-control layer binds scopes to callers.
+Likes/dislikes/spice preferences remain separate from allergies/diets. Planning with saved
+`diner_ids` uses the latest snapshot. An inline profile controls current restrictions and
+explicit preference values; omitted soft fields inherit saved preferences in that scope.
+An inline empty list clears that preference for the request. Nothing is saved automatically.
+
+`POST /api/order/validate` accepts `{menu: Menu, request: TableRequest, items: PlanItem[]}`
+and returns `valid`, structured `reasons[{code, detail}]`, recomputed `totals`, per-dish
+`evaluations`, staff questions, and assumptions. Send the **entire current order and inputs**
+after swaps or edits. The planner also uses this check before returning an order.
+`/api/menu/evaluate` additionally returns per-person `assessments` with status `conflict`,
+`requires_confirmation`, or `validated_under_known_data`. Unknown evidence never counts
+as validated allergy coverage. `Dish.reviewed_allergens` records explicit evidence review,
+not an allergy-safety guarantee; present/unknown allergen flags still take precedence.
+`Conflict.code` distinguishes `missing_information`, `no_solution`, and
+`order_validation_failed`. Existing response keys and numeric money fields are preserved.
+
+USD prices/budgets must be finite nonnegative/positive amounts with at most two decimals
+(and at most one billion dollars). Tax and tip round separately using ROUND_HALF_UP; tip is
+on the pre-tax subtotal. The exact all-in budget cannot be exceeded, even by one cent.
+Defaults are assumptions, not restaurant fee evidence. Confirm extra charges and serving
+sizes; portions are only estimates. Public-menu fixtures are offline tests, not new selectable
+production menus. Mock orders can now return a conflict when independent validation fails.
+
+SQLite survives process restarts only while that database file is retained. Container
+replacement is **not** durable by default; persisting history across containers requires an
+explicit persistent volume at `MICHELIN_PROFILE_DB`. No such volume or production service
+has been provisioned. Test histories use temporary databases and no real diner data.

@@ -12,7 +12,17 @@ def request_for(group, **kwargs):
     return TableRequest(menu_id="sample_sichuan", diners=group, budget_per_person=25, **kwargs)
 
 
+def reviewed_synthetic_menu(menu):
+    # Synthetic evidence-review mutation only; never alter restaurant fixtures.
+    from michelin.schemas import Allergen
+
+    for dish in menu.dishes:
+        dish.reviewed_allergens = list(Allergen)
+    return menu
+
+
 def test_real_plan_respects_budget_coverage_and_portions(sample_menu, sample_group):
+    reviewed_synthetic_menu(sample_menu)
     req = request_for(sample_group)
     plan = solve(sample_menu, req)
     assert isinstance(plan, Plan)
@@ -42,6 +52,7 @@ def test_real_plan_respects_budget_coverage_and_portions(sample_menu, sample_gro
 
 
 def test_keep_and_remove_are_enforced(sample_menu, sample_group):
+    reviewed_synthetic_menu(sample_menu)
     req = request_for(
         sample_group,
         locked_dish_ids=["kung_pao_chicken"],
@@ -55,6 +66,7 @@ def test_keep_and_remove_are_enforced(sample_menu, sample_group):
 
 
 def test_budget_relaxation_is_actually_feasible(sample_menu, sample_group):
+    reviewed_synthetic_menu(sample_menu)
     req = request_for(sample_group).model_copy(update={"budget_per_person": 5})
     conflict = solve(sample_menu, req)
     assert isinstance(conflict, Conflict)

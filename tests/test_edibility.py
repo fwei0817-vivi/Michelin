@@ -17,10 +17,10 @@ def test_inferred_tier_also_blocks(sample_menu):
     assert not can_eat(sample_menu.dish("dan_dan_noodles"), dan)
 
 
-def test_unknown_tier_does_not_block_but_raises_a_question(sample_menu, sample_group):
+def test_unknown_tier_blocks_coverage_and_raises_a_question(sample_menu, sample_group):
     amy = by_id(sample_group, "amy")  # shellfish + fish allergy
     dish = sample_menu.dish("di_san_xian")  # shellfish flag is tier=unknown (oyster sauce)
-    assert can_eat(dish, amy)
+    assert not can_eat(dish, amy)
     qs = open_questions(dish, [amy])
     assert any("oyster" in q.lower() or "shellfish" in q.lower() for q in qs)
 
@@ -42,8 +42,10 @@ def test_no_pork_treats_null_as_unsafe(sample_menu, sample_group):
     assert can_eat(sample_menu.dish("kung_pao_chicken"), tom)
 
 
-def test_edible_by_lists_everyone_for_plain_greens(sample_menu, sample_group):
-    assert edible_by(sample_menu.dish("garlic_seasonal_greens"), sample_group) == [p.id for p in sample_group]
+def test_plain_greens_do_not_imply_allergen_review(sample_menu, sample_group):
+    assert edible_by(sample_menu.dish("garlic_seasonal_greens"), sample_group) == [
+        p.id for p in sample_group if not p.allergies
+    ]
 
 
 def test_diet_flags_on_ad_hoc_dishes():

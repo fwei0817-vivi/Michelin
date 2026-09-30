@@ -114,3 +114,43 @@ free of any selection logic.
 - Menu imports extract explicit English names and prices, using optional local Tesseract for images. Never invent ingredients, prices, or dietary flags. Edits stay in the browser session and require human review before planning; no external AI service receives menu images.
 - Dish cards may show an illustrative Wikimedia Commons photo of a similar dish, labelled as such and credited. Photos are decoration, never evidence: ingredient and allergen claims come only from the reviewed menu and its evidence tiers.
 - Kitchen questions are shown twice on the plan page, inline under the dish they concern and as one list below the dishes, never as a banner above them. The order panel is the one dark block on the page so the bill reads as separate from the dishes.
+
+## 2026-09-30 — Persistent explicit preferences and independent validation
+
+This user-authorized backend extension supersedes the proposal's exclusion of history.
+Store explicit profile snapshots in local SQLite by `(scope, person_id, revision)`; never
+infer allergies, diets, or tastes from an order. Full profile updates append history with
+optimistic revision checks. DELETE erases all revisions for that person in that scope.
+Saved likes/dislikes/spice preferences inform ranking; current inline values (including
+empty lists) win. Inline hard restrictions remain authoritative as in the existing API.
+Planning never writes profiles. Scope keys isolate local prototype groups, not authenticated
+accounts; a real deployment needs trusted identity binding and access control first.
+
+Unknown or absent allergen evidence now excludes that diner from coverage. This supersedes
+section 2's old unknown-tier behavior. `reviewed_allergens` is an explicit review of available
+evidence for named allergens, not proof of absence or a cross-contact guarantee. Recorded
+or inferred presence and unknown flags always override this review. Existing sample menus
+are deliberately not relabeled as reviewed; requests involving allergies may now return
+`missing_information`. Public menu V badges establish vegetarian only, not vegan.
+
+The new order validator recomputes quantities, cents, eligibility, coverage, pins/exclusions
+and portion estimates from current inputs. Every API-generated order, including mock output,
+passes this independent check. Explanations may change reasons only. Coverage counts distinct
+dishes, not quantity; price and estimated portion units multiply by quantity. This is still
+per-diner coverage, not a claim that all dishes suit all people or that shared-table
+cross-contact is safe. Conflicts with unresolved evidence are conservatively reported as
+`missing_information`, not proof that the restaurant cannot accommodate the group.
+
+Budget is strict (no 5% overshoot): USD cents, decimal ROUND_HALF_UP, tax and pre-tax tip
+rounded separately. Cap search uses those same rounded rules. Missing prices never mean
+zero. Defaults remain the existing configurable 8.875% tax and 18% tip assumptions, not
+verified restaurant charges. Unlisted fees are not included. No exact serving adequacy is
+claimed; retain the existing portion heuristic and bounded search.
+
+Public evidence: small regular-menu extracts from Café China and CHILI, observed 2026-09-30,
+live in `tests/fixtures/public_menus.json` with official URLs and meal context. Synthetic
+mutations are explicit in tests. Do not substitute weekday lunch prices, infer missing piece
+counts, or infer ingredient omission is possible. Piece-target optimization, meal-time offer
+validation, accommodation requests and fee schedules (including outside-cake caps) remain
+out of scope; callers must supply a reviewed menu for the actual context and confirm fees.
+No live model extraction or OCR was run; model boundaries are exercised with mocked failures.

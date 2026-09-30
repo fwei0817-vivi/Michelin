@@ -143,3 +143,15 @@ for `{menu, diners}`. `POST /api/menu/parse` extracts English name/price rows fr
 `{image_base64}`; image OCR uses local Tesseract. Imported dietary fields remain unknown.
 All imports and edits require review before planning. No LLM credentials are required for
 the current deterministic planner or grounded explanations. See README for operating limits.
+
+## User-authorized backend extension (2026-09-30)
+
+Persistent explicit profile history is now in scope; see README's backend history section
+for additive CRUD routes, `X-Profile-Scope`, revision semantics, and prototype access limits.
+`POST /api/order/validate` accepts a menu, complete TableRequest, and PlanItems; it recomputes
+the entire order. `/api/menu/evaluate` adds per-diner three-state assessments; `Conflict`
+adds `code`, and `Dish` adds `reviewed_allergens`. Unknown/absent allergen evidence no longer
+counts toward coverage. Existing sample menu data is not retroactively certified. Mock
+orders must pass independent validation too. Existing JSON keys remain compatible; stricter
+validation may return conflicts where old code returned an unvalidated order. Contract
+review by the other owners is still needed before any upstream PR; none is opened here.

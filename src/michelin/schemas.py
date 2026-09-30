@@ -6,9 +6,10 @@ files under data/. Change it first, then update everything that reads or writes 
 
 from __future__ import annotations
 
+from decimal import Decimal
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class EvidenceTier(str, Enum):
@@ -77,11 +78,21 @@ class AllergenFlag(BaseModel):
     reason: str
 
 
+def validate_money(value):
+    if value is not None and abs(value) > 1_000_000_000:
+        raise ValueError("USD amounts must not exceed one billion")
+    if value is not None and Decimal(str(value)) != Decimal(str(value)).quantize(Decimal("0.01")):
+        raise ValueError("USD amounts must have at most two decimal places")
+    return value
+
+
 class Dish(BaseModel):
     id: str  # stable ASCII slug, e.g. "mapo_tofu"
     name_zh: str | None = None
     name_en: str | None = None
-    price: float | None = None  # None = unreadable on photo; must be filled before verified
+    price: float | None = Field(
+        default=None, ge=0, allow_inf_nan=False
+    )  # None = unreadable on photo; must be filled before verified
     description_raw: str | None = None  # verbatim menu text, never edited
     category: DishCategory = DishCategory.OTHER
     cooking_method: str | None = None  # "stir_fry", "deep_fry", "braise", "steam", ...
@@ -89,6 +100,9 @@ class Dish(BaseModel):
     portion: PortionClass = PortionClass.MEDIUM
     main_ingredients: list[IngredientClaim] = Field(default_factory=list)
     allergens: list[AllergenFlag] = Field(default_factory=list)
+    # Explicit review of available evidence, never a guarantee about cross-contact.
+    reviewed_allergens: list[Allergen] = Field(default_factory=list)
+    _price_cents = field_validator("price")(validate_money)
     # None = unknown. Hard constraints treat None as False (not safe to assume).
     is_vegetarian: bool | None = None
     is_vegan: bool | None = None
@@ -119,8 +133,8 @@ class Menu(BaseModel):
 
 
 class DinerProfile(BaseModel):
-    id: str
-    name: str
+    id: str = Field(min_length=1, max_length=100, pattern=r"^[A-Za-z0-9_-]+$")
+    name: str = Field(min_length=1, max_length=200)
     allergies: list[Allergen] = Field(default_factory=list)  # HARD
     diets: list[Diet] = Field(default_factory=list)  # HARD
     max_spice: int | None = Field(default=None, ge=0, le=3)  # SOFT
@@ -130,16 +144,28 @@ class DinerProfile(BaseModel):
 
 class TableRequest(BaseModel):
     menu_id: str
-    diners: list[DinerProfile]
-    budget_per_person: float  # all-in: includes tax and tip
-    tax_rate: float = 0.08875  # NYC sales tax
-    tip_rate: float = 0.18
-    min_dishes_per_person: int = 2  # non-staple dishes each diner must be able to eat
+    diners: list[DinerProfile] = Field(min_length=1, max_length=6)
+    budget_per_person: float = Field(gt=0, allow_inf_nan=False)  # all-in: includes tax and tip
+    tax_rate: float = Field(default=0.08875, ge=0, le=0.3, allow_inf_nan=False)  # NYC sales tax
+    tip_rate: float = Field(default=0.18, ge=0, le=0.4, allow_inf_nan=False)
+    min_dishes_per_person: int = Field(
+        default=2, ge=1, le=40, strict=True
+    )  # non-staple dishes each diner must be able to eat
     dish_count_target: int | None = Field(default=None, ge=1, le=20)
     style_preference: str = "balanced"
     include_staple: bool = True  # add one staple (rice) per person
     locked_dish_ids: list[str] = Field(default_factory=list)  # user pinned these, must stay
-    excluded_dish_ids: list[str] = Field(default_factory=list)  # user removed these, must not appear
+    excluded_dish_ids: list[str] = Field(
+        default_factory=list
+    )  # user removed these, must not appear
+
+    _budget_cents = field_validator("budget_per_person")(validate_money)
+
+    @model_validator(mode="after")
+    def unique_people(self):
+        if len({p.id for p in self.diners}) != len(self.diners):
+            raise ValueError("Diner IDs must be unique")
+        return self
 
     @property
     def n_diners(self) -> int:
@@ -153,7 +179,7 @@ class TableRequest(BaseModel):
 
 class PlanItem(BaseModel):
     dish_id: str
-    quantity: int = 1
+    quantity: int = Field(default=1, ge=1, le=100, strict=True)
     edible_by: list[str] = Field(default_factory=list)  # diner ids, under hard constraints
     reason: str | None = None  # one-liner from explain.py
 
@@ -188,5 +214,6 @@ class Relaxation(BaseModel):
 
 
 class Conflict(BaseModel):
+    code: str = "no_solution"
     message: str
     relaxations: list[Relaxation] = Field(default_factory=list)

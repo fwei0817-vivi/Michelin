@@ -1,0 +1,130 @@
+{
+  "retrieved_at": "2026-09-30",
+  "evidence": "Small factual extracts supplied from direct official-page review. Ingredient lists are partial; no cross-contact clearance. V means vegetarian only. Portion classes are software defaults, not restaurant serving claims.",
+  "menus": [
+    {
+      "restaurant_id": "cafe_china_regular",
+      "restaurant_name": "Café China",
+      "cuisine": "chinese_sichuan",
+      "source": "https://cafechina.nyc/menu",
+      "verified": true,
+      "dishes": [
+        {
+          "id": "fish",
+          "name_en": "Braised Whole Fish with Pickled Chilis",
+          "price": 40,
+          "contains_pork": true,
+          "is_vegetarian": false,
+          "main_ingredients": [
+            {
+              "name": "minced pork",
+              "tier": "menu"
+            },
+            {
+              "name": "tilapia",
+              "tier": "menu"
+            }
+          ],
+          "allergens": [
+            {
+              "allergen": "fish",
+              "tier": "menu",
+              "confidence": 1,
+              "reason": "Listed tilapia"
+            }
+          ]
+        },
+        {
+          "id": "chive_pancakes",
+          "name_en": "Chive Pancakes",
+          "price": 12,
+          "allergens": [
+            {
+              "allergen": "shellfish",
+              "tier": "menu",
+              "confidence": 1,
+              "reason": "Listed dried shrimp"
+            },
+            {
+              "allergen": "egg",
+              "tier": "menu",
+              "confidence": 1,
+              "reason": "Listed egg"
+            }
+          ]
+        },
+        {
+          "id": "pot_stickers",
+          "name_en": "Vegetable Pot Stickers",
+          "price": 12,
+          "is_vegetarian": true
+        },
+        {
+          "id": "mapo",
+          "name_en": "Ma Po Tofu",
+          "price": 19,
+          "is_vegetarian": true
+        },
+        {
+          "id": "rice",
+          "name_en": "White Rice",
+          "price": 2,
+          "category": "staple",
+          "is_vegetarian": true
+        },
+        {
+          "id": "scallion_pancakes",
+          "name_en": "Scallion Pancakes",
+          "price": 8,
+          "is_vegetarian": true
+        }
+      ]
+    },
+    {
+      "restaurant_id": "chili_regular",
+      "restaurant_name": "CHILI",
+      "cuisine": "chinese_sichuan",
+      "source": "https://chilinyc.com/new-york-midtown-manhattan-chili-food-menu",
+      "verified": true,
+      "dishes": [
+        {
+          "id": "mapo",
+          "name_en": "Ma Po Tofu",
+          "price": 22,
+          "is_vegetarian": true
+        },
+        {
+          "id": "rice",
+          "name_en": "White Rice",
+          "price": 2,
+          "category": "staple"
+        },
+        {
+          "id": "bok_choy",
+          "name_en": "Bok Choy with Garlic",
+          "price": 18
+        },
+        {
+          "id": "scallion_pancakes",
+          "name_en": "Scallion Pancakes",
+          "price": 10,
+          "is_vegetarian": true
+        }
+      ]
+    }
+  ],
+  "pieces_per_order": {
+    "cafe_china_regular": {
+      "pot_stickers": 4,
+      "chive_pancakes": 2,
+      "scallion_pancakes": null
+    },
+    "chili_regular": {
+      "scallion_pancakes": 6
+    }
+  },
+  "context": {
+    "cafe_china_regular": "Regular menu; outside cake fee $4/person, capped $30, excluded from these orders.",
+    "chili_regular": "Regular menu, rice excluded from entrees. $16 weekday lunch mapo is a distinct offer and is not used here."
+  }
+}

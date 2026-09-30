@@ -1,17 +1,35 @@
-"""Budget arithmetic. The per-person budget is all-in: it includes tax and tip.
+"""USD cents, ROUND_HALF_UP per tax/tip line; tip uses pre-tax subtotal.
 
-Tip is computed on the pre-tax subtotal (US convention), so for a menu subtotal S:
-    total = S * (1 + tax_rate + tip_rate)
+No unlisted service fees are included. The cap uses the same rounded arithmetic as
+validation, avoiding both one-cent overruns and rejection of valid boundary orders.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
+from decimal import ROUND_HALF_UP, Decimal
+
+CENT = Decimal("0.01")
 
 
-def subtotal_cap(budget_per_person: float, n_diners: int, tax_rate: float, tip_rate: float) -> float:
-    """Largest menu-price subtotal whose all-in total fits the group's budget."""
-    return budget_per_person * n_diners / (1.0 + tax_rate + tip_rate)
+def money(value):
+    return Decimal(str(value)).quantize(CENT, rounding=ROUND_HALF_UP)
+
+
+def cents(value):
+    return int(money(value) * 100)
+
+
+def subtotal_cap(
+    budget_per_person: float, n_diners: int, tax_rate: float, tip_rate: float
+) -> float:
+    budget = cents(budget_per_person) * n_diners
+    lo, hi = 0, budget
+    while lo < hi:
+        mid = (lo + hi + 1) // 2
+        if cents(totals(mid / 100, n_diners, tax_rate, tip_rate).total) <= budget:
+            lo = mid
+        else:
+            hi = mid - 1
+    return lo / 100
 
 
 @dataclass(frozen=True)
@@ -24,13 +42,8 @@ class Totals:
 
 
 def totals(subtotal: float, n_diners: int, tax_rate: float, tip_rate: float) -> Totals:
-    tax = round(subtotal * tax_rate, 2)
-    tip = round(subtotal * tip_rate, 2)
-    total = round(subtotal + tax + tip, 2)
-    return Totals(
-        subtotal=round(subtotal, 2),
-        tax=tax,
-        tip=tip,
-        total=total,
-        per_person=round(total / n_diners, 2),
-    )
+    subtotal = money(subtotal)
+    tax = money(subtotal * Decimal(str(tax_rate)))
+    tip = money(subtotal * Decimal(str(tip_rate)))
+    total = subtotal + tax + tip
+    return Totals(*(float(x) for x in (subtotal, tax, tip, total, money(total / n_diners))))

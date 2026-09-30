@@ -1,5 +1,5 @@
 from michelin.plan.score import variety_score
-from michelin.schemas import Dish, DishCategory, IngredientClaim, EvidenceTier
+from michelin.schemas import Dish, DishCategory, EvidenceTier, IngredientClaim
 
 
 def d(id, category, method, protein):

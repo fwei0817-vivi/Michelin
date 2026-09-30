@@ -49,18 +49,8 @@ def test_mock_mode_plan_conflict_and_edits(monkeypatch):
     }
 
     r = client.post("/api/plan", json=base).json()
-    assert r["kind"] == "plan"
-    ids = [i["dish_id"] for i in r["plan"]["items"]]
-    assert "kung_pao_chicken" in ids
-    fish = next(i for i in r["plan"]["items"] if i["dish_id"] == "boiled_fish_chili_oil")
-    assert "amy" not in fish["edible_by"]  # fish allergy applied for real, even in mock mode
-
-    r = client.post(
-        "/api/plan",
-        json={**base, "excluded_dish_ids": ["kung_pao_chicken"], "locked_dish_ids": ["mapo_tofu"]},
-    ).json()
-    ids = [i["dish_id"] for i in r["plan"]["items"]]
-    assert "kung_pao_chicken" not in ids and "mapo_tofu" in ids
+    assert r["kind"] == "conflict"
+    assert r["conflict"]["code"] == "order_validation_failed"
 
     r = client.post("/api/plan", json={**base, "budget_per_person": 12}).json()
     assert r["kind"] == "conflict" and r["conflict"]["relaxations"]
@@ -85,8 +75,13 @@ def test_inline_diners_override_saved_profiles(monkeypatch):
             "budget_per_person": 25,
         },
     ).json()
-    pork = next(i for i in r["plan"]["items"] if i["dish_id"] == "yuxiang_shredded_pork")
-    assert "li" not in pork["edible_by"]
+    assert r["kind"] == "conflict"  # invalid mock cannot masquerade as a valid order
+    resolved = api._resolve_diners(
+        api.PlanRequest(
+            menu_id="sample_sichuan", diners=[li_vegan], diner_ids=["li"], budget_per_person=25
+        )
+    )
+    assert resolved[0].diets == ["vegan"]
 
 
 def test_planner_is_available_without_mock(monkeypatch):
@@ -114,7 +109,8 @@ def test_real_plan_and_eligibility(monkeypatch):
         },
     )
     assert r.status_code == 200
-    assert r.json()["kind"] == "plan"
+    assert r.json()["kind"] == "conflict"
+    assert r.json()["conflict"]["code"] == "missing_information"
     evaluation = client.post("/api/menu/evaluate", json={"menu": menu, "diners": profiles}).json()
     fish = evaluation["boiled_fish_chili_oil"]
     assert "amy" not in fish["edible_by"]
