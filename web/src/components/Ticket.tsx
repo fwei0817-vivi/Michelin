@@ -159,7 +159,7 @@ export function Ticket({ menu, plan, diners, settings, locked, stale, loading, o
             <strong>{money(plan.per_person, cur)}</strong>
             <span>per person</span>
           </p>
-          <p className="bill-table">{money(plan.total, cur)} for the table, tax and tip included</p>
+          <p className="bill-table">{money(plan.total, cur)} for the table, using selected tax and tip</p>
           <div className={`bill-budget ${over ? "over" : ""}`}>
             <div className="bill-track">
               <span style={{ width: `${Math.max(0, Math.min(100, (100 * plan.per_person) / settings.budget))}%` }} />
@@ -195,7 +195,7 @@ export function Ticket({ menu, plan, diners, settings, locked, stale, loading, o
           <button className="btn btn-light" onClick={onOrder} disabled={!canOrder}>
             View order ticket
           </button>
-          <p className="bill-note">Show it to your server. Nothing is ordered from here.</p>
+          <p className="bill-note">Confirm fees and serving sizes with your server. Nothing is ordered from here.</p>
           <button className="text-button light" onClick={onParty}>
             Edit people and budget
           </button>

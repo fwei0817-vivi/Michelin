@@ -40,6 +40,7 @@ export function TableSetup({ diners, settings, currency, onChange, onEdit, onAdd
           </h3>
           <select className="field preset" aria-label="Load a group" value="" onChange={(e) => { if (e.target.value) onPreset(e.target.value); }}>
             <option value="">Load a group…</option>
+            <option value="synthetic-three">Three synthetic diners (no restrictions)</option>
             <option value="saved">Example group</option>
             <option value="two">Example dinner for two</option>
             <option value="new">Start empty</option>

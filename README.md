@@ -114,3 +114,15 @@ SQLite survives process restarts only while that database file is retained. Cont
 replacement is **not** durable by default; persisting history across containers requires an
 explicit persistent volume at `MICHELIN_PROFILE_DB`. No such volume or production service
 has been provisioned. Test histories use temporary databases and no real diner data.
+
+## Use prepared model responses now; replace the provider later
+
+Menu import now offers **assistant-prepared responses** for Café China and CHILI. The server
+replays the response only for its exact menu ID, input kind and SHA-256. Unknown inputs fail
+honestly; no live model is called. The same `/api/menu/extract` contract is used by replaceable
+provider adapters selected with `MICHELIN_EXTRACTION_PROVIDER` (default `replay`). A real
+provider implementation is not installed yet; it can be added without changing the frontend
+or rule engine. Genuine local text/OCR import remains a separate, labelled path.
+
+See [offline replay instructions and evaluation](docs/offline-replay.md) for setup, response
+registration, the contract, local profile history controls, browser QA, and measured limits.

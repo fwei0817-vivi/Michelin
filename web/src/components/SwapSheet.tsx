@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { ArrowLeftRight, Check, CheckCircle2, CircleHelp, FileImage, Flame, Leaf, Pencil, Plus, Search, Upload, UserX, Users } from "lucide-react";
-import { evaluateMenu, parseMenu } from "../api";
-import { CATEGORY_LABEL, currencySymbol, dishName, flagWording, listNames, money } from "../lib/format";
+import { evaluateMenu, parseMenu, getPreparedInputs, extractMenu } from "../api";
+import { CATEGORY_LABEL, currencySymbol, dishName, flagWording, money } from "../lib/format";
 import { DISH_PHOTOS } from "../lib/dishPhotos";
-import type { DinerProfile, Dish, Eligibility, Menu, MenuSummary, Plan } from "../types";
+import type { DinerProfile, Dish, Eligibility, Menu, MenuSummary, Plan, PreparedInput } from "../types";
 import { DishEditor } from "./DishEditor";
 import { Sheet } from "./Sheet";
 
@@ -31,6 +31,22 @@ const SPICE = ["", "Mild", "Medium", "Hot"];
 
 /** The restaurant menu drawer: browse and edit the menu, import one, or pick a dish to add or swap in. */
 export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mode, initialTab = "browse", tax, tip, onPick, onClose, onUpdate, onSelectMenu }: Props) {
+  const [prepared, setPrepared] = useState<PreparedInput[]>([]);
+  const [preparedId, setPreparedId] = useState("");
+  const [extractedMenu, setExtractedMenu] = useState<Menu | null>(null);
+  const [extractionNotice, setExtractionNotice] = useState("");
+  useEffect(() => { let active = true; getPreparedInputs().then(rows => {if (active) setPrepared(rows);}).catch(() => {}); return () => {active = false;}; }, []);
+  const replay = async () => {
+    const input = prepared.find(p => p.menu_id === preparedId);
+    if (!input) return;
+    setParsing(true); setError(""); setImported([]); setExtractedMenu(null); setExtractionNotice("");
+    try {
+      const result = await extractMenu({menu_id: input.menu_id, text: input.input_text});
+      setExtractedMenu(result.menu); setImported(result.menu.dishes); setImportMode("replace");
+      setExtractionNotice(result.notice); setRestaurantName(result.menu.restaurant_name);
+    } catch(e) {setError(e instanceof Error ? e.message : String(e));}
+    finally {setParsing(false);}
+  };
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [sameCategory, setSameCategory] = useState(false);
@@ -80,7 +96,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
   const importRows = async () => {
     setParsing(true);
     setError("");
-    setImported([]);
+    setImported([]); setExtractedMenu(null); setExtractionNotice("");
     try {
       let image_base64: string | undefined;
       if (photo) {
@@ -147,10 +163,20 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
 
         {tab === "import" ? (
           <div className="import-panel">
+            <section aria-label="Prepared model responses" className="import-review">
+              <h3>Use an assistant-prepared model response</h3>
+              <p className="helper">Exact-input replay from official-menu facts. No live model, OCR, or image recognition. New inputs need a prepared response or a future provider.</p>
+              <label className="field-label">Prepared menu<select aria-label="Prepared menu" className="field" value={preparedId} disabled={parsing} onChange={e => setPreparedId(e.target.value)}>
+                <option value="">Choose a prepared input…</option>
+                {prepared.map(p => <option key={p.menu_id} value={p.menu_id}>{p.menu_id} · {p.retrieved_at}</option>)}
+              </select></label>
+              <button className="btn btn-outline" disabled={parsing || !preparedId} onClick={() => void replay()}>Replay prepared response</button>
+              {extractionNotice && <p role="status">{extractionNotice}</p>}
+            </section>
             <p className="helper">Paste your menu below, one dish and price per line. After importing, review ingredients and dietary details before getting suggestions.</p>
             <details className="photo-import">
               <summary>Use a menu photo instead</summary>
-              <p className="helper">Photo reading requires image recognition to be available. If it fails, paste the menu text below.</p>
+              <p className="helper">This separate path uses genuine local Tesseract OCR when installed, not prepared-response replay. It has not been evaluated on these restaurant images.</p>
               <label className="upload-area">
                 <FileImage size={24} />
                 <strong>{photo?.name ?? "Choose a menu photo"}</strong>
@@ -178,7 +204,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
             <div className="field-grid">
               <label className="field-label">
                 Use imported dishes
-                <select className="field" value={importMode} onChange={(e) => setImportMode(e.target.value as "append" | "replace")}>
+                <select className="field" disabled={!!extractedMenu} value={importMode} onChange={(e) => setImportMode(e.target.value as "append" | "replace")}>
                   <option value="replace">Start a new menu</option>
                   <option value="append">Add to current menu</option>
                 </select>
@@ -210,13 +236,13 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                   className="btn btn-outline"
                   disabled={importedCount > MAX_DISHES}
                   onClick={() => {
-                    update({
+                    update(extractedMenu ?? {
                       ...menu,
-                      ...(importMode === "replace" ? { restaurant_name: restaurantName.trim() || "My restaurant", source: "User-imported menu", cuisine: "Custom menu" } : {}),
+                      ...(importMode === "replace" ? { restaurant_name: restaurantName.trim() || "My restaurant", source: "User-imported menu", cuisine: "Custom menu", preparation_mode: null } : {}),
                       verified: false,
                       dishes: importMode === "replace" ? imported : [...menu.dishes, ...imported],
                     });
-                    setImported([]);
+                    setImported([]); setExtractedMenu(null);
                     setTab("browse");
                   }}
                 >
@@ -304,7 +330,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                         ) : (
                           notFor.length > 0 && (
                             <div className="dish-notes">
-                              <p className="not-for"><UserX size={13} /><span>Not for {listNames(notFor.map((p) => p.name))}</span></p>
+                              {notFor.map(p => <p className="not-for" key={p.id}><UserX size={13}/><span>{p.name}: {e.assessments?.[p.id]?.status === "requires_confirmation" ? "Requires confirmation" : "Recorded conflict"} — {(e.blocked_for[p.id] ?? []).join("; ")}</span></p>)}
                             </div>
                           )
                         )}

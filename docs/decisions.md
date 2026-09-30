@@ -154,3 +154,14 @@ counts, or infer ingredient omission is possible. Piece-target optimization, mea
 validation, accommodation requests and fee schedules (including outside-cake caps) remain
 out of scope; callers must supply a reviewed menu for the actual context and confirm fees.
 No live model extraction or OCR was run; model boundaries are exercised with mocked failures.
+
+## 2026-09-30 — Assistant-prepared model adapter
+
+User explicitly requested authored model replies now, with a replaceable genuine provider
+later, without live model spending. Add an exact-input replay adapter at the extraction
+boundary rather than a separate fixture-only application. Menu identity, input kind and hash
+must match; missing responses fail honestly. All output still requires explicit review and
+independent planning validation. No fake recommendation model: selection/explanation already
+work deterministically. Provenance is retained in Menu and visible in the existing import and
+plan views. Minimal UI integration also exposes explicit synthetic profile history and
+three-state diner assessments. See `offline-replay.md` for reproducible tests and exclusions.

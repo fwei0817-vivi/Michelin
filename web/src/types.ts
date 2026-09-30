@@ -52,6 +52,7 @@ export interface Menu {
   restaurant_name: string;
   cuisine: string;
   source: string;
+  preparation_mode?: "prepared_replay" | "live" | null;
   currency: string;
   verified: boolean;
   dishes: Dish[];
@@ -148,5 +149,16 @@ export interface DishEligibility {
   edible_by: string[];
   blocked_for: Record<string, string[]>;
   questions: string[];
+  assessments?: Record<string, {status: "conflict" | "requires_confirmation" | "validated_under_known_data"; reasons: string[]}>;
 }
 export type Eligibility = Record<string, DishEligibility>;
+
+export interface PreparedInput {
+  menu_id: string; input_text: string; input_sha256: string; source_url: string;
+  retrieved_at: string; preparation: string;
+}
+export interface ExtractionResponse {
+  menu: Menu; provider: string; mode: "prepared_replay" | "live";
+  input_sha256: string; source_url: string | null; retrieved_at: string | null; notice: string;
+}
+export interface ProfileSnapshot { profile: DinerProfile; revision: number; created_at?: string }

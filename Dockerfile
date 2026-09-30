@@ -15,6 +15,7 @@ RUN pip install --no-cache-dir .
 COPY data/menus ./data/menus
 COPY data/profiles ./data/profiles
 COPY data/fixtures ./data/fixtures
+COPY data/prepared ./data/prepared
 COPY --from=web /web/dist ./web/dist
 EXPOSE 8000
 CMD ["uvicorn", "michelin.api:app", "--host", "0.0.0.0", "--port", "8000"]

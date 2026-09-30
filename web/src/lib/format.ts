@@ -106,7 +106,7 @@ export function checkLabel(name: string, passed: boolean, minDishes: number): st
     diets: ["Recorded diets met", "Diet conflict"],
     coverage: [`Everyone has ${minDishes}+ options`, `Not everyone has ${minDishes}+ options`],
     budget: ["Within budget", "Over budget"],
-    portions: ["Portions fit the table", "Portions off target"],
+    portions: ["Estimated portions on target", "Portions off target"],
   };
   return labels[name]?.[passed ? 0 : 1] ?? name;
 }

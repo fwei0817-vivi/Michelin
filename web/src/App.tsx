@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AlertCircle, BookOpen, LoaderCircle, RefreshCw, Users, UtensilsCrossed } from "lucide-react";
 import { getHealth, getMenu, getMenus, getProfiles, postPlan } from "./api";
 import { ConflictNote } from "./components/ConflictNote";
+import { ProfileHistory } from "./components/ProfileHistory";
 import { SetupFlow } from "./components/SetupFlow";
 import { DinerSheet } from "./components/DinerSheet";
 import { Sheet } from "./components/Sheet";
@@ -127,7 +128,7 @@ export default function App() {
     else if (step === "plan" && menu?.verified) void generate({ diners: next });
   };
   const choosePreset = (id: string) => {
-    const next = id === "saved" ? presets : id === "two" ? presets.slice(0, 2) : [];
+    const next: DinerProfile[] = id === "synthetic-three" ? [1, 2, 3].map(n => ({id: `synthetic_${n}`, name: `Synthetic ${n}`, allergies: [], diets: [], likes: [], dislikes: [], max_spice: null})) : id === "saved" ? presets : id === "two" ? presets.slice(0, 2) : [];
     invalidate(); setDiners(next); setSettings(s => ({ ...s, dishCount: Math.max(1, next.length + 1) })); setLocked([]); setExcluded([]);
     if (!next.length) setResult(null);
   };
@@ -153,6 +154,8 @@ export default function App() {
 
   return <div className="min-h-screen"><TopBar menu={menu} count={diners.length} onMenu={() => setBrowser({ mode: "browse", old: null })} onParty={() => step === "plan" ? setParty(true) : setStep("table")}/>
     <main className="workspace">
+      {menu?.preparation_mode === "prepared_replay" && <div className="notice" role="status"><AlertCircle size={17}/><span>Assistant-prepared menu response replay. No live model or image OCR. Prices are a dated factual extract; ingredients and fees need confirmation.</span></div>}
+      <ProfileHistory diners={diners} onLoad={people => {invalidate(); setDiners(people); setPresets(people); setNeedsReplan(true);}}/>
       {mock && <div className="notice" role="status"><AlertCircle size={17}/><span>This demonstration uses a fixed set of sample dishes.</span></div>}
       {error && <div className="notice error-notice" role="alert"><AlertCircle size={17}/><span>{error}</span>{menu && <button className="btn btn-quiet btn-small" onClick={() => void generate()} disabled={loading}>Try again</button>}</div>}
       {stale && <div className="notice" role="status"><RefreshCw size={17} className={loading ? "spin" : ""}/><span>{loading ? "Updating the dishes. Kept dishes stay in place…" : "Your table or budget changed. Update the dishes to match."}</span>{!loading && <button className="btn btn-quiet btn-small" onClick={() => void generate()} disabled={!menu?.verified}>Update dishes</button>}</div>}

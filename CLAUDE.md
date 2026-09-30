@@ -155,3 +155,14 @@ counts toward coverage. Existing sample menu data is not retroactively certified
 orders must pass independent validation too. Existing JSON keys remain compatible; stricter
 validation may return conflicts where old code returned an unvalidated order. Contract
 review by the other owners is still needed before any upstream PR; none is opened here.
+
+## Prepared extraction boundary (2026-09-30)
+
+`POST /api/menu/extract` takes `{menu_id, text? , image_base64?}` (exactly one input) and
+returns `{menu, provider, mode, input_sha256, source_url, retrieved_at, notice}`. The default
+`replay` adapter reads assistant-prepared records from `data/prepared/` by identity/kind/hash;
+no live model call. `GET /api/model/prepared` lists known inputs. Providers implement the same
+`ExtractionProvider` interface; future live implementations register in `PROVIDERS` and are
+selected via `MICHELIN_EXTRACTION_PROVIDER`. Existing parse/planning contracts remain.
+`Menu.preparation_mode` is additive provenance. Explicit review is required after extraction.
+User authorized minimal frontend integration for replay and local synthetic history; no redesign.

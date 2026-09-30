@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from michelin.explain import explain
+from michelin.model import ExtractionRequest, ExtractionResponse
 from michelin.plan.budget import subtotal_cap, totals
 from michelin.plan.edibility import assessment, edible_by, open_questions
 from michelin.plan.optimizer import solve
@@ -326,6 +327,41 @@ def plan(req: PlanRequest, x_profile_scope: str | None = Header(default=None)) -
     return PlanResponse(kind="plan", plan=result, subtotal_cap=cap)
 
 
+@app.get("/api/model/prepared")
+def prepared_inputs():
+    """Known local inputs, not an extraction service or an OCR catalogue."""
+    from michelin.model import prepared_catalog
+
+    return [
+        {
+            key: row[key]
+            for key in (
+                "menu_id",
+                "input_text",
+                "input_sha256",
+                "source_url",
+                "retrieved_at",
+                "preparation",
+            )
+        }
+        for row in prepared_catalog()
+    ]
+
+
+@app.post("/api/menu/extract")
+def extract_menu(req: ExtractionRequest) -> ExtractionResponse:
+    from michelin.model import UnpreparedInput, extract, get_extraction_provider
+
+    try:
+        return extract(req, get_extraction_provider())
+    except UnpreparedInput as exc:
+        raise HTTPException(409, str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            502, "Extraction provider failed or returned malformed output; no menu accepted."
+        ) from exc
+
+
 class ParseRequest(BaseModel):
     text: str = Field(default="", max_length=100000)
     image_base64: str | None = Field(default=None, max_length=12000000)
@@ -380,7 +416,12 @@ def parse_menu(req: ParseRequest) -> dict:
             )
     if not text.strip():
         raise HTTPException(422, "Paste menu text or choose an image first.")
-    return {"dishes": [d.model_dump() for d in parse_text(text)], "text": text}
+    return {
+        "dishes": [d.model_dump() for d in parse_text(text)],
+        "text": text,
+        "mode": "local_ocr" if req.image_base64 else "local_text",
+        "notice": "Local deterministic extraction; no model API called. Review all rows.",
+    }
 
 
 class EvaluateRequest(BaseModel):

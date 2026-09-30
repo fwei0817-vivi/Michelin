@@ -89,7 +89,7 @@ export function SetupFlow({ step, onStep, menu, diners, settings, onMenu, onImpo
               Or try the sample plan
             </button>
           </div>
-          <p className="session-note">Classroom prototype. Changes stay on this page and reset when you refresh.</p>
+          <p className="session-note">Classroom prototype. Menu edits stay on this page. Only explicit profile saves persist locally.</p>
         </>
       ) : (
         <>

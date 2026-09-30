@@ -1,0 +1,131 @@
+{
+  "menu_id": "cafe_china_regular",
+  "input_kind": "text",
+  "input_text": "Braised Whole Fish with Pickled Chilis $40.00\nChive Pancakes $12.00\nVegetable Pot Stickers $12.00\nMa Po Tofu $19.00\nWhite Rice $2.00\nScallion Pancakes $8.00",
+  "input_sha256": "c9232f3f893b27e88149070c46e84a2d00293a4b2c9cd36d400842e0192ea50e",
+  "source_url": "https://cafechina.nyc/menu",
+  "retrieved_at": "2026-09-30",
+  "preparation": "Assistant-prepared structured response from a small official-menu factual extract. Input is a curated transcription; descriptions and ingredient evidence use supplied official-page review.",
+  "menu": {
+    "restaurant_id": "cafe_china_regular",
+    "restaurant_name": "Café China",
+    "cuisine": "chinese_sichuan",
+    "source": "https://cafechina.nyc/menu",
+    "verified": true,
+    "dishes": [
+      {
+        "id": "fish",
+        "name_en": "Braised Whole Fish with Pickled Chilis",
+        "price": 40,
+        "contains_pork": true,
+        "is_vegetarian": false,
+        "main_ingredients": [
+          {
+            "name": "minced pork",
+            "tier": "menu"
+          },
+          {
+            "name": "tilapia",
+            "tier": "menu"
+          }
+        ],
+        "allergens": [
+          {
+            "allergen": "fish",
+            "tier": "menu",
+            "confidence": 1,
+            "reason": "Listed tilapia"
+          }
+        ],
+        "confirm_with_staff": [
+          "Confirm omitted ingredients, preparation, cross-contact and additional fees."
+        ]
+      },
+      {
+        "id": "chive_pancakes",
+        "name_en": "Chive Pancakes",
+        "price": 12,
+        "allergens": [
+          {
+            "allergen": "shellfish",
+            "tier": "menu",
+            "confidence": 1,
+            "reason": "Listed dried shrimp"
+          },
+          {
+            "allergen": "egg",
+            "tier": "menu",
+            "confidence": 1,
+            "reason": "Listed egg"
+          }
+        ],
+        "confirm_with_staff": [
+          "Confirm omitted ingredients, preparation, cross-contact and additional fees."
+        ],
+        "main_ingredients": [
+          {
+            "name": "dried shrimp",
+            "tier": "menu"
+          },
+          {
+            "name": "egg",
+            "tier": "menu"
+          }
+        ]
+      },
+      {
+        "id": "pot_stickers",
+        "name_en": "Vegetable Pot Stickers",
+        "price": 12,
+        "is_vegetarian": true,
+        "confirm_with_staff": [
+          "Confirm omitted ingredients, preparation, cross-contact and additional fees."
+        ],
+        "main_ingredients": [
+          {
+            "name": "tofu",
+            "tier": "menu"
+          },
+          {
+            "name": "shiitake",
+            "tier": "menu"
+          }
+        ]
+      },
+      {
+        "id": "mapo",
+        "name_en": "Ma Po Tofu",
+        "price": 19,
+        "is_vegetarian": true,
+        "confirm_with_staff": [
+          "Confirm omitted ingredients, preparation, cross-contact and additional fees."
+        ],
+        "main_ingredients": [
+          {
+            "name": "tofu",
+            "tier": "menu"
+          }
+        ]
+      },
+      {
+        "id": "rice",
+        "name_en": "White Rice",
+        "price": 2,
+        "category": "staple",
+        "is_vegetarian": true,
+        "confirm_with_staff": [
+          "Confirm omitted ingredients, preparation, cross-contact and additional fees."
+        ]
+      },
+      {
+        "id": "scallion_pancakes",
+        "name_en": "Scallion Pancakes",
+        "price": 8,
+        "is_vegetarian": true,
+        "confirm_with_staff": [
+          "Confirm omitted ingredients, preparation, cross-contact and additional fees."
+        ]
+      }
+    ]
+  }
+}

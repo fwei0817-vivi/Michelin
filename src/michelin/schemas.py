@@ -115,6 +115,7 @@ class Menu(BaseModel):
     restaurant_id: str
     restaurant_name: str
     cuisine: str  # e.g. "chinese_sichuan"
+    preparation_mode: str | None = None  # explicit provider provenance, never an accuracy claim
     source: str  # "google_maps_photo" | "own_photo" | "restaurant_site" | "sample"
     currency: str = "USD"
     verified: bool = False  # True only after a human checked every dish against the photo
