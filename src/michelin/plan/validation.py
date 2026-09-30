@@ -40,7 +40,7 @@ def validate_order(menu: Menu, request: TableRequest, items: list[PlanItem]) -> 
     if not missing_price:
         subtotal = sum(cents(d.price) * q for d, q in selected) / 100
         amounts = asdict(totals(subtotal, request.n_diners, request.tax_rate, request.tip_rate))
-        if cents(amounts["total"]) > cents(request.budget_per_person) * request.n_diners:
+        if cents(amounts["total"]) > cents(request.all_in_budget):
             issue("over_budget", "Rounded tax and pre-tax tip exceed the strict table budget.")
     evaluations = {d.id: {p.id: assessment(d, p) for p in request.diners} for d, _ in selected}
     for d, _ in selected:

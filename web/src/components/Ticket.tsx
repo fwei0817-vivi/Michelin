@@ -32,7 +32,7 @@ export function Ticket({ menu, plan, diners, settings, locked, stale, loading, o
   const byId: Record<string, Dish> = Object.fromEntries(menu.dishes.map((d) => [d.id, d]));
   const items = plan.items.filter((i) => byId[i.dish_id]);
   const cur = currencySymbol(menu.currency);
-  const remaining = settings.budget - plan.per_person;
+  const remaining = settings.budget - plan.total;
   const over = remaining < 0;
   const questions = plan.confirm_with_staff.length;
   const failed = plan.checks.filter((c) => !c.passed);
@@ -162,11 +162,11 @@ export function Ticket({ menu, plan, diners, settings, locked, stale, loading, o
           <p className="bill-table">{money(plan.total, cur)} for the table, using selected tax and tip</p>
           <div className={`bill-budget ${over ? "over" : ""}`}>
             <div className="bill-track">
-              <span style={{ width: `${Math.max(0, Math.min(100, (100 * plan.per_person) / settings.budget))}%` }} />
+              <span style={{ width: `${Math.max(0, Math.min(100, (100 * plan.total) / settings.budget))}%` }} />
             </div>
             {over
-              ? `${money(-remaining, cur)} over your ${money(settings.budget, cur)} budget`
-              : `${money(remaining, cur)} under your ${money(settings.budget, cur)} budget`}
+              ? `${money(-remaining, cur)} over your ${money(settings.budget, cur)} table budget`
+              : `${money(remaining, cur)} under your ${money(settings.budget, cur)} table budget`}
           </div>
           <ul className="bill-checks" aria-label="Plan checks">
             {plan.checks.map((c) => (
@@ -267,7 +267,7 @@ function DishCard({ item, dish, diners, cur, kept, expanded, disabled, onToggle,
             {dish.is_vegan ? "Vegan" : "Vegetarian"}
           </span>
         )}
-        {dish.spice_level > 0 && (
+        {dish.spice_level != null && dish.spice_level > 0 && (
           <span>
             <Flame size={12} />
             {SPICE[dish.spice_level]}

@@ -242,3 +242,36 @@ def test_duplicate_people_are_rejected():
         json={"menu_id": "sample_sichuan", "diners": [person, person], "budget_per_person": 30},
     )
     assert result.status_code == 422
+
+
+def test_total_budget_applies_to_same_four_people_at_exact_cent_boundary():
+    menu = public_menu()
+    items = [
+        PlanItem(dish_id="pot_stickers", quantity=2),
+        PlanItem(dish_id="mapo"),
+        PlanItem(dish_id="rice", quantity=4),
+    ]
+    req = request(tax_rate=0, tip_rate=0, budget_total=51)
+    assert not any(r["code"] == "over_budget" for r in validate_order(menu, req, items)["reasons"])
+    req = req.model_copy(update={"budget_total": 50.99})
+    assert any(r["code"] == "over_budget" for r in validate_order(menu, req, items)["reasons"])
+
+
+def test_plan_endpoint_forwards_authoritative_total_budget():
+    menu = public_menu()
+    response = TestClient(api.app).post(
+        "/api/plan",
+        json={
+            "menu_id": "synthetic",
+            "menu_override": menu.model_dump(mode="json"),
+            "diners": [p.model_dump(mode="json") for p in people(3)],
+            "budget_per_person": 100,
+            "budget_total": 1,
+            "tax_rate": 0,
+            "tip_rate": 0,
+            "min_dishes_per_person": 1,
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["kind"] == "conflict"
+    assert response.json()["subtotal_cap"] == 1

@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from michelin.explain import explain
+from michelin.meal import PeopleAction, apply_people_action
 from michelin.model import ExtractionRequest, ExtractionResponse
 from michelin.plan.budget import subtotal_cap, totals
 from michelin.plan.edibility import assessment, edible_by, open_questions
@@ -47,6 +48,17 @@ FIXTURE_DIR = ROOT / "data/fixtures"
 MOCK = os.environ.get("MICHELIN_MOCK", "") not in ("", "0", "false")
 
 app = FastAPI(title="Michelin", version="0.1.0")
+
+
+@app.post("/api/meal/people")
+def meal_people(request: PeopleAction):
+    try:
+        diners = apply_people_action(request)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return {"diners": diners, "recommendation_invalidated": True}
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # the frontend may be hosted separately
@@ -93,7 +105,8 @@ class PlanRequest(BaseModel):
     diner_ids: list[str] = Field(default_factory=list)  # saved profiles, by id
     diners: list[DinerProfile] = Field(default_factory=list)  # edited or ad-hoc, sent inline
     budget_per_person: float = Field(gt=0, allow_inf_nan=False)
-    _budget_cents = field_validator("budget_per_person")(validate_money)
+    budget_total: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    _budget_cents = field_validator("budget_per_person", "budget_total")(validate_money)
     tax_rate: float = Field(default=0.08875, ge=0, le=0.3)
     tip_rate: float = Field(default=0.18, ge=0, le=0.4)
     min_dishes_per_person: int = Field(default=2, ge=1, le=40, strict=True)
@@ -266,6 +279,7 @@ def plan(req: PlanRequest, x_profile_scope: str | None = Header(default=None)) -
         menu_id=req.menu_id,
         diners=_resolve_diners(req, x_profile_scope),
         budget_per_person=req.budget_per_person,
+        budget_total=req.budget_total,
         tax_rate=req.tax_rate,
         tip_rate=req.tip_rate,
         min_dishes_per_person=req.min_dishes_per_person,
@@ -274,7 +288,7 @@ def plan(req: PlanRequest, x_profile_scope: str | None = Header(default=None)) -
         dish_count_target=req.dish_count_target,
         style_preference=req.style_preference,
     )
-    cap = subtotal_cap(req.budget_per_person, request.n_diners, req.tax_rate, req.tip_rate)
+    cap = subtotal_cap(request.all_in_budget, 1, req.tax_rate, req.tip_rate)
 
     if MOCK:
         result = _mock_solve(menu, request)
@@ -496,7 +510,7 @@ def _mock_solve(menu: Menu, request: TableRequest) -> Plan | Conflict:
     dishes = [menu.dish(i.dish_id) for i in items]
     non_staple = [d for d in dishes if d.category.value != "staple"]
     t = totals(subtotal, n, request.tax_rate, request.tip_rate)
-    cap = subtotal_cap(request.budget_per_person, n, request.tax_rate, request.tip_rate)
+    cap = subtotal_cap(request.all_in_budget, 1, request.tax_rate, request.tip_rate)
     lo, hi = required_range(n)
     units = total_units(dishes)
 

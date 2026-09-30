@@ -29,7 +29,7 @@ def units(dish: Dish) -> float:
     handled separately by `TableRequest.include_staple`."""
     if dish.category == DishCategory.STAPLE:
         return 0.0
-    return PORTION_UNITS[dish.portion]
+    return PORTION_UNITS[dish.portion] if dish.portion is not None else 1.0
 
 
 def required_range(n_diners: int) -> tuple[float, float]:

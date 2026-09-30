@@ -1,9 +1,13 @@
 # Michelin — a smarter way to order for the table
 
 IEOR E4577 course project. Given a parsed restaurant menu, the diners' saved profiles and a
-per-person budget, the app proposes a table order that satisfies every allergy and diet
-constraint, fits the budget including tax and tip, and feeds everyone. If no order can, it
-says exactly which constraint to relax.
+total meal budget (legacy API per-person budgets remain supported), the app proposes an
+order using recorded restriction evidence, exact money arithmetic and explicit portion
+estimates. Unknown ingredients require confirmation; portions are not a guarantee that
+everyone is fed. If no validated order is found, it explains conflicts or missing evidence.
+
+See [the current meal workflow](docs/meal-session.md) for adding people, temporary meal
+changes, explicit saved preferences, swaps and the future structured chat boundary.
 
 See `CLAUDE.md` for architecture, ownership, contracts and conventions; `docs/` for the
 proposal and design decisions.

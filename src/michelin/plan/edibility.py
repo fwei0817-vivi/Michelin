@@ -6,6 +6,8 @@ A review establishes only no recorded evidence, never an allergy safety guarante
 
 from __future__ import annotations
 
+import re
+
 from michelin.schemas import Allergen, Diet, DinerProfile, Dish, EvidenceTier
 
 BLOCKING_TIERS = {EvidenceTier.MENU, EvidenceTier.INFERRED}
@@ -35,6 +37,38 @@ def blocking_diets(dish: Dish, diner: DinerProfile) -> list[Diet]:
 
 def assessment(dish: Dish, diner: DinerProfile) -> dict:
     conflicts, unknown = [], []
+    # A small explicit vocabulary is contradiction detection, not an ingredient
+    # extractor. Unrecognized text never establishes absence or safety.
+    terms = {
+        "pork": (r"\bpork\b|猪肉", {Diet.VEGETARIAN, Diet.VEGAN, Diet.NO_PORK}, set()),
+        "beef": (r"\bbeef\b|牛肉", {Diet.VEGETARIAN, Diet.VEGAN, Diet.NO_BEEF}, set()),
+        "chicken": (r"\bchicken\b|鸡肉", {Diet.VEGETARIAN, Diet.VEGAN}, set()),
+        "fish": (r"\bfish\b|\btilapia\b", {Diet.VEGETARIAN, Diet.VEGAN}, {Allergen.FISH}),
+        "shellfish": (
+            r"\bshrimp\b|\bprawn\b|\bcrab\b|\boyster sauce\b",
+            {Diet.VEGETARIAN, Diet.VEGAN},
+            {Allergen.SHELLFISH},
+        ),
+        "egg": (r"\beggs?\b", {Diet.VEGAN}, {Allergen.EGG}),
+        "dairy": (r"\bmilk\b|\bbutter\b|\bcheese\b", {Diet.VEGAN}, {Allergen.DAIRY}),
+        "sesame": (r"\bsesame\b", set(), {Allergen.SESAME}),
+        "peanut": (r"\bpeanuts?\b", set(), {Allergen.PEANUT}),
+    }
+    for claim in dish.main_ingredients:
+        for label, (pattern, diets, allergens) in terms.items():
+            if re.search(pattern, claim.name, re.IGNORECASE) and (
+                diets.intersection(diner.diets) or allergens.intersection(diner.allergies)
+            ):
+                # Substitutions/negations need review; do not certify an omission.
+                ambiguous = re.search(
+                    r"\b(no|without|free|vegan|substitute|omit|plant)\b", claim.name, re.IGNORECASE
+                )
+                if claim.tier in BLOCKING_TIERS and not ambiguous:
+                    conflicts.append(
+                        f"Recorded or inferred {label} ingredient conflicts with restrictions"
+                    )
+                else:
+                    unknown.append(f"Confirm {label} ingredient/preparation")
     for allergen in diner.allergies:
         flags = [f for f in dish.allergens if f.allergen == allergen]
         if any(f.tier in BLOCKING_TIERS for f in flags):
@@ -50,7 +84,28 @@ def assessment(dish: Dish, diner: DinerProfile) -> dict:
         Diet.NO_PORK: ("contains_pork", False),
         Diet.NO_BEEF: ("contains_beef", False),
     }
+    # Positive labels cannot erase contradictory recorded evidence. Allergen evidence
+    # still wins over reviewed_allergens. Unknown claims remain confirmation questions.
+    animal_allergens = {Allergen.FISH, Allergen.SHELLFISH}
     for diet in diner.diets:
+        incompatible = animal_allergens | (
+            {Allergen.EGG, Allergen.DAIRY} if diet == Diet.VEGAN else set()
+        )
+        if diet in {Diet.VEGETARIAN, Diet.VEGAN}:
+            if dish.contains_pork is True or dish.contains_beef is True:
+                conflicts.append(f"Recorded meat conflicts with {diet.value}")
+            if diet == Diet.VEGAN and dish.is_vegetarian is False:
+                conflicts.append("Non-vegetarian preparation conflicts with vegan")
+            for flag in dish.allergens:
+                if flag.allergen in incompatible:
+                    if flag.tier in BLOCKING_TIERS:
+                        conflicts.append(
+                            f"Recorded or inferred {flag.allergen.value} conflicts with {diet.value}"
+                        )
+                    else:
+                        unknown.append(
+                            f"Confirm {flag.allergen.value} for {diet.value} preparation"
+                        )
         field, required = fields[diet]
         value = getattr(dish, field)
         if value is None:
@@ -79,6 +134,12 @@ def open_questions(dish: Dish, diners: list[DinerProfile]) -> list[str]:
     """Staff questions that matter for someone at this table: the dish's own questions plus
     any `unknown`-tier flag that matches a diner's allergy."""
     questions = list(dish.confirm_with_staff)
+    if dish.portion is None:
+        questions.append(
+            f"{dish.name_en or dish.id}: portion unknown; planning estimates 1 unit per non-staple order, not people fed. Confirm size."
+        )
+    if dish.spice_level is None:
+        questions.append(f"{dish.name_en or dish.id}: spice level unknown. Confirm heat.")
     for person in diners:
         result = assessment(dish, person)
         questions.extend(

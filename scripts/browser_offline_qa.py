@@ -107,22 +107,32 @@ def main():
                 page.get_by_role("button", name="Edit Synthetic 1", exact=True).click()
                 expect(page.get_by_label("Likes", exact=True)).to_have_value("")
                 page.get_by_label("Likes", exact=True).fill("tofu")
-                page.get_by_role("button", name="Save", exact=True).click()
+                page.get_by_role("button", name="Use for this meal", exact=True).click()
                 checks.append("back navigation and cancelled profile edit preserve state")
-                page.get_by_text("Local synthetic profile history", exact=True).click()
-                page.get_by_role("button", name="Save current person", exact=True).click()
+                page.get_by_text("Remember people (synthetic demo)", exact=True).click()
+                page.get_by_role("button", name="Save for future meals", exact=True).click()
                 expect(
                     page.get_by_text("Saved Synthetic 1, revision 1.", exact=True)
                 ).to_be_visible()
                 page.get_by_role("button", name="Edit Synthetic 1", exact=True).click()
                 page.get_by_label("Likes", exact=True).fill("mushrooms")
-                page.get_by_role("button", name="Save", exact=True).click()
-                page.get_by_role("button", name="Save current person", exact=True).click()
+                page.get_by_role("button", name="Use for this meal", exact=True).click()
+                page.get_by_role("button", name="Save for future meals", exact=True).click()
                 expect(
                     page.get_by_text("Saved Synthetic 1, revision 2.", exact=True)
                 ).to_be_visible()
                 expect(page.get_by_role("list", name="Profile revisions")).to_contain_text("tofu")
                 checks.append("explicit preference saves and historical revisions")
+                page.get_by_role("button", name="Edit Synthetic 1", exact=True).click()
+                page.get_by_label("Likes", exact=True).fill("temporary meal preference")
+                page.get_by_role("button", name="Use for this meal", exact=True).click()
+                page.get_by_role("button", name="View history", exact=True).click()
+                expect(page.get_by_role("list", name="Profile revisions")).not_to_contain_text(
+                    "temporary meal preference"
+                )
+                checks.append("meal-only preference edits do not write history")
+                page.get_by_text("Remember people (synthetic demo)", exact=True).click()
+                page.screenshot(path="/tmp/michelin-session-01-people-budget.png", full_page=True)
                 # TableSetup uses "Find dishes for the table" in the initial flow.
                 buttons = page.get_by_role("button").all_text_contents()
                 plan_button = next(x for x in buttons if "Find" in x or "Plan the table" in x)
@@ -130,6 +140,39 @@ def main():
                 expect(page.get_by_role("heading", name="Who can eat what")).to_be_visible()
                 expect(page.get_by_role("button", name="View order ticket")).to_be_enabled()
                 checks.append("real-menu plan and per-person coverage")
+                page.get_by_role("button", name="Edit people and budget", exact=True).click()
+                page.get_by_role("button", name="Add a person", exact=True).click()
+                page.get_by_label("Name", exact=True).fill("Synthetic Newcomer")
+                with page.expect_response(
+                    lambda response: response.url.endswith("/api/meal/people")
+                ) as added:
+                    page.get_by_role("button", name="Use for this meal", exact=True).click()
+                added_people = added.value.json()["diners"]
+                newcomer = next(
+                    person for person in added_people if person["name"] == "Synthetic Newcomer"
+                )
+                assert newcomer["id"].startswith("diner_")
+                expect(
+                    page.get_by_role("button", name="Edit Synthetic Newcomer", exact=True)
+                ).to_be_visible()
+                page.get_by_role("dialog", name="Your table", exact=True).get_by_role(
+                    "button", name="Close", exact=True
+                ).click()
+                expect(page.get_by_role("button", name="View order ticket")).to_be_enabled()
+                checks.append(
+                    "add diner after recommendation regenerates whole order with stable independent ID"
+                )
+                page.get_by_role("button", name="Edit people and budget", exact=True).click()
+                page.get_by_role("button", name="Edit Synthetic Newcomer", exact=True).click()
+                page.get_by_role("button", name="Not eating tonight", exact=True).click()
+                expect(
+                    page.get_by_role("button", name="Edit Synthetic Newcomer", exact=True)
+                ).to_have_count(0)
+                page.get_by_role("dialog", name="Your table", exact=True).get_by_role(
+                    "button", name="Close", exact=True
+                ).click()
+                expect(page.get_by_role("button", name="View order ticket")).to_be_enabled()
+                checks.append("remove diner regenerates order without changing total budget")
                 for _ in range(2):
                     swap = page.get_by_role("button", name=re.compile("^Swap ")).first
                     swap.click()
@@ -141,15 +184,30 @@ def main():
                 expect(page.get_by_role("button", name="View order ticket")).to_be_enabled()
                 checks.append("swap cancellation preserves valid order")
                 # Save evidence before intentional restriction failure.
-                page.screenshot(path="/tmp/michelin-offline-plan.png", full_page=True)
+                page.screenshot(path="/tmp/michelin-session-02-order.png", full_page=True)
                 page.get_by_role("button", name="Edit people and budget", exact=True).click()
                 page.get_by_role("button", name="Edit Synthetic 1", exact=True).click()
                 page.get_by_role("button", name="shellfish", exact=True).click()
-                page.get_by_role("button", name="Save", exact=True).click()
+                page.get_by_role("button", name="Use for this meal", exact=True).click()
                 page.get_by_role("dialog", name="Your table", exact=True).get_by_role(
                     "button", name="Close", exact=True
                 ).click()
                 expect(page.get_by_role("heading", name="No order fits yet")).to_be_visible()
+                page.get_by_text("Remember people (synthetic demo)", exact=True).click()
+                with page.expect_response(
+                    lambda response: response.url.endswith("/api/meal/people")
+                ) as loaded:
+                    page.get_by_role("button", name="Load saved preferences", exact=True).click()
+                current = loaded.value.json()["diners"]
+                assert current[0]["allergies"] == ["shellfish"] and len(current) == 3
+                expect(page.get_by_role("heading", name="No order fits yet")).to_be_visible()
+                checks.append(
+                    "loading saved preferences preserves this meal's hard restrictions and other people"
+                )
+                page.get_by_text("Remember people (synthetic demo)", exact=True).click()
+                page.screenshot(
+                    path="/tmp/michelin-session-03-restriction-review.png", full_page=True
+                )
                 page.get_by_role("button", name="Browse menu", exact=True).click()
                 expect(
                     page.get_by_text(re.compile("Synthetic 1: Requires confirmation")).first
@@ -161,8 +219,8 @@ def main():
                 page.get_by_role("button", name="Edit people and budget", exact=True).click()
                 page.get_by_role("button", name="Edit Synthetic 1", exact=True).click()
                 page.get_by_role("button", name="shellfish", exact=True).click()
-                page.get_by_role("button", name="Save", exact=True).click()
-                page.get_by_label("Budget per person").fill("20")
+                page.get_by_role("button", name="Use for this meal", exact=True).click()
+                page.get_by_label("Total meal budget").fill("60")
                 page.get_by_role("dialog", name="Your table", exact=True).get_by_role(
                     "button", name="Update dishes", exact=True
                 ).click()
@@ -181,7 +239,7 @@ def main():
                     "over-budget swap fails and Undo restores the prior valid constraints"
                 )
                 page.get_by_role("button", name="Edit people and budget", exact=True).click()
-                page.get_by_label("Budget per person").fill("1")
+                page.get_by_label("Total meal budget").fill("1")
                 page.get_by_role("dialog", name="Your table", exact=True).get_by_role(
                     "button", name="Update dishes", exact=True
                 ).click()
@@ -192,10 +250,13 @@ def main():
                 start()
                 page.reload()
                 expect(page.get_by_role("heading", name="Choose a menu")).to_be_visible()
-                page.get_by_text("Local synthetic profile history", exact=True).click()
-                page.get_by_role("button", name="Load saved group", exact=True).click()
+                page.get_by_text("Remember people (synthetic demo)", exact=True).click()
+                page.get_by_role("button", name="Load saved preferences", exact=True).click()
                 expect(
-                    page.get_by_text("Loaded 1 saved synthetic profiles.", exact=True)
+                    page.get_by_text(
+                        "Applied saved preferences. Existing diners keep this meal’s hard restrictions.",
+                        exact=True,
+                    )
                 ).to_be_visible()
                 page.get_by_role("button", name="View history", exact=True).click()
                 expect(page.get_by_role("list", name="Profile revisions")).to_contain_text(

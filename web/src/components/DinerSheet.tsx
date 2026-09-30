@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ALLERGENS, ALLERGEN_LABEL, DIETS, DIET_LABEL, SPICE_LABEL, slug, splitList } from "../lib/format";
+import { ALLERGENS, ALLERGEN_LABEL, DIETS, DIET_LABEL, SPICE_LABEL, splitList } from "../lib/format";
 import type { Allergen, Diet, DinerProfile } from "../types";
 import { Sheet } from "./Sheet";
 
@@ -27,13 +27,14 @@ export function DinerSheet({ diner, existingIds, onSave, onRemove, onClose }: Pr
   const save = () => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    let id = diner?.id ?? slug(trimmed);
+    let id = diner?.id ?? `diner_${crypto.randomUUID()}`;
     if (!diner) while (existingIds.includes(id)) id = `${id}_`;
     onSave({ id, name: trimmed, allergies, diets, max_spice: spice, dislikes: splitList(dislikes), likes: splitList(likes) });
   };
 
   return (
     <Sheet title={diner ? `About ${diner.name}` : "Someone new"} onClose={onClose}>
+      <p className="helper">Changes apply only to this meal. Use “Save for future meals” separately to remember them.</p>
       <form
         className="mt-5 space-y-6"
         onSubmit={(e) => {
@@ -122,7 +123,7 @@ export function DinerSheet({ diner, existingIds, onSave, onRemove, onClose }: Pr
               Cancel
             </button>
             <button type="submit" disabled={!name.trim()} className="btn btn-primary">
-              Save
+              Use for this meal
             </button>
           </div>
         </div>

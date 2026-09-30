@@ -21,7 +21,10 @@ def explain(plan: Plan, menu: Menu, request: TableRequest) -> Plan:
         heat = [
             p.name
             for p in request.diners
-            if p.id in item.edible_by and p.max_spice is not None and dish.spice_level > p.max_spice
+            if p.id in item.edible_by
+            and p.max_spice is not None
+            and dish.spice_level is not None
+            and dish.spice_level > p.max_spice
         ]
         if heat:
             reason += f" Above the preferred spice level for {', '.join(heat)}."

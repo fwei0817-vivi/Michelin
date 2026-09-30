@@ -96,8 +96,8 @@ class Dish(BaseModel):
     description_raw: str | None = None  # verbatim menu text, never edited
     category: DishCategory = DishCategory.OTHER
     cooking_method: str | None = None  # "stir_fry", "deep_fry", "braise", "steam", ...
-    spice_level: int = Field(default=0, ge=0, le=3)
-    portion: PortionClass = PortionClass.MEDIUM
+    spice_level: int | None = Field(default=None, ge=0, le=3)
+    portion: PortionClass | None = None
     main_ingredients: list[IngredientClaim] = Field(default_factory=list)
     allergens: list[AllergenFlag] = Field(default_factory=list)
     # Explicit review of available evidence, never a guarantee about cross-contact.
@@ -160,13 +160,22 @@ class TableRequest(BaseModel):
         default_factory=list
     )  # user removed these, must not appear
 
-    _budget_cents = field_validator("budget_per_person")(validate_money)
+    budget_total: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    _budget_cents = field_validator("budget_per_person", "budget_total")(validate_money)
 
     @model_validator(mode="after")
     def unique_people(self):
         if len({p.id for p in self.diners}) != len(self.diners):
             raise ValueError("Diner IDs must be unique")
         return self
+
+    @property
+    def all_in_budget(self) -> float:
+        return (
+            self.budget_total
+            if self.budget_total is not None
+            else float(Decimal(str(self.budget_per_person)) * self.n_diners)
+        )
 
     @property
     def n_diners(self) -> int:

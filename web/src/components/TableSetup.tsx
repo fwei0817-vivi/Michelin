@@ -60,7 +60,7 @@ export function TableSetup({ diners, settings, currency, onChange, onEdit, onAdd
             </li>
           ))}
         </ul>
-        <button className="text-button add-person" onClick={onAdd}>
+        <button className="text-button add-person" onClick={onAdd} disabled={diners.length >= 6}>
           <Plus size={16} />
           Add a person
         </button>
@@ -70,12 +70,12 @@ export function TableSetup({ diners, settings, currency, onChange, onEdit, onAdd
         <h3 id="budget-heading">Budget and dishes</h3>
         <div className="field-row">
           <label className="field-label">
-            Budget per person
+            Total meal budget
             <span className="input-affix">
               <span aria-hidden="true">{cur.trim()}</span>
-              <NumberField className="field" min={1} max={500} step={1} value={settings.budget} onChange={(n) => set("budget", n)} />
+              <NumberField className="field" min={1} max={500} step={0.01} value={settings.budget} onChange={(n) => set("budget", n)} />
             </span>
-            <small>Tax and tip included</small>
+            <small>Includes selected tax and tip; other fees unknown</small>
           </label>
           <label className="field-label">
             Dishes to order
@@ -124,8 +124,8 @@ export function TableSetup({ diners, settings, currency, onChange, onEdit, onAdd
       {!diners.length && <p className="helper">Add at least one person to plan your meal.</p>}
       <div className="drawer-footer setup-footer">
         <p className="footer-total">
-          <strong>{money(settings.budget * diners.length, cur)}</strong> for the table
-          <small>About {money(subtotalCap(settings.budget, diners.length, settings.tax, settings.tip), cur)} in menu prices</small>
+          <strong>{money(settings.budget, cur)}</strong> for the table
+          <small>About {money(subtotalCap(settings.budget, 1, settings.tax, settings.tip), cur)} in menu prices</small>
         </p>
         <button className="btn btn-primary" onClick={onPlan} disabled={loading || !diners.length || !valid}>
           <RefreshCw size={16} className={loading ? "spin" : ""} />

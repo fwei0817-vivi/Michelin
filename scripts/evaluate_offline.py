@@ -29,6 +29,7 @@ def main():
         [
             "-q",
             str(root / "tests/test_replay.py"),
+            str(root / "tests/test_meal.py"),
             str(root / "tests/test_backend_validation.py"),
             str(root / "tests/test_profiles.py"),
         ],

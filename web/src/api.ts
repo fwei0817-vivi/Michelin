@@ -50,3 +50,8 @@ export const persistProfile = (scope: string, profile: DinerProfile, revision: n
     method: revision ? "PUT" : "POST", headers: scopeHeaders(scope),
     body: JSON.stringify(revision ? {profile, expected_revision: revision} : profile),
   });
+
+export const applyPeopleAction = (diners: DinerProfile[], action: "add" | "update" | "remove" | "load_preferences", extra: {person?: DinerProfile; person_id?: string; saved?: DinerProfile[]}) =>
+  request<{diners: DinerProfile[]; recommendation_invalidated: boolean}>("/api/meal/people", {
+    method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({diners, action, ...extra}),
+  });

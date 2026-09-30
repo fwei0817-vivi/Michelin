@@ -36,8 +36,8 @@ export interface Dish {
   description_raw?: string | null;
   category: string;
   cooking_method?: string | null;
-  spice_level: number;
-  portion: string;
+  spice_level: number | null;
+  portion: string | null;
   main_ingredients: IngredientClaim[];
   allergens: AllergenFlag[];
   is_vegetarian: boolean | null;
@@ -118,6 +118,7 @@ export interface PlanRequest {
   diner_ids?: string[];
   diners?: DinerProfile[];
   budget_per_person: number;
+  budget_total?: number;
   tax_rate?: number;
   tip_rate?: number;
   min_dishes_per_person?: number;

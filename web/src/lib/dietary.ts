@@ -4,6 +4,8 @@ import { ALLERGEN_LABEL, listNames } from "./format";
 /** Open questions are not confirmations. Keep them visible alongside eligibility. */
 export function dishQuestions(dish: Dish, diners: DinerProfile[]): string[] {
   const questions = [...dish.confirm_with_staff];
+  if (dish.spice_level == null) questions.push("Spice level unknown; confirm with staff.");
+  if (dish.portion == null) questions.push("Portion unknown; planning uses an estimate, not a people-fed guarantee.");
   for (const flag of dish.allergens) {
     if (flag.tier !== "unknown") continue;
     const affected = diners.filter(p => p.allergies.includes(flag.allergen));
@@ -13,6 +15,6 @@ export function dishQuestions(dish: Dish, diners: DinerProfile[]): string[] {
 }
 
 export function heatNote(dish: Dish, diners: DinerProfile[]): string | null {
-  const affected = diners.filter(p => p.max_spice != null && dish.spice_level > p.max_spice);
+  const affected = diners.filter(p => p.max_spice != null && dish.spice_level != null && dish.spice_level > p.max_spice);
   return affected.length ? `Spicier than ${listNames(affected.map(p => p.name))} ${affected.length === 1 ? "prefers" : "prefer"}` : null;
 }

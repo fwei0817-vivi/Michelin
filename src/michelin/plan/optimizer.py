@@ -19,9 +19,7 @@ from michelin.schemas import Check, Conflict, Menu, Plan, PlanItem, Relaxation, 
 
 def _search(menu: Menu, req: TableRequest, *, budget: bool = True, min_cost: bool = False):
     n = req.n_diners
-    cap = math.floor(
-        subtotal_cap(req.budget_per_person, n, req.tax_rate, req.tip_rate) * 100 + 1e-7
-    )
+    cap = math.floor(subtotal_cap(req.all_in_budget, 1, req.tax_rate, req.tip_rate) * 100 + 1e-7)
     excluded, locked = set(req.excluded_dish_ids), set(req.locked_dish_ids)
     available = [
         d for d in menu.dishes if d.id not in excluded and d.price is not None and d.price >= 0
@@ -72,7 +70,7 @@ def _search(menu: Menu, req: TableRequest, *, budget: bool = True, min_cost: boo
             if (
                 budget
                 and totals(cost / 100, n, req.tax_rate, req.tip_rate).total
-                > req.budget_per_person * n + 1e-7
+                > req.all_in_budget + 1e-7
             ):
                 return
             dishes = [choices[j] for j in chosen]
@@ -91,7 +89,11 @@ def _search(menu: Menu, req: TableRequest, *, budget: bool = True, min_cost: boo
                     score += (3 if req.style_preference == "favorites" else 1) * sum(
                         x.lower() in ingredients for x in p.likes
                     )
-                    score -= max(0, d.spice_level - p.max_spice) if p.max_spice is not None else 0
+                    score -= (
+                        max(0, d.spice_level - p.max_spice)
+                        if p.max_spice is not None and d.spice_level is not None
+                        else 0
+                    )
             if (min_cost and cost < best_cost) or (
                 not min_cost and (score > best_score or (score == best_score and cost < best_cost))
             ):
@@ -140,7 +142,7 @@ def solve(menu: Menu, request: TableRequest) -> Plan | Conflict:
                 )
                 / 2
             )
-            if price > request.budget_per_person:
+            if price * request.n_diners > request.all_in_budget:
                 relaxations.append(
                     Relaxation(
                         kind="budget",

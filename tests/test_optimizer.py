@@ -14,10 +14,13 @@ def request_for(group, **kwargs):
 
 def reviewed_synthetic_menu(menu):
     # Synthetic evidence-review mutation only; never alter restaurant fixtures.
-    from michelin.schemas import Allergen
+    from michelin.schemas import Allergen, EvidenceTier
 
     for dish in menu.dishes:
         dish.reviewed_allergens = list(Allergen)
+        # This success-case mutation explicitly resolves UNKNOWN flags. Merely
+        # marking allergens reviewed must not erase uncertainty (tested separately).
+        dish.allergens = [f for f in dish.allergens if f.tier != EvidenceTier.UNKNOWN]
     return menu
 
 

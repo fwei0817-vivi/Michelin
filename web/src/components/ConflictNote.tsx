@@ -21,12 +21,12 @@ function optionLabel(r: Relaxation, cur: string): string {
 export function ConflictNote({ conflict, menu, diners, settings, onRelax }: Props) {
   const cur = currencySymbol(menu.currency);
   const n = diners.length;
-  const cap = subtotalCap(settings.budget, n, settings.tax, settings.tip);
+  const cap = subtotalCap(settings.budget, 1, settings.tax, settings.tip);
   return (
     <section className="sheet conflict" aria-labelledby="conflict-heading">
       <h2 id="conflict-heading">No order fits yet</h2>
       <p className="conflict-context">
-        {menu.restaurant_name}, {n} {n === 1 ? "diner" : "diners"} at {money(settings.budget, cur)} each with tax and tip, so about {money(cap, cur)} in
+        {menu.restaurant_name}, {n} {n === 1 ? "diner" : "diners"} at {money(settings.budget, cur)} total with selected tax and tip, so about {money(cap, cur)} in
         menu prices for the table. Everyone needs {settings.minDishes} {settings.minDishes === 1 ? "dish" : "dishes"} they can eat.
       </p>
       <p className="conflict-message">{conflict.message}</p>

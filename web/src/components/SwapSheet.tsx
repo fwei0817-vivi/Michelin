@@ -322,7 +322,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                         <div className="dish-tags">
                           <span>{CATEGORY_LABEL[d.category] ?? d.category}</span>
                           {d.is_vegetarian === true && <span><Leaf size={12} />{d.is_vegan ? "Vegan" : "Vegetarian"}</span>}
-                          {d.spice_level > 0 && <span><Flame size={12} />{SPICE[d.spice_level]}</span>}
+                          {d.spice_level != null && d.spice_level > 0 && <span><Flame size={12} />{SPICE[d.spice_level]}</span>}
                           {e && notFor.length === 0 && <span title="Matches every diner's recorded requirements"><Users size={12} />Matches all {diners.length}</span>}
                         </div>
                         {!e ? (
