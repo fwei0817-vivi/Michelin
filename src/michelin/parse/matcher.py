@@ -11,7 +11,7 @@ Providers (MICHELIN_LLM_PROVIDER, default gemini), all behind the same closed-li
   gemini         gemini-2.5-pro on Vertex AI, Google Application Default Credentials
                  (`gcloud auth application-default login`); project from GOOGLE_CLOUD_PROJECT
                  or the gcloud default, region from GOOGLE_CLOUD_LOCATION (us-central1)
-  claude-vertex  claude-opus-5-5 on Vertex AI, same credentials (needs Claude quota)
+  claude-vertex  claude-opus-5-5 on Vertex AI, same credentials
   claude         claude-opus-5-5 on the Anthropic API, ANTHROPIC_API_KEY
 
 Requires the optional `llm` extra. Only dish names and descriptions are sent, never images.

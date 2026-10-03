@@ -151,8 +151,8 @@ violations still 0.
 `parse/matcher.py` sends dish names the knowledge base does not match exactly (names and
 printed descriptions only, never images) to an LLM, which may only answer with a
 knowledge-base id or "none". Default: `gemini-2.5-pro` on the course's Vertex AI project with
-gcloud ADC (the organization disallows API keys; Claude on Vertex currently has no quota,
-`MICHELIN_LLM_PROVIDER=claude-vertex` switches once it does). Temperature 0. The answer is stored in `data/knowledge/llm_matches.json`
+gcloud ADC (the organization disallows API keys). `MICHELIN_LLM_PROVIDER` selects another
+provider (`claude-vertex`, `claude`) behind the same prompt. Temperature 0. The answer is stored in `data/knowledge/llm_matches.json`
 and reused for the same text, so labels stay deterministic and reviewable. Until a person
 accepts a match (`"reviewed": true`), the dish gets a staff question to confirm it is the same
 dish; printed evidence applies either way. Calls happen only with `MICHELIN_LLM_MATCH=1` (or `label_menu --llm`) and credentials;
