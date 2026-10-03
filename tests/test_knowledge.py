@@ -109,3 +109,12 @@ def test_relabel_menu_is_unverified_and_keeps_printed_fields(sample_menu):
     matches = {dish_id: m for dish_id, m, _ in summary}
     assert matches["mapo_tofu"] == "mapo_tofu"
     assert matches["dry_pot_cauliflower"] is None  # not in the knowledge base
+
+
+def test_crab_meat_is_shellfish_not_meat():
+    from michelin.parse.knowledge import gather
+
+    d = dish("Braised Tofu with Crab Meat", description="stewed crab roe and tofu")
+    hits = {h for c in gather(d)[0] for h in c.hits}
+    assert "shellfish" in hits and "meat" not in hits
+    assert "meat" in {h for c in gather(dish("Lamb with Cumin"))[0] for h in c.hits}

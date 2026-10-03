@@ -49,7 +49,7 @@ Counts are diner x dish pairs; a pair counts under every trap type among its con
 | H06 | hidden_ingredient | plan | plan | ✅ | ✅ | 0 | 0 | 0 | 75.93 / 90.00 | ok |
 | H07 | hidden_ingredient | plan | any | ✅ | ✅ | 0 | 0 | 0 | 73.33 / 120.00 | ok |
 | H08 | hidden_ingredient | plan | any | ✅ | ✅ | 0 | 0 | 0 | 56.90 / 90.00 | ok |
-| H09 | hidden_ingredient | plan | any | ✅ | ✅ | 0 | 0 | 0 | 96.05 / 210.00 | ok |
+| H09 | hidden_ingredient | plan | any | ✅ | ✅ | 0 | 0 | 0 | 99.85 / 210.00 | ok |
 | H10 | hidden_ingredient | plan | any | ✅ | ✅ | 0 | 0 | 0 | 54.36 / 90.00 | ok |
 | H11 | hidden_ingredient | plan | any | ✅ | ✅ | 0 | 0 | 0 | 131.57 / 180.00 | ok |
 | L01 | lock_exclude | plan | any | ✅ | ✅ | 0 | 0 | 0 | 84.75 / 120.00 | ok |

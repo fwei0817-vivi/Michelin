@@ -55,7 +55,7 @@ PRINTED = {
     "pork": r"\bpork\b|\bham\b|\bbacon\b|\blard\b|猪",
     "beef": r"\bbeef\b|牛",
     "poultry": r"\bchicken\b|\bduck\b|鸡|鸭",
-    "meat": r"\bmeat\b|\blamb\b|\bmutton\b|羊",
+    "meat": r"(?<!crab )\bmeat\b|\blamb\b|\bmutton\b|羊",
     "fish": r"\bfish\b|\bsalmon\b|\bcod\b|\btilapia\b|鱼",
     "shellfish": r"\bshrimps?\b|\bprawns?\b|\bcrab\b|\bscallops?\b|\blobster\b|\bclams?\b"
     r"|\bmussels?\b|\boysters?\b|虾|蟹|贝",
