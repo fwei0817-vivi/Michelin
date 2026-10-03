@@ -12,8 +12,14 @@ Three evidence sources, combined per dish:
    even when the dish itself is not in the knowledge base.
 
 A dish with no knowledge-base match is never certified: diet flags stay `None` (unsafe by
-product rule 3), every allergen without stronger evidence gets an `unknown` flag, and staff must be asked. An LLM
-matcher may later map unusual names to an entry id; it never writes ingredients itself.
+product rule 3), every allergen without stronger evidence gets an `unknown` flag, and staff
+must be asked. An LLM matcher may later map unusual names to an entry id; it never writes
+ingredients itself.
+
+Policy for `possible` components (decided 2026-10-02, see docs/decisions.md): vegetarian and
+vegan stay eligible with a staff question, since these are mostly stocks and sauces the
+kitchen can confirm or leave out. Allergies, no-pork and no-beef stay strict: `possible`
+leaves the flag `unknown`/`None`, which the planner treats as unsafe.
 """
 
 from __future__ import annotations
@@ -191,11 +197,12 @@ def _strongest(components: list[Component], wanted: set[str]) -> str | None:
 
 
 def _diet_ok(components: list[Component], breakers: set[str], known: bool) -> bool | None:
-    """False if a definite/likely breaker; None if only possible ones or the dish is unknown."""
+    """False if a definite/likely breaker; None if the dish is unknown; True otherwise. A
+    possible breaker leaves True: its staff question carries the caveat (see policy above)."""
     cert = _strongest(components, breakers)
     if cert in ("definite", "likely"):
         return False
-    return None if cert == "possible" or not known else True
+    return True if known else None
 
 
 def _contains(components: list[Component], hit: str, known: bool) -> bool | None:

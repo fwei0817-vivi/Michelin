@@ -10,10 +10,10 @@
 | Unflagged possible risks | 0 |
 | Over budget | 0 |
 | Wrong arithmetic | 0 |
-| False "no order works" | 4 |
+| False "no order works" | 1 |
 | Menu level: unsafe dishes allowed | 3 |
 | Menu level: safe dishes refused | 12 |
-| Menu level: possible-only dishes refused | 37 |
+| Menu level: possible-only dishes refused | 2 |
 
 ## By trap type
 
@@ -44,14 +44,14 @@ Counts are diner x dish pairs; a pair counts under every trap type among its con
 | H01 | hidden_ingredient | conflict | any | ✅ | ❌ refused | 0 | 0 | 0 |  |  |
 | H02 | hidden_ingredient | plan | any | ✅ | ✅ | 0 | 0 | 0 | 78.40 / 120.00 | ok |
 | H03 | hidden_ingredient | plan | any | ✅ | ✅ | 0 | 0 | 0 | 56.90 / 90.00 | ok |
-| H04 | hidden_ingredient | conflict | any | ✅ | ❌ refused | 0 | 0 | 0 |  |  |
+| H04 | hidden_ingredient | plan | any | ✅ | ✅ | 0 | 0 | 0 | 66.99 / 120.00 | ok |
 | H05 | hidden_ingredient | plan | any | ✅ | ✅ | 0 | 0 | 0 | 86.02 / 120.00 | ok |
 | H06 | hidden_ingredient | plan | plan | ✅ | ✅ | 0 | 0 | 0 | 75.93 / 90.00 | ok |
 | H07 | hidden_ingredient | plan | any | ✅ | ✅ | 0 | 0 | 0 | 73.33 / 120.00 | ok |
 | H08 | hidden_ingredient | plan | any | ✅ | ✅ | 0 | 0 | 0 | 56.90 / 90.00 | ok |
-| H09 | hidden_ingredient | plan | any | ✅ | ✅ | 0 | 0 | 0 | 97.32 / 210.00 | ok |
-| H10 | hidden_ingredient | conflict | any | ✅ | ❌ refused | 0 | 0 | 0 |  |  |
-| H11 | hidden_ingredient | conflict | any | ✅ | ❌ refused | 0 | 0 | 0 |  |  |
+| H09 | hidden_ingredient | plan | any | ✅ | ✅ | 0 | 0 | 0 | 99.85 / 210.00 | ok |
+| H10 | hidden_ingredient | plan | any | ✅ | ✅ | 0 | 0 | 0 | 54.36 / 90.00 | ok |
+| H11 | hidden_ingredient | plan | any | ✅ | ✅ | 0 | 0 | 0 | 131.57 / 180.00 | ok |
 | L01 | lock_exclude | plan | any | ✅ | ✅ | 0 | 0 | 0 | 84.75 / 120.00 | ok |
 | L02 | lock_exclude | conflict | conflict | ✅ | ✅ | 0 | 0 | 0 |  |  |
 | L03 | lock_exclude | conflict | conflict | ✅ | ✅ | 0 | 0 | 0 |  |  |
@@ -65,9 +65,9 @@ reference asks, label clears. **stricter** = label more cautious than the refere
 
 | Dishes | correct | missed | weakened | unflagged | stricter | accuracy |
 |---|---|---|---|---|---|---|
-| in knowledge base | 372 | 0 | 0 | 0 | 5 | 99% |
+| in knowledge base | 360 | 0 | 0 | 12 | 5 | 95% |
 | not in knowledge base (holdout) | 14 | 0 | 16 | 0 | 48 | 18% |
-| all | 386 | 0 | 16 | 0 | 53 | 85% |
+| all | 374 | 0 | 16 | 12 | 53 | 82% |
 
 Missed or weakened, by trap: hidden 13, name_inference 3
 
@@ -97,30 +97,6 @@ Missed or weakened, by trap: hidden 13, name_inference 3
 - menu: safe refused: v3 <- smashed_cucumber
 - menu: safe refused: v4 <- smashed_cucumber
 - menu: safe refused: v5 <- smashed_cucumber
-- menu: possible-only refused: v0 <- yuxiang_eggplant
-- menu: possible-only refused: v1 <- yuxiang_eggplant
-- menu: possible-only refused: v2 <- yuxiang_eggplant
-- menu: possible-only refused: v3 <- yuxiang_eggplant
-- menu: possible-only refused: v4 <- yuxiang_eggplant
-- menu: possible-only refused: v5 <- yuxiang_eggplant
-- menu: possible-only refused: v0 <- garlic_bok_choy
-- menu: possible-only refused: v1 <- garlic_bok_choy
-- menu: possible-only refused: v2 <- garlic_bok_choy
-- menu: possible-only refused: v3 <- garlic_bok_choy
-- menu: possible-only refused: v4 <- garlic_bok_choy
-- menu: possible-only refused: v5 <- garlic_bok_choy
-- menu: possible-only refused: v0 <- buddhas_delight
-- menu: possible-only refused: v1 <- buddhas_delight
-- menu: possible-only refused: v2 <- buddhas_delight
-- menu: possible-only refused: v3 <- buddhas_delight
-- menu: possible-only refused: v4 <- buddhas_delight
-- menu: possible-only refused: v5 <- buddhas_delight
-- menu: possible-only refused: v0 <- vegetable_spring_rolls
-- menu: possible-only refused: v1 <- vegetable_spring_rolls
-- menu: possible-only refused: v2 <- vegetable_spring_rolls
-- menu: possible-only refused: v3 <- vegetable_spring_rolls
-- menu: possible-only refused: v4 <- vegetable_spring_rolls
-- menu: possible-only refused: v5 <- vegetable_spring_rolls
 - detail: No order meets the current budget, portions, dietary coverage, and kept dishes. Review the options below, or change your kept dishes or menu.
 
 **C02**
@@ -137,12 +113,7 @@ Missed or weakened, by trap: hidden 13, name_inference 3
 - detail: No order meets the current budget, portions, dietary coverage, and kept dishes. Review the options below, or change your kept dishes or menu.
 
 **H04**
-- refused although a safe order exists
 - menu: safe refused: vegan <- smashed_cucumber
-- menu: possible-only refused: vegan <- vegetable_spring_rolls
-- menu: possible-only refused: vegan <- buddhas_delight
-- menu: possible-only refused: vegan <- garlic_bok_choy
-- detail: No order meets the current budget, portions, dietary coverage, and kept dishes. Review the options below, or change your kept dishes or menu.
 
 **H05**
 - menu: possible-only refused: nopork <- yuxiang_eggplant
@@ -151,23 +122,7 @@ Missed or weakened, by trap: hidden 13, name_inference 3
 - menu: safe refused: veg <- smashed_cucumber
 - menu: safe refused: nopork <- smashed_cucumber
 - menu: safe refused: nopork <- salt_pepper_shrimp
-- menu: possible-only refused: veg <- yuxiang_eggplant
 - menu: possible-only refused: nopork <- yuxiang_eggplant
-- menu: possible-only refused: veg <- garlic_bok_choy
-- menu: possible-only refused: veg <- buddhas_delight
-- menu: possible-only refused: veg <- vegetable_lo_mein
-
-**H10**
-- refused although a safe order exists
-- menu: possible-only refused: david <- garlic_seasonal_greens
-- menu: possible-only refused: david <- di_san_xian
-- detail: No order meets the current budget, portions, dietary coverage, and kept dishes. Review the options below, or change your kept dishes or menu.
-
-**H11**
-- refused although a safe order exists
-- menu: possible-only refused: david <- garlic_seasonal_greens
-- menu: possible-only refused: david <- di_san_xian
-- detail: No order meets the current budget, portions, dietary coverage, and kept dishes. Review the options below, or change your kept dishes or menu.
 
 **L02**
 - menu: safe refused: veg <- smashed_cucumber

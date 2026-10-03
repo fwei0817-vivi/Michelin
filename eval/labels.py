@@ -63,11 +63,13 @@ def load_eval_menu(name: str) -> dict[str, dict]:
     raise ValueError(f"unknown eval menu {name!r}")
 
 
-def _diet_flag(found: dict[str, str], breakers: set[str]) -> bool | None:
+def _diet_flag(found: dict[str, str], breakers: set[str], ask_ok: bool = False) -> bool | None:
+    """ask_ok: a possible breaker stays eligible with a staff question (vegetarian/vegan
+    policy, same as src/michelin/parse/knowledge.py)."""
     certs = [c for hit, c in found.items() if hit in breakers]
     if any(c in SEVERE for c in certs):
         return False
-    return None if certs else True
+    return None if certs and not ask_ok else True
 
 
 def _flags(dish: dict, found: dict[str, str], printed_only: bool) -> dict:
@@ -89,8 +91,8 @@ def _flags(dish: dict, found: dict[str, str], printed_only: bool) -> dict:
         beef = beef if beef is False else None
     return {
         "allergens": allergens,
-        "is_vegetarian": _diet_flag(found, DIET_BREAKERS["vegetarian"]),
-        "is_vegan": _diet_flag(found, DIET_BREAKERS["vegan"]),
+        "is_vegetarian": _diet_flag(found, DIET_BREAKERS["vegetarian"], ask_ok=not printed_only),
+        "is_vegan": _diet_flag(found, DIET_BREAKERS["vegan"], ask_ok=not printed_only),
         "contains_pork": None if pork is None else not pork,
         "contains_beef": None if beef is None else not beef,
         # Read by the backend branch; ignored by main. The reviewer looked at every allergen.

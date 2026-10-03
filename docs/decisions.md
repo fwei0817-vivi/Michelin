@@ -135,5 +135,13 @@ Why: the bad-case evaluation (`eval/`) showed every severe violation came from l
 from printed text alone (hidden egg, minced pork, peanuts, sauces); the planner's rules were
 already correct given correct labels. With knowledge-base labels severe violations went from
 14 to 0 on the trap scenarios, while unrecognized holdout dishes fell back to "ask staff".
-Open question for the team: dishes with only `possible` conflicts are currently refused,
-which makes four evaluated tables report "no order works" although a safe order exists.
+
+`possible` components: vegetarian and vegan diners may order the dish, and the staff question
+names the component (chicken powder, oyster sauce, egg wash). Allergies, no-pork and no-beef
+stay strict: `possible` leaves the flag unknown and the dish is not counted for that diner.
+Why: refusing every `possible` dish made four evaluated tables report "no order works" while
+a safe order existed (including the sample group). Vegetarian "possibles" are mostly stocks
+and sauces staff can confirm or leave out; allergies are medical and pork/beef restrictions
+are often religious, so asking is not enough there. Effect on the evaluation: false refusals
+4 -> 1 (the remaining one involves dishes the knowledge base does not know), severe
+violations still 0.

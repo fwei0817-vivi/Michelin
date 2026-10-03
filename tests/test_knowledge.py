@@ -35,7 +35,9 @@ def test_fish_fragrant_eggplant_is_not_a_fish_dish():
     out = label_dish(dish("Fish-Fragrant Eggplant", "鱼香茄子", "eggplant in garlic sauce"))
     assert out.match == "yuxiang_eggplant"
     assert Allergen.FISH not in {f.allergen for f in out.dish.allergens}
-    assert out.dish.is_vegetarian is None  # possible minced pork: ask staff
+    # Possible minced pork: a vegetarian may order after asking; no-pork stays strict.
+    assert out.dish.is_vegetarian is True
+    assert out.dish.contains_pork is None
     assert any("minced pork" in q for q in out.dish.confirm_with_staff)
 
 
@@ -47,8 +49,8 @@ def test_printed_ingredient_is_menu_tier():
 
 def test_possible_oyster_sauce_is_unknown_with_a_question():
     out = label_dish(dish("Garlic Bok Choy"))
-    assert tiers(out, Allergen.SHELLFISH) == {EvidenceTier.UNKNOWN}
-    assert out.dish.is_vegetarian is None
+    assert tiers(out, Allergen.SHELLFISH) == {EvidenceTier.UNKNOWN}  # allergy: strict
+    assert out.dish.is_vegetarian is True  # diet: eligible, with the question below
     assert any("oyster sauce" in q for q in out.dish.confirm_with_staff)
 
 
