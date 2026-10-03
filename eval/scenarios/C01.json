@@ -1,0 +1,65 @@
+{
+  "id": "C01",
+  "category": "infeasible",
+  "menu": "trap",
+  "title": "Six vegans, $12 each",
+  "trap": "Not enough truly vegan dishes and not enough money.",
+  "diners": [
+    {
+      "id": "v0",
+      "name": "Vegan0",
+      "allergies": [],
+      "diets": [
+        "vegan"
+      ],
+      "max_spice": null
+    },
+    {
+      "id": "v1",
+      "name": "Vegan1",
+      "allergies": [],
+      "diets": [
+        "vegan"
+      ],
+      "max_spice": null
+    },
+    {
+      "id": "v2",
+      "name": "Vegan2",
+      "allergies": [],
+      "diets": [
+        "vegan"
+      ],
+      "max_spice": null
+    },
+    {
+      "id": "v3",
+      "name": "Vegan3",
+      "allergies": [],
+      "diets": [
+        "vegan"
+      ],
+      "max_spice": null
+    },
+    {
+      "id": "v4",
+      "name": "Vegan4",
+      "allergies": [],
+      "diets": [
+        "vegan"
+      ],
+      "max_spice": null
+    },
+    {
+      "id": "v5",
+      "name": "Vegan5",
+      "allergies": [],
+      "diets": [
+        "vegan"
+      ],
+      "max_spice": null
+    }
+  ],
+  "budget_per_person": 12,
+  "expect": "conflict"
+}

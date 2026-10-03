@@ -1,0 +1,51 @@
+{
+  "id": "H07",
+  "category": "hidden_ingredient",
+  "menu": "trap",
+  "title": "Egg allergy",
+  "trap": "Fried rice, lo mein (egg noodles) and hot and sour soup contain egg; only lo mein prints it.",
+  "diners": [
+    {
+      "id": "egg",
+      "name": "Eva",
+      "allergies": [
+        "egg"
+      ],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p1",
+      "name": "Ana",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p2",
+      "name": "Ben",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p3",
+      "name": "Cai",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    }
+  ],
+  "budget_per_person": 30,
+  "dish_subset": [
+    "house_fried_rice",
+    "vegetable_lo_mein",
+    "hot_sour_soup",
+    "tomato_egg",
+    "beef_chow_fun",
+    "hot_sour_potato",
+    "kung_pao_chicken",
+    "steamed_rice"
+  ],
+  "expect": "any"
+}

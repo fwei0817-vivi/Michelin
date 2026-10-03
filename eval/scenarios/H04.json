@@ -1,0 +1,52 @@
+{
+  "id": "H04",
+  "category": "hidden_ingredient",
+  "menu": "trap",
+  "title": "Vegan with 'vegetable' dishes",
+  "trap": "Vegetable lo mein has egg noodles; spring rolls may have egg wash; Buddha's delight and bok choy may use oyster sauce; soup has egg.",
+  "diners": [
+    {
+      "id": "vegan",
+      "name": "Van",
+      "allergies": [],
+      "diets": [
+        "vegan"
+      ],
+      "max_spice": null
+    },
+    {
+      "id": "p1",
+      "name": "Ana",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p2",
+      "name": "Ben",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p3",
+      "name": "Cai",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    }
+  ],
+  "budget_per_person": 30,
+  "dish_subset": [
+    "vegetable_lo_mein",
+    "vegetable_spring_rolls",
+    "buddhas_delight",
+    "garlic_bok_choy",
+    "hot_sour_soup",
+    "hot_sour_potato",
+    "smashed_cucumber",
+    "beef_chow_fun",
+    "steamed_rice"
+  ],
+  "expect": "any"
+}

@@ -1,0 +1,49 @@
+{
+  "menu": "data/menus/sample_sichuan.json",
+  "note": "Truth for the repo's own sample menu, keyed by dish id. Labels the system sees come from the repo file unchanged; this block is only used for scoring. Component certainty is confidence that the component is present in the typical NYC version (definite / likely / possible); hits are the restriction categories that component triggers, and inherit its certainty. Reviewed by Ruolin Bao on 2026-10-02.",
+  "truth": {
+    "garlic_pork_belly": {"traps": ["explicit"], "components": [
+      {"name": "pork belly", "hits": ["pork"], "certainty": "definite", "trap": "explicit"},
+      {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "likely", "trap": "hidden"},
+      {"name": "sesame oil", "hits": ["sesame"], "certainty": "possible", "trap": "ambiguous"}]},
+    "mapo_tofu": {"traps": ["name_inference"], "components": [
+      {"name": "minced meat", "hits": ["meat"], "certainty": "definite", "trap": "name_inference"},
+      {"name": "minced pork", "hits": ["pork"], "certainty": "likely", "trap": "name_inference"},
+      {"name": "doubanjiang", "hits": ["soy", "wheat"], "certainty": "definite", "trap": "name_inference"}]},
+    "yuxiang_shredded_pork": {"traps": ["explicit", "false_alarm"], "components": [
+      {"name": "pork", "hits": ["pork"], "certainty": "definite", "trap": "explicit"},
+      {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "likely", "trap": "hidden"}]},
+    "kung_pao_chicken": {"traps": ["explicit"], "components": [
+      {"name": "chicken", "hits": ["poultry"], "certainty": "definite", "trap": "explicit"},
+      {"name": "peanuts", "hits": ["peanut"], "certainty": "definite", "trap": "explicit"},
+      {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "likely", "trap": "hidden"}]},
+    "dry_fried_string_beans": {"traps": ["hidden", "ambiguous"], "components": [
+      {"name": "minced pork", "hits": ["pork"], "certainty": "likely", "trap": "hidden"},
+      {"name": "dried shrimp", "hits": ["shellfish"], "certainty": "possible", "trap": "ambiguous"},
+      {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "likely", "trap": "hidden"}]},
+    "garlic_seasonal_greens": {"traps": ["ambiguous"], "components": [
+      {"name": "oyster sauce", "hits": ["shellfish"], "certainty": "possible", "trap": "ambiguous"},
+      {"name": "chicken broth or powder", "hits": ["meat_stock"], "certainty": "possible", "trap": "ambiguous"}]},
+    "di_san_xian": {"traps": ["ambiguous"], "components": [
+      {"name": "oyster sauce", "hits": ["shellfish"], "certainty": "possible", "trap": "ambiguous"},
+      {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "likely", "trap": "hidden"}]},
+    "dry_pot_cauliflower": {"traps": ["hidden"], "components": [
+      {"name": "pork belly", "hits": ["pork"], "certainty": "likely", "trap": "hidden"},
+      {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "likely", "trap": "hidden"}]},
+    "boiled_fish_chili_oil": {"traps": ["explicit"], "components": [
+      {"name": "fish fillet", "hits": ["fish"], "certainty": "definite", "trap": "explicit"},
+      {"name": "doubanjiang", "hits": ["soy", "wheat"], "certainty": "likely", "trap": "hidden"}]},
+    "hot_and_sour_soup": {"traps": ["hidden"], "components": [
+      {"name": "egg ribbons", "hits": ["egg"], "certainty": "likely", "trap": "hidden"},
+      {"name": "shredded pork", "hits": ["pork"], "certainty": "likely", "trap": "hidden"},
+      {"name": "chicken stock", "hits": ["meat_stock"], "certainty": "likely", "trap": "hidden"},
+      {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "definite", "trap": "hidden"}]},
+    "dan_dan_noodles": {"traps": ["name_inference", "hidden"], "components": [
+      {"name": "wheat noodles", "hits": ["wheat"], "certainty": "definite", "trap": "explicit"},
+      {"name": "minced pork", "hits": ["pork"], "certainty": "definite", "trap": "explicit"},
+      {"name": "sesame paste", "hits": ["sesame"], "certainty": "definite", "trap": "explicit"},
+      {"name": "crushed peanuts", "hits": ["peanut"], "certainty": "likely", "trap": "name_inference"},
+      {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "definite", "trap": "hidden"}]},
+    "steamed_rice": {"traps": ["negative_control"], "components": []}
+  }
+}

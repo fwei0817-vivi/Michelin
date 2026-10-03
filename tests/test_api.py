@@ -156,3 +156,19 @@ def test_invalid_settings_and_duplicate_dishes_rejected():
     menu = client.get("/api/menus/sample_sichuan").json()
     menu["dishes"].append(menu["dishes"][0])
     assert client.post("/api/plan", json={**base, "menu_override": menu}).status_code == 422
+
+
+def test_menu_import_labels_from_knowledge_base():
+    r = client.post(
+        "/api/menu/parse",
+        json={"text": "Kung Pao Chicken $16.95\nChef's Mystery Special $14.00"},
+    )
+    kung_pao, mystery = r.json()["dishes"]
+    peanut = [f for f in kung_pao["allergens"] if f["allergen"] == "peanut"]
+    assert peanut and peanut[0]["tier"] == "inferred"
+    assert kung_pao["is_vegetarian"] is False
+    assert kung_pao["category"] == "stir_fry"
+    assert not any("Confirm ingredients" in q for q in kung_pao["confirm_with_staff"])
+    assert mystery["is_vegetarian"] is None
+    assert {f["tier"] for f in mystery["allergens"]} == {"unknown"}
+    assert any("not a dish we recognize" in q for q in mystery["confirm_with_staff"])

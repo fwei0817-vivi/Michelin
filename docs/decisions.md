@@ -114,3 +114,93 @@ free of any selection logic.
 - Menu imports extract explicit English names and prices, using optional local Tesseract for images. Never invent ingredients, prices, or dietary flags. Edits stay in the browser session and require human review before planning; no external AI service receives menu images.
 - Dish cards may show an illustrative Wikimedia Commons photo of a similar dish, labelled as such and credited. Photos are decoration, never evidence: ingredient and allergen claims come only from the reviewed menu and its evidence tiers.
 - Kitchen questions are shown twice on the plan page, inline under the dish they concern and as one list below the dishes, never as a banner above them. The order panel is the one dark block on the page so the bill reads as separate from the dishes.
+
+## 2026-10-02 — Hidden-ingredient knowledge base labels imported dishes
+
+Supersedes the "never invent ingredients or dietary flags" part of the 2026-09-21 import rule;
+prices and names are still never invented.
+
+- `data/knowledge/hidden_ingredients.json` holds reviewed typical-recipe components per dish
+  (definite / likely / possible) and per named sauce. `parse/knowledge.py` turns the printed
+  text plus that file into labels: printed → `menu`, definite/likely → `inferred`,
+  possible → `unknown` with a staff question. Same text, same labels, every time.
+- A dish the knowledge base does not recognize is never certified: diet flags stay `null`
+  and every allergen is `unknown`, with a "not a dish we recognize" staff question.
+- `/api/menu/parse` returns these labels; `python -m michelin.parse.label_menu` does the same
+  for a whole menu file. Output is always unverified and still needs human review.
+- An LLM may later map unusual dish names to a knowledge-base entry. It never writes
+  ingredients or flags itself.
+
+Why: the bad-case evaluation (`eval/`) showed every severe violation came from labels built
+from printed text alone (hidden egg, minced pork, peanuts, sauces); the planner's rules were
+already correct given correct labels. With knowledge-base labels severe violations went from
+14 to 0 on the trap scenarios, while unrecognized holdout dishes fell back to "ask staff".
+
+`possible` components: allergies are strict, diets ask. An allergen that is only possible is
+labeled `unknown`; the `backend-integrated` planner does not count the dish for that diner. The
+planner on `main` still counts `unknown` allergens as eligible (with a staff question), so
+strict allergies need that backend fix merged. For vegetarian, vegan, no-pork and
+no-beef diners the dish stays eligible and the staff question names the component (chicken
+powder, oyster sauce, minced pork). Meat of an unspecified kind that is definite or likely
+still blocks no-pork and no-beef, since it may be either.
+Why: refusing every `possible` dish made four evaluated tables report "no order works" while
+a safe order existed (including the sample group). A diet is confirmed by asking staff, the
+same question for a vegetarian or a no-pork diner; an allergy is medical, so a question is not
+enough. An earlier version kept no-pork and no-beef strict while letting vegetarians ask, which
+treated the same uncertain minced meat differently for two diners. Effect on the evaluation:
+false refusals 4 -> 1 (the remaining one involves dishes the knowledge base does not know),
+severe violations still 0.
+
+## 2026-10-02 — An LLM maps unusual dish names to the knowledge base
+
+`parse/matcher.py` sends dish names the knowledge base does not match exactly (names and
+printed descriptions only, never images) to an LLM, which may only answer with a
+knowledge-base id or "none". Default: `gemini-2.5-pro` on the course's Vertex AI project with
+gcloud ADC (the organization disallows API keys). `MICHELIN_LLM_PROVIDER` selects another
+provider (`claude-vertex`, `claude`) behind the same prompt. Temperature 0. The answer is stored in `data/knowledge/llm_matches.json`
+and reused for the same text, so labels stay deterministic and reviewable. Until a person
+accepts a match (`"reviewed": true`), the dish gets a staff question to confirm it is the same
+dish; printed evidence applies either way. Calls happen only with `MICHELIN_LLM_MATCH=1` (or `label_menu --llm`) and credentials;
+without them the app behaves as before.
+Why: exact names miss common spellings ("Spicy Tofu w/ Ground Pork"); letting the model pick
+from a closed list keeps it out of ingredient claims. `eval/matcher_eval.py` measures accuracy
+and run-to-run agreement before answers are stored: on 27 name variants, 5 runs, Gemini
+answered 96% correctly and gave the same answer on every run for all 27. Its one miss maps
+"Shrimp Lo Mein" to the generic lo_mein entry instead of "none"; printed shrimp still blocks
+shellfish allergies.
+
+## 2026-10-02 — Three real restaurants: Atlas Kitchen, Café China, CHILI
+
+Up to 40 dishes each from the regular dinner menu on each restaurant's own site (lunch and
+happy-hour prices excluded), with provenance in `data/raw/<slug>_source.json` (URL, date,
+names, prices, printed descriptions and tags as listed). Atlas Kitchen is near campus and
+mid-priced; Café China and CHILI are Midtown and pricier, which exercises budget conflicts.
+Labels come from `label_menu --llm` plus the review answers described below. Finding from that
+review: Café China and CHILI both print Ma Po Tofu as vegetarian, while the knowledge base
+expects minced meat; neither side is overridden silently. Meat is treated as `possible`, so vegetarian,
+no-pork and no-beef diners may order it after the staff question.
+
+### Labels for the three restaurants: how they were made (2026-10-02)
+
+The three menus are marked `verified: true` for the classroom prototype, on the LLM owner's
+decision. What that means, so nobody over-claims it:
+
+- Names and prices: copied from each restaurant's own menu page (`data/raw/`).
+- Ingredient labels: knowledge-base entries for recognized dishes; for the 35 dishes it did not
+  recognize, plus three corrections (Shanghai spring rolls are not vegetable spring rolls; the
+  two Ma Po Tofu dishes the restaurants print as vegetarian), typical-recipe assessments drafted
+  by Claude and accepted by the team, recorded in `data/menus/review_answers.xlsx` and imported
+  with `parse/review_workbook.py`. LLM name matches were accepted after review.
+- Not done: no restaurant was asked. Everything that is only "possible" stays a staff question,
+  and labels keep the `inferred` / `unknown` tiers; nothing is presented as printed fact.
+
+Re-labeling: `label_menu` (stored LLM answers) followed by `review_workbook import` on the
+answers file reproduces the menus; setting `verified` stays a deliberate manual step.
+
+### Knowledge-base review status (2026-10-02)
+
+All 58 dishes and 10 sauces in `data/knowledge/hidden_ingredients.json` were drafted with Claude
+from typical NYC recipes, exported to a review sheet (one dropdown per restriction), skimmed by
+the LLM owner and accepted as a whole with no changes. That is a sanity check, not an
+entry-by-entry verification: present it as "AI-drafted, team-reviewed typical recipes", and
+keep `possible` components as staff questions.

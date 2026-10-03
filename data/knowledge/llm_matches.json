@@ -1,0 +1,555 @@
+{
+ "note": "LLM dish-name matches. Edit kb_id and set reviewed: true to correct one.",
+ "matches": {
+  " | beef pancake wrap | hand kneaded crispy scallion pancake wrapped around tender braised beef shank with our special sauce spread onion and cilantro": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | braised tofu with crab meat | stewed crab roe and tofu": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | chungking spicy chicken | stir fried diced chicken with red chili peppers": {
+   "kb_id": "chongqing_chicken",
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | crystal shrimp dumplings | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | cucumber salad | diced cucumber with house made garlic dressing gf v": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | dry pot cabbage | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | five spice beef | sliced beef shank marinated with five different spices gf": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | fragrant fish fillet | fillet of sole with seasonal vegetables and green chili pepper soy sauce": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | fried rice with preserved vegetable | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | kung fu shrimp | black tiger prawn with peanut dried chili peppercorn gf": {
+   "kb_id": "kung_pao_shrimp",
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | mouth watering chicken | poached chicken with house special sauce sesame and peanuts": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | mr and mrs smith | sliced beef and tripe seasoned with chili oil cilantro and peanuts": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | mung bean jelly | mung bean noodles garlic peppercorns sesame soy and chili sauce v": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | pickled fish stew | fillets of sole with pickled cabbage chili peppers cilantro and peppercorn gf": {
+   "kb_id": "pickled_cabbage_fish",
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | pork dumplings in chili oil | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | pork in garlic dressing | sliced pork mixed with house special garlic sauce chili oil and soy sauce": {
+   "kb_id": "garlic_pork_belly",
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | pork pot stickers | ": {
+   "kb_id": "pork_dumplings",
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | red style chungking braised fish stew | fillets of sole with chili oil peppercorn and bean sprout": {
+   "kb_id": "boiled_fish",
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | sautéed chinese broccoli | gf": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | sautéed potato shreds | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | sautéed string beans | gf": {
+   "kb_id": "dry_fried_string_beans",
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | shredded beef with green chili | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | spicy cumin lamb | lamb with cumin chili peppers onion and cilantro": {
+   "kb_id": "cumin_lamb",
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | spicy wonton | pork": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | szechuan cold noodle | cold noodles with sesame peanuts and scallion": {
+   "kb_id": "sesame_cold_noodles",
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | tea smoked duck | 1 2 bone in duck gf": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  " | vegetable pot stickers | v": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "三椒煸鸡 | three pepper chicken | chicken cayenne peppers asian chili peppers sichuan peppercorns": {
+   "kb_id": "chongqing_chicken",
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "上汤豆苗 | poached snow pea shoots | snow pea shoots oyster mushrooms dried shrimp dried scallops gf": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "上海春卷 | shanghai crispy spring rolls | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "上海烧卖 | shanghai shumai | sticky rice chinese pork sausages salted egg yolk shiitake mushrooms": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "丝瓜扇贝 | loofah with dried scallops | loofah dried scallops": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "会稽山担担面 | dan dan noodle | ": {
+   "kb_id": "dan_dan_noodles",
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "双椒皮蛋 | preserved egg with green and red peppers | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "四川双素 | eggplants and string beans | eggplants string beans oyster sauce": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "夫妻肺 | husband and wife special | beef tripe and tendon chili oil peanuts sesame cilantro": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "奇味鸡 | curiously tasty chicken | chicken winter melon cumin oyster sauce fish sauce basil": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "奶油核桃虾 | creamy prawn with walnut | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "孜然黑山羊 | sautéed cumin flavor sliced lamb | ": {
+   "kb_id": "cumin_lamb",
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "宫保虾仁 | kung pao shrimp | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "小椒牛肉 | shredded beef with green chili | beef asian chili peppers cayenne peppers bamboo shoots": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "山海烧茄子 | sautéed sliced eggplant with chili | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "山海番茄炒鸡蛋 | scramble egg and chopped tomato | ": {
+   "kb_id": "tomato_egg",
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "山海辣椒小炒肉 | sautéed pork with hot pepper | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "岷山红烧肉 | braised pork belly | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "干锅有机花菜 | organic cauliflower in drywok flavored with sliced pork | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "手撕包菜 | stir fried cabbage | taiwan cabbage cayenne peppers v": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "捞汁秋葵 | poached okras | tabasco peppers sesame oil v": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "樟茶鸭 | tea smoked duck | 1 4 duck deboned wheat buns": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "樟茶鸭丝炒饭 | fried rice with shredded duck | rice egg shredded duck onion gf": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "歌乐山辣子鸡 | chicken with red dried chili | ": {
+   "kb_id": "chongqing_chicken",
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "水晶虾饺 | crystal shrimp dumplings | shrimp lard potato starch gf": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "江北水煮鱼 | fish filet in chili oil | ": {
+   "kb_id": "boiled_fish",
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "滑蛋虾仁 | scrambled eggs with shrimp | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "漩汁秋葵 | poached okra | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "火腿冬瓜片 | sautéed sliced wintermelon with spam | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "炝炒包菜 | stir fried cabbage | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "特色酸菜鱼 | braised fish fillet with chinese sauerkraut | ": {
+   "kb_id": "pickled_cabbage_fish",
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "糖醋小排 | sweet and sour baby ribs | pork rib tip sesame": {
+   "kb_id": "sweet_sour_pork",
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "素菜贴 | vegetable pot stickers | mixed vegetables shiitake mushrooms tofu v": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "紫菜蛋花汤 | egg drop with seaweed soup per person | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "红油口水鸡 | mouth watering chicken | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "红油水饺 | pork dumplings in chili oil | pork chili oil": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "绝味黄瓜 | cucumber salad with garlic sauce | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "芝麻菠菜 | spinach with white sesame | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "蒜泥白肉卷 | pork in garlic dressing | pork belly cucumbers": {
+   "kb_id": "garlic_pork_belly",
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "蒜苗腊肉 | sautéed chinese bacon with garlic sprouts | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "虾仁炒饭 | shrimp fried rice with chinese sausage | rice shrimp chinese pork sausage egg carrots pea onion": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "虾炒饭 | shrimp fried rice | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "蟹粉小笼包 | crab with pork soup dumplings | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "豆花咸烧白 | braised pork szechuan style | pork belly tofu fermented mustard greens shoots fish sauce": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "醋熏瓜条 | spicy cucumbers | cucumbers chili peppers sichuan peppercorns v": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "钱来山秘制湘干 | spicy dried tofu | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "锅包肉 | crispy pork in sweet and sour sauce | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "青丘素菜钵 | sautéed bok choy | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "韭菜盒子 | chive pancakes | dried shrimp egg": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "飞鸿大虾 | kung fu shrimp | shell on prawns cayenne peppers sichuan peppercorns peanuts sesame gf": {
+   "kb_id": "kung_pao_shrimp",
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "香薰豆腐 | house smoked tofu | smoked tofu peanuts fermented soybean v": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "香辣孜然羊 | spicy cumin lamb | lamb onion bell peppers cilantro cayenne peppers sichuan peppercorns": {
+   "kb_id": "cumin_lamb",
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "香辣软壳蟹 | spicy soft shell crabs | soft shell crabs cayenne peppers sichuan peppercorns garlic wheat flour": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "香辣鱼片 | spicy fish fillets | sole fish cayenne peppers sichuan peppercorns cilantro": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "鱼香芥兰 | broccoli with garlic sauce | ": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "鲜肉锅贴 | pork pot stickers | pork chives": {
+   "kb_id": "pork_dumplings",
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "鸡 | mouth watering chicken | chicken chili oil peanuts sesame": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "date": "2026-10-03",
+   "reviewed": true
+  },
+  "鸡丝凉 | cold noodles with shredded chicken | wheat noodles chicken chili oil peanuts sesame": {
+   "kb_id": null,
+   "model": "gemini-2.5-pro",
+   "kb_version": "2026-10-02b",
+   "date": "2026-10-03",
+   "reviewed": true
+  }
+ }
+}

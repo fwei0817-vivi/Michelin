@@ -1,0 +1,51 @@
+{
+  "id": "H02",
+  "category": "hidden_ingredient",
+  "menu": "trap",
+  "title": "Shellfish allergy with sauces",
+  "trap": "XO sauce is dried scallop/shrimp; fried rice has shrimp; greens and lo mein may use oyster sauce; string beans may use dried shrimp.",
+  "diners": [
+    {
+      "id": "shell",
+      "name": "Sam",
+      "allergies": [
+        "shellfish"
+      ],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p1",
+      "name": "Ana",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p2",
+      "name": "Ben",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p3",
+      "name": "Cai",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    }
+  ],
+  "budget_per_person": 30,
+  "dish_subset": [
+    "xo_green_beans",
+    "house_fried_rice",
+    "garlic_bok_choy",
+    "vegetable_lo_mein",
+    "dry_fried_beans",
+    "kung_pao_chicken",
+    "beef_chow_fun",
+    "steamed_rice"
+  ],
+  "expect": "any"
+}

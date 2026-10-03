@@ -63,8 +63,24 @@ Set `MICHELIN_MOCK=1` only for fixture-based demos.
 Menu editing and imports are session-local. Paste one English dish per line with its price
 at the end, or upload an English PNG/JPEG/WebP menu image (up to 8 MB). Image extraction
 requires the `tesseract` executable with English language data (included in the Dockerfile).
-If unavailable, text import and manual entry still work. Imported dishes retain unknown
-dietary flags and require explicit review before use. No external AI calls are made.
+If unavailable, text import and manual entry still work. Imported dishes are labeled from the
+reviewed hidden-ingredient knowledge base (`data/knowledge/`); dishes it does not recognize
+keep unknown dietary flags. Either way they require explicit review before use. By default no
+external AI calls are made; LLM name matching is opt-in (below).
+
+To label a whole menu file for review: `uv run python -m michelin.parse.label_menu draft.json
+-o data/menus/<slug>.json`. The output is unverified. Add `--llm` (with `uv sync --extra llm` and
+`gcloud auth application-default login`) to let an LLM map names the knowledge base misses;
+set `MICHELIN_LLM_MATCH=1` to do the same for in-app imports. The default provider is
+`gemini-2.5-pro` on Vertex AI; `MICHELIN_LLM_PROVIDER=claude-vertex` or `claude` switches it. Stored answers live in
+`data/knowledge/llm_matches.json`.
+
+Dishes neither matches go to a spreadsheet for hand labeling: `uv run python -m
+michelin.parse.review_workbook export data/menus/<slug>.json -o review.xlsx`, fill the dropdowns,
+then `... review_workbook import review.xlsx data/menus/<slug>.json`. The answers used for the
+three restaurant menus are kept in `data/menus/review_answers.xlsx`; to rebuild a menu, run
+`label_menu` and then this import. Setting `verified: true` stays a manual step. The bad-case evaluation lives in
+`eval/` (see `eval/README.md`).
 
 Additional API fields on `POST /api/plan`: `menu_override`, `dish_count_target` (1–20),
 and `style_preference` (`balanced`, `lighter`, `favorites`).

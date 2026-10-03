@@ -1,0 +1,48 @@
+{
+  "id": "B03",
+  "category": "budget",
+  "menu": "trap",
+  "title": "Non-NYC rates",
+  "trap": "6.25% tax and 20% tip must be honored, not NYC defaults.",
+  "diners": [
+    {
+      "id": "p1",
+      "name": "Ana",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p2",
+      "name": "Ben",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p3",
+      "name": "Cai",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p4",
+      "name": "Dev",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p5",
+      "name": "Eli",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    }
+  ],
+  "budget_per_person": 22,
+  "tax_rate": 0.0625,
+  "tip_rate": 0.2,
+  "expect": "any"
+}

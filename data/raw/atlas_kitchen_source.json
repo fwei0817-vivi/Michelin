@@ -1,0 +1,288 @@
+{
+ "restaurant": "Atlas Kitchen",
+ "url": "https://www.atlaskitchennyc.com/menu",
+ "retrieved": "2026-10-02",
+ "note": "Regular dinner menu as listed on the restaurant's own site; lunch and happy-hour prices excluded. Selection of up to 40 dishes; names, prices and printed descriptions/tags copied as listed.",
+ "dishes": [
+  {
+   "section": "Appetizers",
+   "code": "A1",
+   "name_en": "Spicy Dried Tofu",
+   "name_zh": "钱来山秘制湘干",
+   "price": 9.95
+  },
+  {
+   "section": "Appetizers",
+   "code": "A3",
+   "name_en": "Mouth-watering Chicken",
+   "name_zh": "红油口水鸡",
+   "price": 12.95
+  },
+  {
+   "section": "Appetizers",
+   "code": "A5",
+   "name_en": "Sliced Pork Belly with Garlic Sauce",
+   "name_zh": "祗山晾衣白肉",
+   "price": 11.95
+  },
+  {
+   "section": "Appetizers",
+   "code": "A11",
+   "name_en": "Spinach with White Sesame",
+   "name_zh": "芝麻菠菜",
+   "price": 8.95
+  },
+  {
+   "section": "Appetizers",
+   "code": "A12",
+   "name_en": "Cucumber Salad with Garlic Sauce",
+   "name_zh": "绝味黄瓜",
+   "price": 8.95
+  },
+  {
+   "section": "Appetizers",
+   "code": "A13",
+   "name_en": "Preserved Egg with Green and Red Peppers",
+   "name_zh": "双椒皮蛋",
+   "price": 10.95
+  },
+  {
+   "section": "Appetizers",
+   "code": "A15",
+   "name_en": "Shanghai Crispy Spring Rolls (4Pc)",
+   "name_zh": "上海春卷",
+   "price": 5.95
+  },
+  {
+   "section": "Appetizers",
+   "code": "A17",
+   "name_en": "Crab with Pork Soup Dumplings (6Pc)",
+   "name_zh": "蟹粉小笼包",
+   "price": 11.95
+  },
+  {
+   "section": "Appetizers",
+   "code": "A18",
+   "name_en": "Scallion Pancake",
+   "name_zh": "葱油饼",
+   "price": 6.95
+  },
+  {
+   "section": "Appetizers",
+   "code": "A19",
+   "name_en": "Pork Potstickers (6Pc)",
+   "name_zh": "锅贴",
+   "price": 8.95
+  },
+  {
+   "section": "Soup",
+   "code": "S7",
+   "name_en": "Egg Drop with Seaweed Soup (Per Person)",
+   "name_zh": "紫菜蛋花汤",
+   "price": 3.95
+  },
+  {
+   "section": "Soup",
+   "code": "S8",
+   "name_en": "Hot and Sour Soup (Per Person)",
+   "name_zh": "酸辣汤",
+   "price": 3.95
+  },
+  {
+   "section": "Meat",
+   "code": "M5",
+   "name_en": "Crispy Pork in Sweet & Sour Sauce",
+   "name_zh": "锅包肉",
+   "price": 18.95
+  },
+  {
+   "section": "Meat",
+   "code": "M8",
+   "name_en": "Sautéed Chinese Bacon with Garlic Sprouts",
+   "name_zh": "蒜苗腊肉",
+   "price": 19.95
+  },
+  {
+   "section": "Meat",
+   "code": "M9",
+   "name_en": "Sautéed Pork with Hot Pepper",
+   "name_zh": "山海辣椒小炒肉",
+   "price": 17.95
+  },
+  {
+   "section": "Meat",
+   "code": "M12",
+   "name_en": "Braised Pork Belly",
+   "name_zh": "岷山红烧肉",
+   "price": 18.95
+  },
+  {
+   "section": "Meat",
+   "code": "M15",
+   "name_en": "Sautéed Cumin Flavor Sliced Lamb",
+   "name_zh": "孜然黑山羊",
+   "price": 23.95
+  },
+  {
+   "section": "Poultry",
+   "code": "P1",
+   "name_en": "Chicken with Red Dried Chili",
+   "name_zh": "歌乐山辣子鸡",
+   "price": 22.95
+  },
+  {
+   "section": "Poultry",
+   "code": "P5",
+   "name_en": "Scramble Egg & Chopped Tomato",
+   "name_zh": "山海番茄炒鸡蛋",
+   "price": 16.95
+  },
+  {
+   "section": "Seafood",
+   "code": "SF3",
+   "name_en": "Fish Filet in Chili Oil",
+   "name_zh": "江北水煮鱼",
+   "price": 22.95
+  },
+  {
+   "section": "Seafood",
+   "code": "SF5",
+   "name_en": "Scrambled Eggs with Shrimp",
+   "name_zh": "滑蛋虾仁",
+   "price": 16.95
+  },
+  {
+   "section": "Seafood",
+   "code": "SF7",
+   "name_en": "Creamy Prawn with Walnut",
+   "name_zh": "奶油核桃虾",
+   "price": 28.95
+  },
+  {
+   "section": "Seafood",
+   "code": "SF11",
+   "name_en": "Braised Fish Fillet with Chinese Sauerkraut",
+   "name_zh": "特色酸菜鱼",
+   "price": 23.95
+  },
+  {
+   "section": "Vegetable",
+   "code": "V1",
+   "name_en": "Sautéed Bok Choy",
+   "name_zh": "青丘素菜钵",
+   "price": 16.95
+  },
+  {
+   "section": "Vegetable",
+   "code": "V2",
+   "name_en": "Stir-fried String Beans",
+   "name_zh": "干煸四季豆",
+   "price": 16.95
+  },
+  {
+   "section": "Vegetable",
+   "code": "V3",
+   "name_en": "Sautéed Sliced Eggplant with Chili",
+   "name_zh": "山海烧茄子",
+   "price": 17.95
+  },
+  {
+   "section": "Vegetable",
+   "code": "V4",
+   "name_en": "Sautéed Sliced Wintermelon with Spam",
+   "name_zh": "火腿冬瓜片",
+   "price": 17.95
+  },
+  {
+   "section": "Vegetable",
+   "code": "V6",
+   "name_en": "Stir-fried Shredded Potatoes",
+   "name_zh": "酸辣土豆丝",
+   "price": 15.95
+  },
+  {
+   "section": "Vegetable",
+   "code": "V8",
+   "name_en": "Sautéed Potato, Green Pepper & Eggplant",
+   "name_zh": "地三鲜",
+   "price": 16.95
+  },
+  {
+   "section": "Vegetable",
+   "code": "V9",
+   "name_en": "Organic Cauliflower in Drywok Flavored with Sliced Pork",
+   "name_zh": "干锅有机花菜",
+   "price": 18.95
+  },
+  {
+   "section": "Vegetable",
+   "code": "V11",
+   "name_en": "Stir-fried Cabbage",
+   "name_zh": "炝炒包菜",
+   "price": 15.95
+  },
+  {
+   "section": "Vegetable",
+   "code": "V14",
+   "name_en": "Mapo Tofu",
+   "name_zh": "麻婆豆腐",
+   "price": 15.95
+  },
+  {
+   "section": "Noodles/Rice",
+   "code": "N10",
+   "name_en": "Dan Dan Noodle",
+   "name_zh": "会稽山担担面",
+   "price": 8.95
+  },
+  {
+   "section": "Noodles/Rice",
+   "code": "R3",
+   "name_en": "Yang Chow Fried Rice (Shrimp, Spam, Scrambled Eggs, Mushroom)",
+   "name_zh": "扬州炒饭",
+   "price": 13.95
+  },
+  {
+   "section": "Noodles/Rice",
+   "code": "R4",
+   "name_en": "Steamed White Rice",
+   "name_zh": "白饭",
+   "price": 1.5
+  },
+  {
+   "section": "American Style",
+   "code": "AS1",
+   "name_en": "General Tso's Chicken",
+   "name_zh": "左宗棠鸡",
+   "price": 16.95
+  },
+  {
+   "section": "American Style",
+   "code": "AS4",
+   "name_en": "Beef with Broccoli",
+   "name_zh": "芥兰牛",
+   "price": 19.95
+  },
+  {
+   "section": "American Style",
+   "code": "AS6",
+   "name_en": "Broccoli with Garlic Sauce",
+   "name_zh": "鱼香芥兰",
+   "price": 15.95
+  },
+  {
+   "section": "American Style",
+   "code": "AS7",
+   "name_en": "Shredded Pork with Garlic Sauce",
+   "name_zh": "鱼香肉丝",
+   "price": 16.95
+  },
+  {
+   "section": "American Style",
+   "code": "AS8",
+   "name_en": "Kung Pao Chicken",
+   "name_zh": "宫保鸡丁",
+   "price": 16.95
+  }
+ ]
+}

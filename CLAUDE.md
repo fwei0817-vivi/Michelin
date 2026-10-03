@@ -42,7 +42,7 @@ shapes. Dish `id`s are stable ASCII slugs (`mapo_tofu`) referenced by plans and 
 | GET | `/api/menus/{slug}` | | `Menu` |
 | GET | `/api/profiles` | | `[DinerProfile]` |
 | POST | `/api/plan` | `{menu_id, diner_ids?, diners?, budget_per_person, tax_rate?, tip_rate?, min_dishes_per_person?, locked_dish_ids?, excluded_dish_ids?, menu_override?, dish_count_target?, style_preference?, explain?}` | `{kind: "plan", plan, subtotal_cap}` or `{kind: "conflict", conflict, subtotal_cap}` |
-| POST | `/api/menu/parse` | `{text?, image_base64?}` | `{dishes: Dish[], text}`: name and price rows only, no ingredient guesses; images need `tesseract` on the server |
+| POST | `/api/menu/parse` | `{text?, image_base64?}` | `{dishes: Dish[], text}`: name and price rows, labeled from `data/knowledge/` with evidence tiers (unrecognized dishes stay unknown); images need `tesseract` on the server |
 | POST | `/api/menu/evaluate` | `{menu, diners}` | per dish: `edible_by`, `blocked_for` reasons per diner, staff `questions` |
 
 `diner_ids` name saved profiles; `diners` carries edited or ad-hoc people inline and wins on the
@@ -125,6 +125,7 @@ docker build -t michelin . && docker run -p 8000:8000 --env-file .env michelin
 - **LLM**: `parse/` and `explain.py` are yours, including the choice of provider and
   dependencies. The team only depends on the output shapes: a `Menu` JSON that a human has
   marked `verified: true`, and `explain()` returning the plan with every `reason` filled.
+  Labels come from `parse/knowledge.py` + `data/knowledge/`; `eval/` scores them.
 
 ## Scope (v1)
 
@@ -140,6 +141,7 @@ claims, live scraping of Google Maps or delivery platforms.
 and `style_preference` (`balanced`, `lighter`, `favorites`). Menu overrides are request-local,
 not written to the shared fixtures. `POST /api/menu/evaluate` evaluates candidate eligibility
 for `{menu, diners}`. `POST /api/menu/parse` extracts English name/price rows from `{text}` or
-`{image_base64}`; image OCR uses local Tesseract. Imported dietary fields remain unknown.
+`{image_base64}`; image OCR uses local Tesseract. Imported dishes are now labeled from
+`data/knowledge/` (2026-10-02 in `docs/decisions.md`); unrecognized ones stay unknown.
 All imports and edits require review before planning. No LLM credentials are required for
 the current deterministic planner or grounded explanations. See README for operating limits.
