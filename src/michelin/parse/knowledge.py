@@ -17,7 +17,8 @@ must be asked. An LLM matcher may later map unusual names to an entry id; it nev
 ingredients itself.
 
 Policy for `possible` components (decided 2026-10-02, see docs/decisions.md): allergies are
-strict, diets ask. An allergen that is only possible stays `unknown`, which blocks it. For
+strict, diets ask. An allergen that is only possible is labeled `unknown`, which the
+backend-integrated planner blocks (the planner on main does not yet). For
 vegetarian, vegan, no-pork and no-beef the dish stays eligible and its staff question names the
 component, since a diet is something the diner confirms with staff anyway.
 """

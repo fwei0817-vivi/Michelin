@@ -136,8 +136,10 @@ from printed text alone (hidden egg, minced pork, peanuts, sauces); the planner'
 already correct given correct labels. With knowledge-base labels severe violations went from
 14 to 0 on the trap scenarios, while unrecognized holdout dishes fell back to "ask staff".
 
-`possible` components: allergies are strict, diets ask. An allergen that is only possible
-stays unknown and the dish is not counted for that diner. For vegetarian, vegan, no-pork and
+`possible` components: allergies are strict, diets ask. An allergen that is only possible is
+labeled `unknown`; the `backend-integrated` planner does not count the dish for that diner. The
+planner on `main` still counts `unknown` allergens as eligible (with a staff question), so
+strict allergies need that backend fix merged. For vegetarian, vegan, no-pork and
 no-beef diners the dish stays eligible and the staff question names the component (chicken
 powder, oyster sauce, minced pork). Meat of an unspecified kind that is definite or likely
 still blocks no-pork and no-beef, since it may be either.
