@@ -65,9 +65,9 @@ reference asks, label clears. **stricter** = label more cautious than the refere
 
 | Dishes | correct | missed | weakened | unflagged | stricter | accuracy |
 |---|---|---|---|---|---|---|
-| in knowledge base | 372 | 0 | 0 | 0 | 5 | 99% |
+| in knowledge base | 360 | 0 | 0 | 12 | 5 | 95% |
 | not in knowledge base (holdout) | 14 | 0 | 16 | 0 | 48 | 18% |
-| all | 386 | 0 | 16 | 0 | 53 | 85% |
+| all | 374 | 0 | 16 | 12 | 53 | 82% |
 
 Missed or weakened, by trap: hidden 13, name_inference 3
 

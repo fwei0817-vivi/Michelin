@@ -73,7 +73,13 @@ To label a whole menu file for review: `uv run python -m michelin.parse.label_me
 `gcloud auth application-default login`) to let an LLM map names the knowledge base misses;
 set `MICHELIN_LLM_MATCH=1` to do the same for in-app imports. The default provider is
 `gemini-2.5-pro` on Vertex AI; `MICHELIN_LLM_PROVIDER=claude-vertex` or `claude` switches it. Stored answers live in
-`data/knowledge/llm_matches.json`. The bad-case evaluation lives in
+`data/knowledge/llm_matches.json`.
+
+Dishes neither matches go to a spreadsheet for hand labeling: `uv run python -m
+michelin.parse.review_workbook export data/menus/<slug>.json -o review.xlsx`, fill the dropdowns,
+then `... review_workbook import review.xlsx data/menus/<slug>.json`. The answers used for the
+three restaurant menus are kept in `data/menus/review_answers.xlsx`; to rebuild a menu, run
+`label_menu` and then this import. Setting `verified: true` stays a manual step. The bad-case evaluation lives in
 `eval/` (see `eval/README.md`).
 
 Additional API fields on `POST /api/plan`: `menu_override`, `dish_count_target` (1–20),
