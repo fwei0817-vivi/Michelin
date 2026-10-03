@@ -244,3 +244,9 @@ def match_names(
         if stored and stored["kb_id"]:
             out[dish.id] = stored["kb_id"]
     return out
+
+
+def reviewed_ids(dishes: list[Dish], cache_path: Path = CACHE_PATH) -> set[str]:
+    """Dish ids whose stored match a person has accepted (reviewed: true)."""
+    matches = load_cache(cache_path)["matches"]
+    return {d.id for d in dishes if matches.get(cache_key(d), {}).get("reviewed")}

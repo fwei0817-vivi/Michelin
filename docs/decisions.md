@@ -174,3 +174,20 @@ Labels come from `label_menu --llm`; every menu stays `verified: false` until a 
 through `data/menus/REVIEW.md`. Finding for that review: Café China and CHILI both print Ma Po
 Tofu as vegetarian, while the knowledge base expects minced meat; the restaurant's own label
 has to be confirmed with the restaurant, not overridden silently either way.
+
+### Labels for the three restaurants: how they were made (2026-10-02)
+
+The three menus are marked `verified: true` for the classroom prototype, on the LLM owner's
+decision. What that means, so nobody over-claims it:
+
+- Names and prices: copied from each restaurant's own menu page (`data/raw/`).
+- Ingredient labels: knowledge-base entries for recognized dishes; for the 35 dishes it did not
+  recognize, plus three corrections (Shanghai spring rolls are not vegetable spring rolls; the
+  two Ma Po Tofu dishes the restaurants print as vegetarian), typical-recipe assessments drafted
+  by Claude and accepted by the team, recorded in `data/menus/review_answers.xlsx` and imported
+  with `parse/review_workbook.py`. LLM name matches were accepted after review.
+- Not done: no restaurant was asked. Everything that is only "possible" stays a staff question,
+  and labels keep the `inferred` / `unknown` tiers; nothing is presented as printed fact.
+
+Re-labeling: `label_menu` (stored LLM answers) followed by `review_workbook import` on the
+answers file reproduces the menus; setting `verified` stays a deliberate manual step.

@@ -169,10 +169,11 @@ def entry_by_id(kb_id: str, kb: dict | None = None) -> dict:
 
 
 def gather(
-    dish: Dish, kb: dict | None = None, suggested: str | None = None
+    dish: Dish, kb: dict | None = None, suggested: str | None = None, reviewed: dict | None = None
 ) -> tuple[list[Component], dict | None, list[str]]:
     """`suggested`: a knowledge-base id proposed by the LLM matcher, used only when exact
-    matching finds nothing."""
+    matching finds nothing. `reviewed`: a person's entry for this specific dish (same shape
+    as a knowledge-base entry); it replaces any match."""
     kb = kb or load_kb()
     text = _text(dish)
     out = [
@@ -185,7 +186,7 @@ def gather(
     ]
     for s in sauces:
         out += _components(s)
-    entry = match(dish, kb) or (entry_by_id(suggested, kb) if suggested else None)
+    entry = reviewed or match(dish, kb) or (entry_by_id(suggested, kb) if suggested else None)
     if entry:
         out += _components(entry)
     return out, entry, [s["id"] for s in sauces]
@@ -223,12 +224,20 @@ def _contains(components: list[Component], hit: str, known: bool) -> bool | None
     return False
 
 
-def label_dish(dish: Dish, kb: dict | None = None, suggested: str | None = None) -> Labeled:
+def label_dish(
+    dish: Dish,
+    kb: dict | None = None,
+    suggested: str | None = None,
+    reviewed: dict | None = None,
+    suggestion_reviewed: bool = False,
+) -> Labeled:
     """Return a copy of `dish` with ingredients, allergens, diet flags and staff questions
     filled from printed text and the knowledge base. Name, price and id are untouched.
-    `suggested` is an LLM-proposed entry id for a name exact matching does not know."""
-    by_name = match(dish, kb)
-    components, entry, sauce_ids = gather(dish, kb, suggested)
+    `suggested` is an LLM-proposed entry id for a name exact matching does not know;
+    `reviewed` is a person's dish-specific entry and takes precedence over both.
+    `suggestion_reviewed`: a person accepted the LLM match, so staff need not confirm it."""
+    by_name = match(dish, kb) if reviewed is None else reviewed
+    components, entry, sauce_ids = gather(dish, kb, suggested, reviewed)
     known = entry is not None
     label = dish.name_en or dish.name_zh or dish.id
 
@@ -267,10 +276,10 @@ def label_dish(dish: Dish, kb: dict | None = None, suggested: str | None = None)
         for c in components
         if c.certainty == "possible" and not c.printed
     ]
-    if known and by_name is None:
-        names = " / ".join(entry["name_zh"] + entry["aliases"][:1])
+    if known and by_name is None and not suggestion_reviewed:
+        name = entry["aliases"][0] if entry["aliases"] else entry["id"].replace("_", " ")
         questions.append(
-            f"{label}: read as {names} from its name; confirm it is the same dish before "
+            f"{label}: read as {name} from its name; confirm it is the same dish before "
             "relying on its ingredient list."
         )
     if not known:

@@ -4,7 +4,7 @@
   "cuisine": "chinese_sichuan",
   "source": "restaurant_site",
   "currency": "USD",
-  "verified": false,
+  "verified": true,
   "dishes": [
     {
       "id": "house_smoked_tofu",
@@ -16,43 +16,29 @@
       "cooking_method": null,
       "spice_level": 0,
       "portion": "small",
-      "main_ingredients": [],
+      "main_ingredients": [
+        {
+          "name": "peanuts",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "soy",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "wheat",
+          "tier": "unknown",
+          "note": null
+        }
+      ],
       "allergens": [
-        {
-          "allergen": "dairy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "egg",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "fish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
         {
           "allergen": "peanut",
           "tier": "menu",
           "confidence": 0.9,
           "reason": "peanut (printed): printed on the menu"
-        },
-        {
-          "allergen": "sesame",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "shellfish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
         },
         {
           "allergen": "soy",
@@ -61,24 +47,18 @@
           "reason": "soy (printed): printed on the menu"
         },
         {
-          "allergen": "tree_nut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
           "allergen": "wheat",
           "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "confidence": 0.3,
+          "reason": "wheat: possible in typical recipes"
         }
       ],
-      "is_vegetarian": null,
-      "is_vegan": null,
-      "contains_pork": null,
-      "contains_beef": null,
+      "is_vegetarian": true,
+      "is_vegan": true,
+      "contains_pork": false,
+      "contains_beef": false,
       "confirm_with_staff": [
-        "House Smoked Tofu: not a dish we recognize. Ask staff about meat, seafood, egg, nuts and the sauce before serving anyone with a restriction."
+        "House Smoked Tofu: ask whether it uses wheat."
       ]
     },
     {
@@ -132,9 +112,7 @@
       "is_vegan": false,
       "contains_pork": true,
       "contains_beef": false,
-      "confirm_with_staff": [
-        "Sweet & Sour Baby Ribs: read as 咕咾肉 / 糖醋里脊 / 糖醋排骨 / 锅包肉 / sweet and sour pork from its name; confirm it is the same dish before relying on its ingredient list."
-      ]
+      "confirm_with_staff": []
     },
     {
       "id": "poached_okras",
@@ -146,32 +124,24 @@
       "cooking_method": null,
       "spice_level": 0,
       "portion": "small",
-      "main_ingredients": [],
+      "main_ingredients": [
+        {
+          "name": "sesame",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "soy",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "wheat",
+          "tier": "inferred",
+          "note": null
+        }
+      ],
       "allergens": [
-        {
-          "allergen": "dairy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "egg",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "fish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "peanut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
         {
           "allergen": "sesame",
           "tier": "menu",
@@ -179,37 +149,23 @@
           "reason": "sesame (printed): printed on the menu"
         },
         {
-          "allergen": "shellfish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
           "allergen": "soy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "tree_nut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "tier": "inferred",
+          "confidence": 0.7,
+          "reason": "soy: likely in typical recipes"
         },
         {
           "allergen": "wheat",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "tier": "inferred",
+          "confidence": 0.7,
+          "reason": "wheat: likely in typical recipes"
         }
       ],
-      "is_vegetarian": null,
-      "is_vegan": null,
-      "contains_pork": null,
-      "contains_beef": null,
-      "confirm_with_staff": [
-        "Poached Okras: not a dish we recognize. Ask staff about meat, seafood, egg, nuts and the sauce before serving anyone with a restriction."
-      ]
+      "is_vegetarian": true,
+      "is_vegan": true,
+      "contains_pork": false,
+      "contains_beef": false,
+      "confirm_with_staff": []
     },
     {
       "id": "pork_in_garlic_dressing",
@@ -263,8 +219,7 @@
       "contains_pork": true,
       "contains_beef": false,
       "confirm_with_staff": [
-        "Pork in Garlic Dressing: ask whether it uses sesame oil.",
-        "Pork in Garlic Dressing: read as 蒜泥白肉 / garlic pork belly from its name; confirm it is the same dish before relying on its ingredient list."
+        "Pork in Garlic Dressing: ask whether it uses sesame oil."
       ]
     },
     {
@@ -405,26 +360,34 @@
       "cooking_method": null,
       "spice_level": 0,
       "portion": "small",
-      "main_ingredients": [],
+      "main_ingredients": [
+        {
+          "name": "chicken or duck",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "peanuts",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "sesame",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "soy",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "wheat",
+          "tier": "inferred",
+          "note": null
+        }
+      ],
       "allergens": [
-        {
-          "allergen": "dairy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "egg",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "fish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
         {
           "allergen": "peanut",
           "tier": "menu",
@@ -438,22 +401,10 @@
           "reason": "sesame (printed): printed on the menu"
         },
         {
-          "allergen": "shellfish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
           "allergen": "soy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "tree_nut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "tier": "inferred",
+          "confidence": 0.7,
+          "reason": "soy: likely in typical recipes"
         },
         {
           "allergen": "wheat",
@@ -464,11 +415,9 @@
       ],
       "is_vegetarian": false,
       "is_vegan": false,
-      "contains_pork": null,
-      "contains_beef": null,
-      "confirm_with_staff": [
-        "Cold Noodles with Shredded Chicken: not a dish we recognize. Ask staff about meat, seafood, egg, nuts and the sauce before serving anyone with a restriction."
-      ]
+      "contains_pork": false,
+      "contains_beef": false,
+      "confirm_with_staff": []
     },
     {
       "id": "spicy_cucumbers",
@@ -480,69 +429,39 @@
       "cooking_method": null,
       "spice_level": 0,
       "portion": "small",
-      "main_ingredients": [],
+      "main_ingredients": [
+        {
+          "name": "soy",
+          "tier": "unknown",
+          "note": null
+        },
+        {
+          "name": "wheat",
+          "tier": "unknown",
+          "note": null
+        }
+      ],
       "allergens": [
-        {
-          "allergen": "dairy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "egg",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "fish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "peanut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "sesame",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "shellfish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
         {
           "allergen": "soy",
           "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "tree_nut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "confidence": 0.3,
+          "reason": "soy: possible in typical recipes"
         },
         {
           "allergen": "wheat",
           "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "confidence": 0.3,
+          "reason": "wheat: possible in typical recipes"
         }
       ],
-      "is_vegetarian": null,
-      "is_vegan": null,
-      "contains_pork": null,
-      "contains_beef": null,
+      "is_vegetarian": true,
+      "is_vegan": true,
+      "contains_pork": false,
+      "contains_beef": false,
       "confirm_with_staff": [
-        "Spicy Cucumbers: not a dish we recognize. Ask staff about meat, seafood, egg, nuts and the sauce before serving anyone with a restriction."
+        "Spicy Cucumbers: ask whether it uses soy.",
+        "Spicy Cucumbers: ask whether it uses wheat."
       ]
     },
     {
@@ -714,8 +633,7 @@
       "contains_pork": true,
       "contains_beef": false,
       "confirm_with_staff": [
-        "Pork Pot Stickers (4): ask whether it uses sesame oil.",
-        "Pork Pot Stickers (4): read as 猪肉饺子 / 猪肉锅贴 / 锅贴 / 煎饺 / pork dumplings from its name; confirm it is the same dish before relying on its ingredient list."
+        "Pork Pot Stickers (4): ask whether it uses sesame oil."
       ]
     },
     {
@@ -890,38 +808,34 @@
           "name": "dried shrimp",
           "tier": "inferred",
           "note": null
+        },
+        {
+          "name": "pork or lard",
+          "tier": "unknown",
+          "note": null
+        },
+        {
+          "name": "shellfish or oyster sauce",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "egg",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "wheat",
+          "tier": "inferred",
+          "note": null
         }
       ],
       "allergens": [
-        {
-          "allergen": "dairy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
         {
           "allergen": "egg",
           "tier": "menu",
           "confidence": 0.9,
           "reason": "egg (printed): printed on the menu"
-        },
-        {
-          "allergen": "fish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "peanut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "sesame",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
         },
         {
           "allergen": "shellfish",
@@ -930,30 +844,18 @@
           "reason": "shellfish (printed): printed on the menu"
         },
         {
-          "allergen": "soy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "tree_nut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
           "allergen": "wheat",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "tier": "inferred",
+          "confidence": 0.9,
+          "reason": "wheat: definite in typical recipes"
         }
       ],
       "is_vegetarian": false,
       "is_vegan": false,
       "contains_pork": null,
-      "contains_beef": null,
+      "contains_beef": false,
       "confirm_with_staff": [
-        "Chive Pancakes (2): not a dish we recognize. Ask staff about meat, seafood, egg, nuts and the sauce before serving anyone with a restriction."
+        "Chive Pancakes (2): ask whether it uses pork or lard."
       ]
     },
     {
@@ -966,14 +868,29 @@
       "cooking_method": null,
       "spice_level": 0,
       "portion": "small",
-      "main_ingredients": [],
-      "allergens": [
+      "main_ingredients": [
         {
-          "allergen": "dairy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "name": "pork or lard",
+          "tier": "inferred",
+          "note": null
         },
+        {
+          "name": "egg",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "soy",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "wheat",
+          "tier": "inferred",
+          "note": null
+        }
+      ],
+      "allergens": [
         {
           "allergen": "egg",
           "tier": "menu",
@@ -981,55 +898,23 @@
           "reason": "egg (printed): printed on the menu"
         },
         {
-          "allergen": "fish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "peanut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "sesame",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "shellfish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
           "allergen": "soy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "tree_nut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "tier": "inferred",
+          "confidence": 0.7,
+          "reason": "soy: likely in typical recipes"
         },
         {
           "allergen": "wheat",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "tier": "inferred",
+          "confidence": 0.9,
+          "reason": "wheat: definite in typical recipes"
         }
       ],
       "is_vegetarian": false,
       "is_vegan": false,
       "contains_pork": true,
-      "contains_beef": null,
-      "confirm_with_staff": [
-        "Shanghai Shumai (4): not a dish we recognize. Ask staff about meat, seafood, egg, nuts and the sauce before serving anyone with a restriction."
-      ]
+      "contains_beef": false,
+      "confirm_with_staff": []
     },
     {
       "id": "dan_dan_noodles",
@@ -1233,9 +1118,7 @@
       "is_vegan": false,
       "contains_pork": false,
       "contains_beef": false,
-      "confirm_with_staff": [
-        "Kung Fu Shrimp: read as 宫保虾仁 / 宫保虾 / kung pao shrimp from its name; confirm it is the same dish before relying on its ingredient list."
-      ]
+      "confirm_with_staff": []
     },
     {
       "id": "spicy_soft_shell_crabs",
@@ -1247,37 +1130,34 @@
       "cooking_method": null,
       "spice_level": 0,
       "portion": "medium",
-      "main_ingredients": [],
-      "allergens": [
+      "main_ingredients": [
         {
-          "allergen": "dairy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "name": "shellfish or oyster sauce",
+          "tier": "inferred",
+          "note": null
         },
+        {
+          "name": "egg",
+          "tier": "unknown",
+          "note": null
+        },
+        {
+          "name": "soy",
+          "tier": "unknown",
+          "note": null
+        },
+        {
+          "name": "wheat",
+          "tier": "inferred",
+          "note": null
+        }
+      ],
+      "allergens": [
         {
           "allergen": "egg",
           "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "fish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "peanut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "sesame",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "confidence": 0.3,
+          "reason": "egg: possible in typical recipes"
         },
         {
           "allergen": "shellfish",
@@ -1288,14 +1168,8 @@
         {
           "allergen": "soy",
           "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "tree_nut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "confidence": 0.3,
+          "reason": "soy: possible in typical recipes"
         },
         {
           "allergen": "wheat",
@@ -1306,10 +1180,11 @@
       ],
       "is_vegetarian": false,
       "is_vegan": false,
-      "contains_pork": null,
-      "contains_beef": null,
+      "contains_pork": false,
+      "contains_beef": false,
       "confirm_with_staff": [
-        "Spicy Soft Shell Crabs: not a dish we recognize. Ask staff about meat, seafood, egg, nuts and the sauce before serving anyone with a restriction."
+        "Spicy Soft Shell Crabs: ask whether it uses egg.",
+        "Spicy Soft Shell Crabs: ask whether it uses soy."
       ]
     },
     {
@@ -1322,19 +1197,34 @@
       "cooking_method": null,
       "spice_level": 0,
       "portion": "large",
-      "main_ingredients": [],
-      "allergens": [
+      "main_ingredients": [
         {
-          "allergen": "dairy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "name": "fish or fish sauce",
+          "tier": "inferred",
+          "note": null
         },
+        {
+          "name": "egg",
+          "tier": "unknown",
+          "note": null
+        },
+        {
+          "name": "soy",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "wheat",
+          "tier": "inferred",
+          "note": null
+        }
+      ],
+      "allergens": [
         {
           "allergen": "egg",
           "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "confidence": 0.3,
+          "reason": "egg: possible in typical recipes"
         },
         {
           "allergen": "fish",
@@ -1343,48 +1233,24 @@
           "reason": "fish (printed): printed on the menu"
         },
         {
-          "allergen": "peanut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "sesame",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "shellfish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
           "allergen": "soy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "tree_nut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "tier": "inferred",
+          "confidence": 0.7,
+          "reason": "soy: likely in typical recipes"
         },
         {
           "allergen": "wheat",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "tier": "inferred",
+          "confidence": 0.7,
+          "reason": "wheat: likely in typical recipes"
         }
       ],
       "is_vegetarian": false,
       "is_vegan": false,
-      "contains_pork": null,
-      "contains_beef": null,
+      "contains_pork": false,
+      "contains_beef": false,
       "confirm_with_staff": [
-        "Spicy Fish Fillets: not a dish we recognize. Ask staff about meat, seafood, egg, nuts and the sauce before serving anyone with a restriction."
+        "Spicy Fish Fillets: ask whether it uses egg."
       ]
     },
     {
@@ -1451,44 +1317,34 @@
           "name": "fish sauce",
           "tier": "inferred",
           "note": null
+        },
+        {
+          "name": "pork or lard",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "fish or fish sauce",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "soy",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "wheat",
+          "tier": "inferred",
+          "note": null
         }
       ],
       "allergens": [
-        {
-          "allergen": "dairy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "egg",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
         {
           "allergen": "fish",
           "tier": "menu",
           "confidence": 0.9,
           "reason": "fish (printed): printed on the menu"
-        },
-        {
-          "allergen": "peanut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "sesame",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "shellfish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
         },
         {
           "allergen": "soy",
@@ -1497,25 +1353,17 @@
           "reason": "soy (printed): printed on the menu"
         },
         {
-          "allergen": "tree_nut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
           "allergen": "wheat",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "tier": "inferred",
+          "confidence": 0.7,
+          "reason": "wheat: likely in typical recipes"
         }
       ],
       "is_vegetarian": false,
       "is_vegan": false,
       "contains_pork": true,
-      "contains_beef": null,
-      "confirm_with_staff": [
-        "Braised Pork Szechuan Style: not a dish we recognize. Ask staff about meat, seafood, egg, nuts and the sauce before serving anyone with a restriction."
-      ]
+      "contains_beef": false,
+      "confirm_with_staff": []
     },
     {
       "id": "three_pepper_chicken",
@@ -1581,8 +1429,7 @@
       "contains_beef": false,
       "confirm_with_staff": [
         "Three Pepper Chicken: ask whether it uses peanuts.",
-        "Three Pepper Chicken: ask whether it uses sesame seeds.",
-        "Three Pepper Chicken: read as 辣子鸡 / 重庆辣子鸡 / chongqing chicken from its name; confirm it is the same dish before relying on its ingredient list."
+        "Three Pepper Chicken: ask whether it uses sesame seeds."
       ]
     },
     {
@@ -1725,38 +1572,39 @@
           "name": "fish sauce",
           "tier": "inferred",
           "note": null
+        },
+        {
+          "name": "chicken or duck",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "fish or fish sauce",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "shellfish or oyster sauce",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "soy",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "wheat",
+          "tier": "inferred",
+          "note": null
         }
       ],
       "allergens": [
-        {
-          "allergen": "dairy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "egg",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
         {
           "allergen": "fish",
           "tier": "menu",
           "confidence": 0.9,
           "reason": "fish (printed): printed on the menu"
-        },
-        {
-          "allergen": "peanut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "sesame",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
         },
         {
           "allergen": "shellfish",
@@ -1766,30 +1614,22 @@
         },
         {
           "allergen": "soy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "tree_nut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "tier": "inferred",
+          "confidence": 0.7,
+          "reason": "soy: likely in typical recipes"
         },
         {
           "allergen": "wheat",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "tier": "inferred",
+          "confidence": 0.7,
+          "reason": "wheat: likely in typical recipes"
         }
       ],
       "is_vegetarian": false,
       "is_vegan": false,
-      "contains_pork": null,
-      "contains_beef": null,
-      "confirm_with_staff": [
-        "Curiously Tasty Chicken: not a dish we recognize. Ask staff about meat, seafood, egg, nuts and the sauce before serving anyone with a restriction."
-      ]
+      "contains_pork": false,
+      "contains_beef": false,
+      "confirm_with_staff": []
     },
     {
       "id": "spicy_cumin_lamb",
@@ -1831,9 +1671,7 @@
       "is_vegan": false,
       "contains_pork": null,
       "contains_beef": null,
-      "confirm_with_staff": [
-        "Spicy Cumin Lamb: read as 孜然羊肉 / cumin lamb from its name; confirm it is the same dish before relying on its ingredient list."
-      ]
+      "confirm_with_staff": []
     },
     {
       "id": "shredded_beef_with_green_chili",
@@ -1902,27 +1740,27 @@
       "portion": "medium",
       "main_ingredients": [
         {
-          "name": "minced meat",
-          "tier": "inferred",
-          "note": null
-        },
-        {
-          "name": "minced pork",
-          "tier": "inferred",
-          "note": null
-        },
-        {
-          "name": "minced beef",
+          "name": "pork or lard",
           "tier": "unknown",
           "note": null
         },
         {
-          "name": "tofu",
+          "name": "beef",
+          "tier": "unknown",
+          "note": null
+        },
+        {
+          "name": "lamb or other meat",
+          "tier": "unknown",
+          "note": null
+        },
+        {
+          "name": "soy",
           "tier": "inferred",
           "note": null
         },
         {
-          "name": "doubanjiang",
+          "name": "wheat",
           "tier": "inferred",
           "note": null
         }
@@ -1937,16 +1775,19 @@
         {
           "allergen": "wheat",
           "tier": "inferred",
-          "confidence": 0.9,
-          "reason": "doubanjiang: definite in typical recipes"
+          "confidence": 0.7,
+          "reason": "wheat: likely in typical recipes"
         }
       ],
-      "is_vegetarian": false,
-      "is_vegan": false,
-      "contains_pork": true,
+      "is_vegetarian": true,
+      "is_vegan": true,
+      "contains_pork": null,
       "contains_beef": null,
       "confirm_with_staff": [
-        "Ma Po Tofu: ask whether it uses minced beef."
+        "Ma Po Tofu: ask whether it uses pork or lard.",
+        "Ma Po Tofu: ask whether it uses beef.",
+        "Ma Po Tofu: ask whether it uses lamb or other meat.",
+        "Ma Po Tofu: Menu marks it vegetarian; confirm it is made without minced meat."
       ]
     },
     {
@@ -2048,69 +1889,32 @@
       "cooking_method": null,
       "spice_level": 0,
       "portion": "medium",
-      "main_ingredients": [],
+      "main_ingredients": [
+        {
+          "name": "meat stock or chicken powder",
+          "tier": "unknown",
+          "note": null
+        },
+        {
+          "name": "shellfish or oyster sauce",
+          "tier": "inferred",
+          "note": null
+        }
+      ],
       "allergens": [
-        {
-          "allergen": "dairy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "egg",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "fish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "peanut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "sesame",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
         {
           "allergen": "shellfish",
           "tier": "menu",
           "confidence": 0.9,
           "reason": "shellfish (printed): printed on the menu"
-        },
-        {
-          "allergen": "soy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "tree_nut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "wheat",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
         }
       ],
       "is_vegetarian": false,
       "is_vegan": false,
-      "contains_pork": null,
-      "contains_beef": null,
+      "contains_pork": false,
+      "contains_beef": false,
       "confirm_with_staff": [
-        "Loofah with Dried Scallops: not a dish we recognize. Ask staff about meat, seafood, egg, nuts and the sauce before serving anyone with a restriction."
+        "Loofah with Dried Scallops: ask whether it uses meat stock or chicken powder."
       ]
     },
     {
@@ -2128,39 +1932,29 @@
           "name": "oyster sauce",
           "tier": "inferred",
           "note": null
+        },
+        {
+          "name": "pork or lard",
+          "tier": "unknown",
+          "note": null
+        },
+        {
+          "name": "shellfish or oyster sauce",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "soy",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "wheat",
+          "tier": "inferred",
+          "note": null
         }
       ],
       "allergens": [
-        {
-          "allergen": "dairy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "egg",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "fish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "peanut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "sesame",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
         {
           "allergen": "shellfish",
           "tier": "menu",
@@ -2169,29 +1963,23 @@
         },
         {
           "allergen": "soy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "tree_nut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "tier": "inferred",
+          "confidence": 0.7,
+          "reason": "soy: likely in typical recipes"
         },
         {
           "allergen": "wheat",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "tier": "inferred",
+          "confidence": 0.7,
+          "reason": "wheat: likely in typical recipes"
         }
       ],
       "is_vegetarian": false,
       "is_vegan": false,
       "contains_pork": null,
-      "contains_beef": null,
+      "contains_beef": false,
       "confirm_with_staff": [
-        "Eggplants and String Beans: not a dish we recognize. Ask staff about meat, seafood, egg, nuts and the sauce before serving anyone with a restriction."
+        "Eggplants and String Beans: ask whether it uses pork or lard."
       ]
     },
     {
@@ -2209,70 +1997,37 @@
           "name": "dried shrimp",
           "tier": "inferred",
           "note": null
+        },
+        {
+          "name": "pork or lard",
+          "tier": "unknown",
+          "note": null
+        },
+        {
+          "name": "meat stock or chicken powder",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "shellfish or oyster sauce",
+          "tier": "inferred",
+          "note": null
         }
       ],
       "allergens": [
-        {
-          "allergen": "dairy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "egg",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "fish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "peanut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "sesame",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
         {
           "allergen": "shellfish",
           "tier": "menu",
           "confidence": 0.9,
           "reason": "shellfish (printed): printed on the menu"
-        },
-        {
-          "allergen": "soy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "tree_nut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "wheat",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
         }
       ],
       "is_vegetarian": false,
       "is_vegan": false,
       "contains_pork": null,
-      "contains_beef": null,
+      "contains_beef": false,
       "confirm_with_staff": [
-        "Poached Snow Pea Shoots: not a dish we recognize. Ask staff about meat, seafood, egg, nuts and the sauce before serving anyone with a restriction."
+        "Poached Snow Pea Shoots: ask whether it uses pork or lard."
       ]
     },
     {
@@ -2374,14 +2129,29 @@
       "cooking_method": null,
       "spice_level": 0,
       "portion": "medium",
-      "main_ingredients": [],
-      "allergens": [
+      "main_ingredients": [
         {
-          "allergen": "dairy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "name": "chicken or duck",
+          "tier": "inferred",
+          "note": null
         },
+        {
+          "name": "egg",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "soy",
+          "tier": "inferred",
+          "note": null
+        },
+        {
+          "name": "wheat",
+          "tier": "inferred",
+          "note": null
+        }
+      ],
+      "allergens": [
         {
           "allergen": "egg",
           "tier": "menu",
@@ -2389,55 +2159,23 @@
           "reason": "egg (printed): printed on the menu"
         },
         {
-          "allergen": "fish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "peanut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "sesame",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "shellfish",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
           "allergen": "soy",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
-        },
-        {
-          "allergen": "tree_nut",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "tier": "inferred",
+          "confidence": 0.7,
+          "reason": "soy: likely in typical recipes"
         },
         {
           "allergen": "wheat",
-          "tier": "unknown",
-          "confidence": 0.0,
-          "reason": "dish not in the knowledge base; ingredients unverified"
+          "tier": "inferred",
+          "confidence": 0.7,
+          "reason": "wheat: likely in typical recipes"
         }
       ],
       "is_vegetarian": false,
       "is_vegan": false,
-      "contains_pork": null,
-      "contains_beef": null,
-      "confirm_with_staff": [
-        "Fried Rice with Shredded Duck: not a dish we recognize. Ask staff about meat, seafood, egg, nuts and the sauce before serving anyone with a restriction."
-      ]
+      "contains_pork": false,
+      "contains_beef": false,
+      "confirm_with_staff": []
     },
     {
       "id": "shrimp_fried_rice_with_chinese_sausage",

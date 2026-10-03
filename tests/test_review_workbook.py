@@ -60,3 +60,27 @@ def test_partial_row_only_adds_what_is_known(tmp_path, sample_menu):
     assert {f.tier for f in dish.allergens if f.allergen == Allergen.SHELLFISH} == {
         EvidenceTier.UNKNOWN
     }
+
+
+def test_reviewed_row_overrides_a_knowledge_base_match(tmp_path, sample_menu):
+    from openpyxl import Workbook
+
+    from michelin.parse.review_workbook import FIXED
+
+    menu_path = tmp_path / "menu.json"
+    menu_path.write_text(sample_menu.model_dump_json(), encoding="utf-8")
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "菜品"
+    ws.append(FIXED + [h for _, h in COLUMNS] + ["备注"])
+    answers = {h: "没有" for _, h in COLUMNS} | {"羊肉 / 其他肉": "可能有", "猪肉 / 猪油": "可能有",
+                                              "大豆（豆腐酱油等）": "一定有"}  # fmt: skip
+    ws.append([None, f"{sample_menu.restaurant_id}/mapo_tofu", None, None, None, None]
+              + [answers[h] for _, h in COLUMNS] + ["Menu marks it vegetarian"])  # fmt: skip
+    sheet = tmp_path / "answers.xlsx"
+    wb.save(sheet)
+    import_sheet(sheet, [menu_path])
+    dish = Menu.model_validate_json(menu_path.read_text(encoding="utf-8")).dish("mapo_tofu")
+    assert dish.is_vegetarian is True  # possible meat: vegetarian may ask
+    assert dish.contains_pork is None  # no-pork stays strict
+    assert not any("same dish" in q or "recognize" in q for q in dish.confirm_with_staff)

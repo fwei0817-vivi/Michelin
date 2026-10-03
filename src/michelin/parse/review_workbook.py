@@ -18,6 +18,7 @@ import re
 from pathlib import Path
 
 from michelin.parse.knowledge import PRINTED, Component, _text, label_dish, load_kb, match
+from michelin.parse.label_menu import PRINTED_FIELDS
 from michelin.parse.matcher import cache_key, load_cache
 from michelin.schemas import Dish, Menu
 
@@ -37,6 +38,22 @@ COLUMNS = [  # (hit, header)
     ("soy", "大豆（豆腐酱油等）"),
     ("wheat", "小麦（面粉面条等）"),
 ]
+ENGLISH = {  # component names shown in staff questions; UI text is English
+    "pork": "pork or lard",
+    "beef": "beef",
+    "poultry": "chicken or duck",
+    "meat": "lamb or other meat",
+    "meat_stock": "meat stock or chicken powder",
+    "fish": "fish or fish sauce",
+    "shellfish": "shellfish or oyster sauce",
+    "egg": "egg",
+    "dairy": "dairy",
+    "peanut": "peanuts",
+    "tree_nut": "tree nuts",
+    "sesame": "sesame",
+    "soy": "soy",
+    "wheat": "wheat",
+}
 ANSWERS = {"一定有": "definite", "大概率有": "likely", "可能有": "possible", "没有": None,
            "不知道": "unknown"}  # fmt: skip
 FIXED = ["餐厅", "dish_id（勿改）", "英文菜名", "中文名", "价格", "菜单上的描述"]
@@ -172,7 +189,7 @@ def components_from_row(row: dict) -> tuple[list[Component], bool]:
         if cert == "unknown":
             complete = False
         elif cert:
-            comps.append(Component(f"{header} (reviewed)", (hit,), cert))
+            comps.append(Component(ENGLISH[hit], (hit,), cert))
     return comps, complete
 
 
@@ -193,13 +210,13 @@ def import_sheet(sheet: Path, menu_paths: list[Path]) -> list[str]:
                 dishes.append(d)
                 continue
             comps, complete = components_from_row(row)
-            entry = {"id": "reviewed", "name_zh": [], "aliases": [], "category": d.category.value,
-                     "portion": d.portion.value,
+            entry = {"id": f"reviewed:{d.id}", "name_zh": [], "aliases": [],
+                     "category": d.category.value, "portion": d.portion.value,
                      "components": [{"name": c.name, "hits": list(c.hits), "certainty": c.certainty}
                                     for c in comps]}  # fmt: skip
-            kb = load_kb()
-            kb = {**kb, "dishes": [*kb["dishes"], entry]} if complete else kb
-            labeled = label_dish(d, kb=kb, suggested="reviewed" if complete else None)
+            # Start from what the menu prints, so earlier labels and questions do not linger.
+            printed = Dish(**{k: getattr(d, k) for k in PRINTED_FIELDS})
+            labeled = label_dish(printed, reviewed=entry if complete else None)
             dish = labeled.dish
             if not complete:  # partial answers: add them on top of the unknown baseline
                 dish = _apply_partial(dish, comps)
@@ -210,17 +227,7 @@ def import_sheet(sheet: Path, menu_paths: list[Path]) -> list[str]:
                         "confirm_with_staff": [*dish.confirm_with_staff, f"{d.name_en}: {note}"]
                     }
                 )
-            dishes.append(
-                dish.model_copy(
-                    update={
-                        "confirm_with_staff": [
-                            q
-                            for q in dish.confirm_with_staff
-                            if "confirm it is the same dish" not in q
-                        ]
-                    }
-                )
-            )
+            dishes.append(dish)
             log.append(f"{menu.restaurant_id}/{d.id}: {'complete' if complete else 'partial'}")
         menu = menu.model_copy(update={"dishes": dishes, "verified": False})
         path.write_text(menu.model_dump_json(indent=2) + "\n", encoding="utf-8")

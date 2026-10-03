@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 from michelin.parse.knowledge import label_dish
-from michelin.parse.matcher import match_names
+from michelin.parse.matcher import match_names, reviewed_ids
 from michelin.schemas import Dish, Menu
 
 PRINTED_FIELDS = ("id", "name_zh", "name_en", "price", "description_raw", "category", "portion")
@@ -28,9 +28,12 @@ def relabel(
 ) -> tuple[Menu, list[tuple[str, str | None, tuple[str, ...]]]]:
     printed = [Dish(**{k: getattr(d, k) for k in PRINTED_FIELDS}) for d in menu.dishes]
     suggested = match_names(printed, call_api=call_api)
+    accepted = reviewed_ids(printed)
     dishes, summary = [], []
     for dish in printed:
-        labeled = label_dish(dish, suggested=suggested.get(dish.id))
+        labeled = label_dish(
+            dish, suggested=suggested.get(dish.id), suggestion_reviewed=dish.id in accepted
+        )
         dishes.append(labeled.dish)
         summary.append((dish.id, labeled.match, labeled.sauces))
     return menu.model_copy(update={"dishes": dishes, "verified": False}), summary

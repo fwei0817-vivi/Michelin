@@ -43,12 +43,14 @@ def label_imported(dishes: list[Dish]) -> list[Dish]:
     base misses go to the LLM matcher (stored answers always; new ones only when
     MICHELIN_LLM_MATCH=1)."""
     from michelin.parse.knowledge import label_dish
-    from michelin.parse.matcher import match_names
+    from michelin.parse.matcher import match_names, reviewed_ids
 
-    suggested = match_names(dishes)
+    suggested, accepted = match_names(dishes), reviewed_ids(dishes)
     out = []
     for dish in dishes:
-        labeled = label_dish(dish, suggested=suggested.get(dish.id))
+        labeled = label_dish(
+            dish, suggested=suggested.get(dish.id), suggestion_reviewed=dish.id in accepted
+        )
         if labeled.match:
             generic = generic_question(dish.name_en or "")
             questions = [q for q in labeled.dish.confirm_with_staff if q != generic]
