@@ -219,7 +219,7 @@ def parse_menu(req: ParseRequest) -> dict:
     import subprocess
     import tempfile
 
-    from michelin.parse import parse_text
+    from michelin.parse import label_imported, parse_text
 
     text = req.text
     if req.image_base64:
@@ -260,7 +260,7 @@ def parse_menu(req: ParseRequest) -> dict:
             )
     if not text.strip():
         raise HTTPException(422, "Paste menu text or choose an image first.")
-    return {"dishes": [d.model_dump() for d in parse_text(text)], "text": text}
+    return {"dishes": [d.model_dump() for d in label_imported(parse_text(text))], "text": text}
 
 
 class EvaluateRequest(BaseModel):

@@ -1,9 +1,18 @@
-"""Extract explicit name/price rows. Never guess ingredients or dietary flags."""
+"""Extract explicit name/price rows, then label them from the reviewed knowledge base.
+
+`parse_text` never guesses: it returns names and prices only. `label_imported` adds what the
+printed text and `knowledge.py` support, with evidence tiers; unrecognized dishes stay
+unknown. Either way the result is unverified until a person reviews it.
+"""
 
 import re
 import uuid
 
 from michelin.schemas import Dish
+
+
+def generic_question(name: str) -> str:
+    return f"Confirm ingredients, allergens, and preparation for {name}."
 
 
 def parse_text(text: str) -> list[Dish]:
@@ -22,7 +31,24 @@ def parse_text(text: str) -> list[Dish]:
                 name_en=name,
                 price=float(price),
                 description_raw=line,
-                confirm_with_staff=[f"Confirm ingredients, allergens, and preparation for {name}."],
+                confirm_with_staff=[generic_question(name)],
             )
         )
     return dishes[:40]
+
+
+def label_imported(dishes: list[Dish]) -> list[Dish]:
+    """Knowledge-base labels for imported rows. A recognized dish drops the generic
+    question in favour of specific ones; an unrecognized dish keeps it."""
+    from michelin.parse.knowledge import label_dish
+
+    out = []
+    for dish in dishes:
+        labeled = label_dish(dish)
+        if labeled.match:
+            generic = generic_question(dish.name_en or "")
+            questions = [q for q in labeled.dish.confirm_with_staff if q != generic]
+            out.append(labeled.dish.model_copy(update={"confirm_with_staff": questions}))
+        else:
+            out.append(labeled.dish)
+    return out

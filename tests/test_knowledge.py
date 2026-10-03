@@ -93,3 +93,14 @@ def test_category_filled_only_when_unknown():
 def test_normalize_handles_menu_numbering_and_counts():
     assert normalize("C12. General Tso's Chicken (2)") == "general tsos chicken"
     assert normalize("Hot & Sour Soup") == "hot and sour soup"
+
+
+def test_relabel_menu_is_unverified_and_keeps_printed_fields(sample_menu):
+    from michelin.parse.label_menu import relabel
+
+    labeled, summary = relabel(sample_menu.model_copy(update={"verified": True}))
+    assert labeled.verified is False
+    assert [d.price for d in labeled.dishes] == [d.price for d in sample_menu.dishes]
+    matches = {dish_id: m for dish_id, m, _ in summary}
+    assert matches["mapo_tofu"] == "mapo_tofu"
+    assert matches["dry_pot_cauliflower"] is None  # not in the knowledge base

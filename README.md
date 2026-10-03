@@ -63,8 +63,14 @@ Set `MICHELIN_MOCK=1` only for fixture-based demos.
 Menu editing and imports are session-local. Paste one English dish per line with its price
 at the end, or upload an English PNG/JPEG/WebP menu image (up to 8 MB). Image extraction
 requires the `tesseract` executable with English language data (included in the Dockerfile).
-If unavailable, text import and manual entry still work. Imported dishes retain unknown
-dietary flags and require explicit review before use. No external AI calls are made.
+If unavailable, text import and manual entry still work. Imported dishes are labeled from the
+reviewed hidden-ingredient knowledge base (`data/knowledge/`); dishes it does not recognize
+keep unknown dietary flags. Either way they require explicit review before use. No external
+AI calls are made.
+
+To label a whole menu file for review: `uv run python -m michelin.parse.label_menu draft.json
+-o data/menus/<slug>.json`. The output is unverified. The bad-case evaluation lives in
+`eval/` (see `eval/README.md`).
 
 Additional API fields on `POST /api/plan`: `menu_override`, `dish_count_target` (1–20),
 and `style_preference` (`balanced`, `lighter`, `favorites`).

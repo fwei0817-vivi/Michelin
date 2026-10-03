@@ -114,3 +114,26 @@ free of any selection logic.
 - Menu imports extract explicit English names and prices, using optional local Tesseract for images. Never invent ingredients, prices, or dietary flags. Edits stay in the browser session and require human review before planning; no external AI service receives menu images.
 - Dish cards may show an illustrative Wikimedia Commons photo of a similar dish, labelled as such and credited. Photos are decoration, never evidence: ingredient and allergen claims come only from the reviewed menu and its evidence tiers.
 - Kitchen questions are shown twice on the plan page, inline under the dish they concern and as one list below the dishes, never as a banner above them. The order panel is the one dark block on the page so the bill reads as separate from the dishes.
+
+## 2026-10-02 — Hidden-ingredient knowledge base labels imported dishes
+
+Supersedes the "never invent ingredients or dietary flags" part of the 2026-09-21 import rule;
+prices and names are still never invented.
+
+- `data/knowledge/hidden_ingredients.json` holds reviewed typical-recipe components per dish
+  (definite / likely / possible) and per named sauce. `parse/knowledge.py` turns the printed
+  text plus that file into labels: printed → `menu`, definite/likely → `inferred`,
+  possible → `unknown` with a staff question. Same text, same labels, every time.
+- A dish the knowledge base does not recognize is never certified: diet flags stay `null`
+  and every allergen is `unknown`, with a "not a dish we recognize" staff question.
+- `/api/menu/parse` returns these labels; `python -m michelin.parse.label_menu` does the same
+  for a whole menu file. Output is always unverified and still needs human review.
+- An LLM may later map unusual dish names to a knowledge-base entry. It never writes
+  ingredients or flags itself.
+
+Why: the bad-case evaluation (`eval/`) showed every severe violation came from labels built
+from printed text alone (hidden egg, minced pork, peanuts, sauces); the planner's rules were
+already correct given correct labels. With knowledge-base labels severe violations went from
+14 to 0 on the trap scenarios, while unrecognized holdout dishes fell back to "ask staff".
+Open question for the team: dishes with only `possible` conflicts are currently refused,
+which makes four evaluated tables report "no order works" although a safe order exists.
