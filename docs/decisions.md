@@ -153,9 +153,9 @@ printed descriptions only, never images) to an LLM, which may only answer with a
 knowledge-base id or "none". Default: `gemini-2.5-pro` on the course's Vertex AI project with
 gcloud ADC (the organization disallows API keys; Claude on Vertex currently has no quota,
 `MICHELIN_LLM_PROVIDER=claude-vertex` switches once it does). Temperature 0. The answer is stored in `data/knowledge/llm_matches.json`
-and reused for the same text, so labels stay deterministic and reviewable; a dish matched
-this way gets a staff question to confirm it is the same dish, and printed evidence still
-applies. Calls happen only with `MICHELIN_LLM_MATCH=1` (or `label_menu --llm`) and credentials;
+and reused for the same text, so labels stay deterministic and reviewable. Until a person
+accepts a match (`"reviewed": true`), the dish gets a staff question to confirm it is the same
+dish; printed evidence applies either way. Calls happen only with `MICHELIN_LLM_MATCH=1` (or `label_menu --llm`) and credentials;
 without them the app behaves as before.
 Why: exact names miss common spellings ("Spicy Tofu w/ Ground Pork"); letting the model pick
 from a closed list keeps it out of ingredient claims. `eval/matcher_eval.py` measures accuracy
@@ -170,10 +170,10 @@ Up to 40 dishes each from the regular dinner menu on each restaurant's own site 
 happy-hour prices excluded), with provenance in `data/raw/<slug>_source.json` (URL, date,
 names, prices, printed descriptions and tags as listed). Atlas Kitchen is near campus and
 mid-priced; Café China and CHILI are Midtown and pricier, which exercises budget conflicts.
-Labels come from `label_menu --llm`; every menu stays `verified: false` until a person works
-through `data/menus/REVIEW.md`. Finding for that review: Café China and CHILI both print Ma Po
-Tofu as vegetarian, while the knowledge base expects minced meat; the restaurant's own label
-has to be confirmed with the restaurant, not overridden silently either way.
+Labels come from `label_menu --llm` plus the review answers described below. Finding from that
+review: Café China and CHILI both print Ma Po Tofu as vegetarian, while the knowledge base
+expects minced meat; neither side is overridden silently. Meat is treated as `possible`, so a
+vegetarian may order it after the staff question, and a no-pork diner may not.
 
 ### Labels for the three restaurants: how they were made (2026-10-02)
 
