@@ -1,0 +1,28 @@
+{
+  "id": "L03",
+  "category": "lock_exclude",
+  "menu": "trap",
+  "title": "Locked expensive dish, tight budget",
+  "trap": "Boiled fish ($25.95) locked at $15 for two: must not silently drop the lock.",
+  "diners": [
+    {
+      "id": "p1",
+      "name": "Ana",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p2",
+      "name": "Ben",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    }
+  ],
+  "budget_per_person": 15,
+  "expect": "conflict",
+  "locked_dish_ids": [
+    "boiled_fish"
+  ]
+}

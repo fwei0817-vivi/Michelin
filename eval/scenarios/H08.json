@@ -1,0 +1,43 @@
+{
+  "id": "H08",
+  "category": "hidden_ingredient",
+  "menu": "trap",
+  "title": "Sesame allergy",
+  "trap": "Dan Dan noodles use sesame paste; smashed cucumber may use sesame oil.",
+  "diners": [
+    {
+      "id": "sesame",
+      "name": "Ses",
+      "allergies": [
+        "sesame"
+      ],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p1",
+      "name": "Ana",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p2",
+      "name": "Ben",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    }
+  ],
+  "budget_per_person": 30,
+  "dish_subset": [
+    "dan_dan_noodles",
+    "smashed_cucumber",
+    "sesame_cold_noodles",
+    "tomato_egg",
+    "beef_chow_fun",
+    "hot_sour_potato",
+    "steamed_rice"
+  ],
+  "expect": "any"
+}

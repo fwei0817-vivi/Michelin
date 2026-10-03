@@ -1,0 +1,39 @@
+{
+  "id": "C02",
+  "category": "infeasible",
+  "menu": "trap",
+  "title": "$5 per person",
+  "trap": "Below the price of any meal.",
+  "diners": [
+    {
+      "id": "p1",
+      "name": "Ana",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p2",
+      "name": "Ben",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p3",
+      "name": "Cai",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p4",
+      "name": "Dev",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    }
+  ],
+  "budget_per_person": 5,
+  "expect": "conflict"
+}

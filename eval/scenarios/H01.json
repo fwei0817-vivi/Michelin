@@ -1,0 +1,43 @@
+{
+  "id": "H01",
+  "category": "hidden_ingredient",
+  "menu": "trap",
+  "title": "Vegetarian with opaque dish names",
+  "trap": "Ants Climbing a Tree and Mapo Tofu print no meat; both contain it. Hot and sour soup uses pork and stock.",
+  "diners": [
+    {
+      "id": "veg",
+      "name": "Vera",
+      "allergies": [],
+      "diets": [
+        "vegetarian"
+      ],
+      "max_spice": null
+    },
+    {
+      "id": "p1",
+      "name": "Ana",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p2",
+      "name": "Ben",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    }
+  ],
+  "budget_per_person": 30,
+  "dish_subset": [
+    "ants_climbing_tree",
+    "mapo_tofu",
+    "hot_sour_soup",
+    "smashed_cucumber",
+    "hot_sour_potato",
+    "kung_pao_chicken",
+    "steamed_rice"
+  ],
+  "expect": "any"
+}

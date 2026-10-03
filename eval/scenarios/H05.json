@@ -1,0 +1,51 @@
+{
+  "id": "H05",
+  "category": "hidden_ingredient",
+  "menu": "trap",
+  "title": "No-pork diner and minced pork",
+  "trap": "Mapo, Yu-xiang eggplant, dry-fried beans, dry pot cauliflower and fried rice commonly contain pork without saying so.",
+  "diners": [
+    {
+      "id": "nopork",
+      "name": "Nur",
+      "allergies": [],
+      "diets": [
+        "no_pork"
+      ],
+      "max_spice": null
+    },
+    {
+      "id": "p1",
+      "name": "Ana",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p2",
+      "name": "Ben",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p3",
+      "name": "Cai",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    }
+  ],
+  "budget_per_person": 30,
+  "dish_subset": [
+    "mapo_tofu",
+    "yuxiang_eggplant",
+    "dry_fried_beans",
+    "dry_pot_cauliflower",
+    "house_fried_rice",
+    "kung_pao_chicken",
+    "beef_chow_fun",
+    "steamed_rice"
+  ],
+  "expect": "any"
+}
