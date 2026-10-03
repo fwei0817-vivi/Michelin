@@ -138,3 +138,18 @@ def test_invented_ids_and_bad_rows_are_dropped(tmp_path):
     menu = [dish("b", "Mystery")]
     cache = tmp_path / "m.json"
     assert match_names(menu, call_api=True, provider="gemini", client=fake, cache_path=cache) == {}
+
+
+def test_stale_none_is_asked_again_after_the_knowledge_base_changes(tmp_path):
+    cache = tmp_path / "m.json"
+    menu = [dish("b", "Chef's Clay Pot")]
+    match_names(
+        menu, call_api=True, provider="claude", client=FakeClaude(["none"]), cache_path=cache
+    )
+    data = load_cache(cache)
+    data["matches"][cache_key(menu[0])]["kb_version"] = "old"
+    cache.write_text(json.dumps(data), encoding="utf-8")
+    again = FakeClaude(["mapo_tofu"])
+    assert match_names(menu, call_api=True, provider="claude", client=again, cache_path=cache) == {
+        "b": "mapo_tofu"
+    }

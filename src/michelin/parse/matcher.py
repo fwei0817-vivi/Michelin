@@ -208,20 +208,32 @@ def match_names(
 ) -> dict[str, str]:
     """dish id -> kb id for dishes that exact matching misses but the LLM (or a stored
     answer) maps. Stored answers are always used; the API is called only for new dish
-    text, and only when `call_api` (default: MICHELIN_LLM_MATCH=1)."""
+    text, and only when `call_api` (default: MICHELIN_LLM_MATCH=1). A stored "none" from an
+    older knowledge-base version is asked again, since a new entry may now fit; reviewed
+    answers are never replaced."""
     from michelin.parse.knowledge import match
 
     kb = load_kb()
     cache = load_cache(cache_path)
     call_api = llm_enabled() if call_api is None else call_api
     pending = [d for d in dishes if match(d, kb) is None]
-    new = [d for d in pending if cache_key(d) not in cache["matches"]]
+
+    def settled(dish: Dish) -> bool:
+        stored = cache["matches"].get(cache_key(dish))
+        return bool(stored) and (
+            bool(stored["kb_id"])
+            or stored.get("reviewed")
+            or stored.get("kb_version") == kb.get("version")
+        )
+
+    new = [d for d in pending if not settled(d)]
     if new and call_api:
         provider = provider or provider_name()
         for dish, kb_id in zip(new, ask_llm(new, kb, provider, client), strict=True):
             cache["matches"][cache_key(dish)] = {
                 "kb_id": kb_id,
                 "model": MODELS[provider],
+                "kb_version": kb.get("version"),
                 "date": datetime.now(UTC).date().isoformat(),
                 "reviewed": False,
             }

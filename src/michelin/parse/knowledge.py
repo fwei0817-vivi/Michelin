@@ -99,7 +99,7 @@ def normalize(name: str | None) -> str:
     if not name:
         return ""
     s = name.lower().replace("&", " and ").replace("’", "'")
-    s = re.sub(r"^\s*[a-z]?\d+[.)]?\s+", "", s)
+    s = re.sub(r"^\s*[a-z]{0,3}\d+(?:[.)]\s*|\s+)", "", s)
     s = re.sub(r"\(\s*\d+\s*(pcs?|pieces?)?\s*\)", " ", s)
     s = re.sub(r"[^\w一-鿿]+", " ", s.replace("'", ""))
     return re.sub(r"\s+", " ", s).strip()

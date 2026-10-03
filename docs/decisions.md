@@ -163,3 +163,14 @@ and run-to-run agreement before answers are stored: on 27 name variants, 5 runs,
 answered 96% correctly and gave the same answer on every run for all 27. Its one miss maps
 "Shrimp Lo Mein" to the generic lo_mein entry instead of "none"; printed shrimp still blocks
 shellfish allergies.
+
+## 2026-10-02 — Three real restaurants: Atlas Kitchen, Café China, CHILI
+
+Up to 40 dishes each from the regular dinner menu on each restaurant's own site (lunch and
+happy-hour prices excluded), with provenance in `data/raw/<slug>_source.json` (URL, date,
+names, prices, printed descriptions and tags as listed). Atlas Kitchen is near campus and
+mid-priced; Café China and CHILI are Midtown and pricier, which exercises budget conflicts.
+Labels come from `label_menu --llm`; every menu stays `verified: false` until a person works
+through `data/menus/REVIEW.md`. Finding for that review: Café China and CHILI both print Ma Po
+Tofu as vegetarian, while the knowledge base expects minced meat; the restaurant's own label
+has to be confirmed with the restaurant, not overridden silently either way.

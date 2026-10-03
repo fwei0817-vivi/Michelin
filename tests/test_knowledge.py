@@ -95,6 +95,9 @@ def test_category_filled_only_when_unknown():
 def test_normalize_handles_menu_numbering_and_counts():
     assert normalize("C12. General Tso's Chicken (2)") == "general tsos chicken"
     assert normalize("Hot & Sour Soup") == "hot and sour soup"
+    assert normalize("AS8. Kung Pao Chicken") == "kung pao chicken"
+    assert normalize("A20.Crispy Chicken Wings") == "crispy chicken wings"
+    assert normalize("CSM3. Lobster") == "lobster"
 
 
 def test_relabel_menu_is_unverified_and_keeps_printed_fields(sample_menu):
