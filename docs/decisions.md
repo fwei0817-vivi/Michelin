@@ -191,3 +191,11 @@ decision. What that means, so nobody over-claims it:
 
 Re-labeling: `label_menu` (stored LLM answers) followed by `review_workbook import` on the
 answers file reproduces the menus; setting `verified` stays a deliberate manual step.
+
+### Knowledge-base review status (2026-10-02)
+
+All 58 dishes and 10 sauces in `data/knowledge/hidden_ingredients.json` were drafted with Claude
+from typical NYC recipes, exported to a review sheet (one dropdown per restriction), skimmed by
+the LLM owner and accepted as a whole with no changes. That is a sanity check, not an
+entry-by-entry verification: present it as "AI-drafted, team-reviewed typical recipes", and
+keep `possible` components as staff questions.

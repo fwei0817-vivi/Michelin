@@ -1,6 +1,6 @@
 {
   "version": "2026-10-02b",
-  "note": "Typical NYC restaurant versions. certainty = how often the component is present: definite (defines the dish), likely (most versions), possible (some versions). hits = restriction categories the component triggers, all at the component's certainty. Matching is by exact Chinese name or normalized English alias; anything else is left unknown. Needs human review before use; reviewed entries carry no flag here because the whole file is reviewed together.",
+  "note": "Typical NYC restaurant versions. certainty = how often the component is present: definite (defines the dish), likely (most versions), possible (some versions). hits = restriction categories the component triggers, all at the component's certainty. Matching is by exact Chinese name or normalized English alias; anything else is left unknown. Drafted with Claude from typical NYC recipes; skimmed and accepted as a whole by Ruolin Bao on 2026-10-02 with no changes (not checked entry by entry against restaurants). Edits should be reviewed the same way.",
   "dishes": [
     {"id": "mapo_tofu", "name_zh": ["麻婆豆腐"], "aliases": ["mapo tofu", "ma po tofu", "mapo bean curd", "ma po bean curd"], "category": "braise_or_stew", "portion": "medium",
      "components": [
