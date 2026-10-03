@@ -13,7 +13,7 @@ uv run python eval/run_eval.py --answers eval/baselines/<file>.json   # score a 
 ```
 
 LLM name matching has its own live check (calls the API, costs a little):
-`uv run --extra llm python eval/matcher_eval.py --runs 5` reports accuracy and run-to-run
+`uv run --extra llm --env-file .env python eval/matcher_eval.py --runs 5` reports accuracy and run-to-run
 agreement on `menus/name_variants.json`.
 
 On Windows with a non-UTF-8 locale, set `PYTHONUTF8=1` first. Reports land in `eval/results/`.

@@ -1,6 +1,6 @@
 """Accuracy and run-to-run consistency of the LLM name matcher (live API, costs money).
 
-    uv run --extra llm python eval/matcher_eval.py --runs 5
+    uv run --extra llm --env-file .env python eval/matcher_eval.py --runs 5
 
 Sends every name in menus/name_variants.json to Claude `--runs` times, bypassing the stored
 answers, and reports how often each answer matches the expected entry and whether repeated

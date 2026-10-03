@@ -6,8 +6,8 @@ normalized printed text, and reused verbatim: the same dish text gets the same m
 time, and a person can review or overwrite any stored answer (set "kb_id" and
 "reviewed": true). Only dishes without a stored answer reach the API.
 
-Requires the optional `llm` extra and an Anthropic credential (ANTHROPIC_API_KEY in .env,
-or an `ant auth login` profile). Only dish names and descriptions are sent, never images.
+Requires the optional `llm` extra and an Anthropic credential in the environment
+(ANTHROPIC_API_KEY, e.g. `uv run --env-file .env ...`, or an `ant auth login` profile). Only dish names and descriptions are sent, never images.
 """
 
 from __future__ import annotations
