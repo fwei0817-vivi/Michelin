@@ -145,3 +145,16 @@ and sauces staff can confirm or leave out; allergies are medical and pork/beef r
 are often religious, so asking is not enough there. Effect on the evaluation: false refusals
 4 -> 1 (the remaining one involves dishes the knowledge base does not know), severe
 violations still 0.
+
+## 2026-10-02 — Claude maps unusual dish names to the knowledge base
+
+`parse/matcher.py` sends dish names the knowledge base does not match exactly (names and
+printed descriptions only, never images) to Claude (`claude-opus-5-5`), which may only answer
+with a knowledge-base id or "none". The answer is stored in `data/knowledge/llm_matches.json`
+and reused for the same text, so labels stay deterministic and reviewable; a dish matched
+this way gets a staff question to confirm it is the same dish, and printed evidence still
+applies. Calls happen only with `MICHELIN_LLM_MATCH=1` (or `label_menu --llm`) and an
+Anthropic credential; without them the app behaves as before.
+Why: exact names miss common spellings ("Spicy Tofu w/ Ground Pork"); letting the model pick
+from a closed list keeps it out of ingredient claims. `eval/matcher_eval.py` measures accuracy
+and run-to-run agreement before answers are stored.

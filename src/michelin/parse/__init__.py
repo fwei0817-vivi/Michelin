@@ -39,12 +39,16 @@ def parse_text(text: str) -> list[Dish]:
 
 def label_imported(dishes: list[Dish]) -> list[Dish]:
     """Knowledge-base labels for imported rows. A recognized dish drops the generic
-    question in favour of specific ones; an unrecognized dish keeps it."""
+    question in favour of specific ones; an unrecognized dish keeps it. Names the knowledge
+    base misses go to the LLM matcher (stored answers always; new ones only when
+    MICHELIN_LLM_MATCH=1)."""
     from michelin.parse.knowledge import label_dish
+    from michelin.parse.matcher import match_names
 
+    suggested = match_names(dishes)
     out = []
     for dish in dishes:
-        labeled = label_dish(dish)
+        labeled = label_dish(dish, suggested=suggested.get(dish.id))
         if labeled.match:
             generic = generic_question(dish.name_en or "")
             questions = [q for q in labeled.dish.confirm_with_staff if q != generic]

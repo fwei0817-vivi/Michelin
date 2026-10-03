@@ -5,7 +5,9 @@
 The input is a `Menu` whose dishes need only id, names, price and description; any existing
 ingredient, allergen or diet labels are replaced. The output is always `verified: false`.
 A person must check every dish against the menu photo, then set `verified: true`. The
-summary lists unrecognized dishes first: those are the ones to review hardest.
+summary lists unrecognized dishes first: those are the ones to review hardest. With `--llm`,
+names the knowledge base misses are sent to Claude (see parse/matcher.py); its answers are
+stored in data/knowledge/llm_matches.json and reused.
 """
 
 from __future__ import annotations
@@ -15,16 +17,20 @@ import sys
 from pathlib import Path
 
 from michelin.parse.knowledge import label_dish
+from michelin.parse.matcher import match_names
 from michelin.schemas import Dish, Menu
 
 PRINTED_FIELDS = ("id", "name_zh", "name_en", "price", "description_raw", "category", "portion")
 
 
-def relabel(menu: Menu) -> tuple[Menu, list[tuple[str, str | None, tuple[str, ...]]]]:
+def relabel(
+    menu: Menu, call_api: bool | None = None
+) -> tuple[Menu, list[tuple[str, str | None, tuple[str, ...]]]]:
+    printed = [Dish(**{k: getattr(d, k) for k in PRINTED_FIELDS}) for d in menu.dishes]
+    suggested = match_names(printed, call_api=call_api)
     dishes, summary = [], []
-    for dish in menu.dishes:
-        printed = Dish(**{k: getattr(dish, k) for k in PRINTED_FIELDS})
-        labeled = label_dish(printed)
+    for dish in printed:
+        labeled = label_dish(dish, suggested=suggested.get(dish.id))
         dishes.append(labeled.dish)
         summary.append((dish.id, labeled.match, labeled.sauces))
     return menu.model_copy(update={"dishes": dishes, "verified": False}), summary
@@ -34,10 +40,11 @@ def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("menu", type=Path)
     ap.add_argument("-o", "--out", type=Path, help="write here instead of stdout")
+    ap.add_argument("--llm", action="store_true", help="ask Claude about unrecognized names")
     args = ap.parse_args(argv)
 
     menu = Menu.model_validate_json(args.menu.read_text(encoding="utf-8"))
-    labeled, summary = relabel(menu)
+    labeled, summary = relabel(menu, call_api=args.llm or None)
     body = labeled.model_dump_json(indent=2) + "\n"
     if args.out:
         args.out.write_text(body, encoding="utf-8")

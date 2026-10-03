@@ -69,7 +69,10 @@ keep unknown dietary flags. Either way they require explicit review before use. 
 AI calls are made.
 
 To label a whole menu file for review: `uv run python -m michelin.parse.label_menu draft.json
--o data/menus/<slug>.json`. The output is unverified. The bad-case evaluation lives in
+-o data/menus/<slug>.json`. The output is unverified. Add `--llm` (with `uv sync --extra llm`
+and `ANTHROPIC_API_KEY` set) to let Claude map names the knowledge base misses; set
+`MICHELIN_LLM_MATCH=1` to do the same for in-app imports. Stored answers live in
+`data/knowledge/llm_matches.json`. The bad-case evaluation lives in
 `eval/` (see `eval/README.md`).
 
 Additional API fields on `POST /api/plan`: `menu_override`, `dish_count_target` (1–20),
