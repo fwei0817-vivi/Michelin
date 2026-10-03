@@ -65,8 +65,8 @@ at the end, or upload an English PNG/JPEG/WebP menu image (up to 8 MB). Image ex
 requires the `tesseract` executable with English language data (included in the Dockerfile).
 If unavailable, text import and manual entry still work. Imported dishes are labeled from the
 reviewed hidden-ingredient knowledge base (`data/knowledge/`); dishes it does not recognize
-keep unknown dietary flags. Either way they require explicit review before use. No external
-AI calls are made.
+keep unknown dietary flags. Either way they require explicit review before use. By default no
+external AI calls are made; LLM name matching is opt-in (below).
 
 To label a whole menu file for review: `uv run python -m michelin.parse.label_menu draft.json
 -o data/menus/<slug>.json`. The output is unverified. Add `--llm` (with `uv sync --extra llm` and

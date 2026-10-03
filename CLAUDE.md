@@ -141,6 +141,7 @@ claims, live scraping of Google Maps or delivery platforms.
 and `style_preference` (`balanced`, `lighter`, `favorites`). Menu overrides are request-local,
 not written to the shared fixtures. `POST /api/menu/evaluate` evaluates candidate eligibility
 for `{menu, diners}`. `POST /api/menu/parse` extracts English name/price rows from `{text}` or
-`{image_base64}`; image OCR uses local Tesseract. Imported dietary fields remain unknown.
+`{image_base64}`; image OCR uses local Tesseract. Imported dishes are now labeled from
+`data/knowledge/` (2026-10-02 in `docs/decisions.md`); unrecognized ones stay unknown.
 All imports and edits require review before planning. No LLM credentials are required for
 the current deterministic planner or grounded explanations. See README for operating limits.
