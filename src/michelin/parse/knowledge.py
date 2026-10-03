@@ -16,10 +16,10 @@ product rule 3), every allergen without stronger evidence gets an `unknown` flag
 must be asked. An LLM matcher may later map unusual names to an entry id; it never writes
 ingredients itself.
 
-Policy for `possible` components (decided 2026-10-02, see docs/decisions.md): vegetarian and
-vegan stay eligible with a staff question, since these are mostly stocks and sauces the
-kitchen can confirm or leave out. Allergies, no-pork and no-beef stay strict: `possible`
-leaves the flag `unknown`/`None`, which the planner treats as unsafe.
+Policy for `possible` components (decided 2026-10-02, see docs/decisions.md): allergies are
+strict, diets ask. An allergen that is only possible stays `unknown`, which blocks it. For
+vegetarian, vegan, no-pork and no-beef the dish stays eligible and its staff question names the
+component, since a diet is something the diner confirms with staff anyway.
 """
 
 from __future__ import annotations
@@ -216,11 +216,14 @@ def _diet_ok(components: list[Component], breakers: set[str], known: bool) -> bo
 
 
 def _contains(components: list[Component], hit: str, known: bool) -> bool | None:
+    """True if a definite/likely component; None if the dish is unknown, or it has meat of an
+    unspecified kind that could be this one; False otherwise. A possible component leaves
+    False: its staff question carries the caveat (see policy above)."""
     cert = _strongest(components, {hit})
     if cert in ("definite", "likely"):
         return True
-    if cert == "possible" or not known or _strongest(components, {"meat"}):
-        return None  # unspecified meat: cannot rule this one out
+    if not known or (cert is None and _strongest(components, {"meat"}) in ("definite", "likely")):
+        return None
     return False
 
 

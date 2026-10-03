@@ -136,15 +136,18 @@ from printed text alone (hidden egg, minced pork, peanuts, sauces); the planner'
 already correct given correct labels. With knowledge-base labels severe violations went from
 14 to 0 on the trap scenarios, while unrecognized holdout dishes fell back to "ask staff".
 
-`possible` components: vegetarian and vegan diners may order the dish, and the staff question
-names the component (chicken powder, oyster sauce, egg wash). Allergies, no-pork and no-beef
-stay strict: `possible` leaves the flag unknown and the dish is not counted for that diner.
+`possible` components: allergies are strict, diets ask. An allergen that is only possible
+stays unknown and the dish is not counted for that diner. For vegetarian, vegan, no-pork and
+no-beef diners the dish stays eligible and the staff question names the component (chicken
+powder, oyster sauce, minced pork). Meat of an unspecified kind that is definite or likely
+still blocks no-pork and no-beef, since it may be either.
 Why: refusing every `possible` dish made four evaluated tables report "no order works" while
-a safe order existed (including the sample group). Vegetarian "possibles" are mostly stocks
-and sauces staff can confirm or leave out; allergies are medical and pork/beef restrictions
-are often religious, so asking is not enough there. Effect on the evaluation: false refusals
-4 -> 1 (the remaining one involves dishes the knowledge base does not know), severe
-violations still 0.
+a safe order existed (including the sample group). A diet is confirmed by asking staff, the
+same question for a vegetarian or a no-pork diner; an allergy is medical, so a question is not
+enough. An earlier version kept no-pork and no-beef strict while letting vegetarians ask, which
+treated the same uncertain minced meat differently for two diners. Effect on the evaluation:
+false refusals 4 -> 1 (the remaining one involves dishes the knowledge base does not know),
+severe violations still 0.
 
 ## 2026-10-02 — An LLM maps unusual dish names to the knowledge base
 
@@ -172,8 +175,8 @@ names, prices, printed descriptions and tags as listed). Atlas Kitchen is near c
 mid-priced; Café China and CHILI are Midtown and pricier, which exercises budget conflicts.
 Labels come from `label_menu --llm` plus the review answers described below. Finding from that
 review: Café China and CHILI both print Ma Po Tofu as vegetarian, while the knowledge base
-expects minced meat; neither side is overridden silently. Meat is treated as `possible`, so a
-vegetarian may order it after the staff question, and a no-pork diner may not.
+expects minced meat; neither side is overridden silently. Meat is treated as `possible`, so vegetarian,
+no-pork and no-beef diners may order it after the staff question.
 
 ### Labels for the three restaurants: how they were made (2026-10-02)
 

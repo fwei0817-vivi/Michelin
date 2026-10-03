@@ -11,9 +11,6 @@
 | Over budget | 0 |
 | Wrong arithmetic | 0 |
 | False "no order works" | 0 |
-| Menu level: unsafe dishes allowed | 0 |
-| Menu level: safe dishes refused | 0 |
-| Menu level: possible-only dishes refused | 2 |
 
 ## By trap type
 
@@ -65,9 +62,9 @@ reference asks, label clears. **stricter** = label more cautious than the refere
 
 | Dishes | correct | missed | weakened | unflagged | stricter | accuracy |
 |---|---|---|---|---|---|---|
-| in knowledge base | 364 | 0 | 0 | 12 | 1 | 97% |
+| in knowledge base | 363 | 0 | 0 | 13 | 1 | 96% |
 | not in knowledge base (holdout) | 78 | 0 | 0 | 0 | 0 | 100% |
-| all | 442 | 0 | 0 | 12 | 1 | 97% |
+| all | 441 | 0 | 0 | 13 | 1 | 97% |
 
 ## Details
 
@@ -76,12 +73,6 @@ reference asks, label clears. **stricter** = label more cautious than the refere
 
 **C02**
 - detail: No order meets the current budget, portions, dietary coverage, and kept dishes. Review the options below, or change your kept dishes or menu.
-
-**H05**
-- menu: possible-only refused: nopork <- yuxiang_eggplant
-
-**H09**
-- menu: possible-only refused: nopork <- yuxiang_eggplant
 
 **L02**
 - detail: No order meets the current budget, portions, dietary coverage, and kept dishes. Review the options below, or change your kept dishes or menu.

@@ -82,5 +82,6 @@ def test_reviewed_row_overrides_a_knowledge_base_match(tmp_path, sample_menu):
     import_sheet(sheet, [menu_path])
     dish = Menu.model_validate_json(menu_path.read_text(encoding="utf-8")).dish("mapo_tofu")
     assert dish.is_vegetarian is True  # possible meat: vegetarian may ask
-    assert dish.contains_pork is None  # no-pork stays strict
+    assert dish.contains_pork is False  # diets ask: no-pork may order after the question
+    assert any("pork" in q for q in dish.confirm_with_staff)
     assert not any("same dish" in q or "recognize" in q for q in dish.confirm_with_staff)

@@ -13,7 +13,7 @@
 | False "no order works" | 1 |
 | Menu level: unsafe dishes allowed | 3 |
 | Menu level: safe dishes refused | 12 |
-| Menu level: possible-only dishes refused | 2 |
+| Menu level: possible-only dishes refused | 0 |
 
 ## By trap type
 
@@ -65,9 +65,9 @@ reference asks, label clears. **stricter** = label more cautious than the refere
 
 | Dishes | correct | missed | weakened | unflagged | stricter | accuracy |
 |---|---|---|---|---|---|---|
-| in knowledge base | 360 | 0 | 0 | 12 | 5 | 95% |
+| in knowledge base | 359 | 0 | 0 | 14 | 4 | 95% |
 | not in knowledge base (holdout) | 14 | 0 | 16 | 0 | 48 | 18% |
-| all | 374 | 0 | 16 | 12 | 53 | 82% |
+| all | 373 | 0 | 16 | 14 | 52 | 82% |
 
 Missed or weakened, by trap: hidden 13, name_inference 3
 
@@ -115,14 +115,10 @@ Missed or weakened, by trap: hidden 13, name_inference 3
 **H04**
 - menu: safe refused: vegan <- smashed_cucumber
 
-**H05**
-- menu: possible-only refused: nopork <- yuxiang_eggplant
-
 **H09**
 - menu: safe refused: veg <- smashed_cucumber
 - menu: safe refused: nopork <- smashed_cucumber
 - menu: safe refused: nopork <- salt_pepper_shrimp
-- menu: possible-only refused: nopork <- yuxiang_eggplant
 
 **L02**
 - menu: safe refused: veg <- smashed_cucumber

@@ -536,7 +536,7 @@
       ],
       "is_vegetarian": true,
       "is_vegan": true,
-      "contains_pork": null,
+      "contains_pork": false,
       "contains_beef": false,
       "confirm_with_staff": [
         "Scallion Pancake: ask whether it uses lard."
@@ -1413,7 +1413,7 @@
       ],
       "is_vegetarian": true,
       "is_vegan": true,
-      "contains_pork": null,
+      "contains_pork": false,
       "contains_beef": false,
       "confirm_with_staff": [
         "Sautéed Sliced Eggplant with Chili: ask whether it uses pork or lard.",
@@ -1604,7 +1604,7 @@
       ],
       "is_vegetarian": true,
       "is_vegan": true,
-      "contains_pork": null,
+      "contains_pork": false,
       "contains_beef": false,
       "confirm_with_staff": [
         "Stir-fried Cabbage: ask whether it uses lard.",
@@ -1665,7 +1665,7 @@
       "is_vegetarian": false,
       "is_vegan": false,
       "contains_pork": true,
-      "contains_beef": null,
+      "contains_beef": false,
       "confirm_with_staff": [
         "Mapo Tofu: ask whether it uses minced beef."
       ]
@@ -1975,7 +1975,7 @@
       ],
       "is_vegetarian": true,
       "is_vegan": true,
-      "contains_pork": null,
+      "contains_pork": false,
       "contains_beef": false,
       "confirm_with_staff": [
         "Broccoli with Garlic Sauce: ask whether it uses pork or lard."

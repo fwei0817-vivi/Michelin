@@ -64,8 +64,8 @@ def load_eval_menu(name: str) -> dict[str, dict]:
 
 
 def _diet_flag(found: dict[str, str], breakers: set[str], ask_ok: bool = False) -> bool | None:
-    """ask_ok: a possible breaker stays eligible with a staff question (vegetarian/vegan
-    policy, same as src/michelin/parse/knowledge.py)."""
+    """ask_ok: a possible breaker stays eligible with a staff question (diet policy, same as
+    src/michelin/parse/knowledge.py)."""
     certs = [c for hit, c in found.items() if hit in breakers]
     if any(c in SEVERE for c in certs):
         return False
@@ -84,9 +84,9 @@ def _flags(dish: dict, found: dict[str, str], printed_only: bool) -> dict:
         for hit, cert in sorted(found.items())
         if hit in ALLERGEN_HITS
     ]
-    pork = _diet_flag(found, {"pork"})
-    beef = _diet_flag(found, {"beef"})
-    if "meat" in found:  # unspecified meat: pork/beef status unknown unless established
+    pork = _diet_flag(found, {"pork"}, ask_ok=not printed_only)
+    beef = _diet_flag(found, {"beef"}, ask_ok=not printed_only)
+    if found.get("meat") in SEVERE:  # meat of unspecified kind: could be pork or beef
         pork = pork if pork is False else None
         beef = beef if beef is False else None
     return {

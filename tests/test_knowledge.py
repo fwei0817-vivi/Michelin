@@ -19,7 +19,8 @@ def test_name_inference_mapo_tofu_has_meat_even_when_menu_says_tofu():
     assert out.match == "mapo_tofu"
     assert out.dish.is_vegetarian is False
     assert out.dish.contains_pork is True  # likely pork blocks a no-pork diner
-    assert out.dish.contains_beef is None  # possible beef: ask, never certify
+    assert out.dish.contains_beef is False  # possible beef: no-beef diner asks staff
+    assert any("minced beef" in q for q in out.dish.confirm_with_staff)
 
 
 def test_chinese_name_matches_without_english():
@@ -35,9 +36,9 @@ def test_fish_fragrant_eggplant_is_not_a_fish_dish():
     out = label_dish(dish("Fish-Fragrant Eggplant", "鱼香茄子", "eggplant in garlic sauce"))
     assert out.match == "yuxiang_eggplant"
     assert Allergen.FISH not in {f.allergen for f in out.dish.allergens}
-    # Possible minced pork: a vegetarian may order after asking; no-pork stays strict.
+    # Possible minced pork: vegetarian and no-pork diners may order after asking.
     assert out.dish.is_vegetarian is True
-    assert out.dish.contains_pork is None
+    assert out.dish.contains_pork is False
     assert any("minced pork" in q for q in out.dish.confirm_with_staff)
 
 
@@ -118,3 +119,11 @@ def test_crab_meat_is_shellfish_not_meat():
     hits = {h for c in gather(d)[0] for h in c.hits}
     assert "shellfish" in hits and "meat" not in hits
     assert "meat" in {h for c in gather(dish("Lamb with Cumin"))[0] for h in c.hits}
+
+
+def test_unspecified_meat_blocks_no_pork_only_when_likely():
+    from michelin.parse.knowledge import Component, _contains
+
+    meat = [Component("minced meat", ("meat",), "definite")]
+    assert _contains(meat, "pork", known=True) is None  # could be pork: not certified
+    assert _contains([Component("meat", ("meat",), "possible")], "pork", known=True) is False

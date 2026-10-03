@@ -787,7 +787,7 @@
       ],
       "is_vegetarian": true,
       "is_vegan": true,
-      "contains_pork": null,
+      "contains_pork": false,
       "contains_beef": false,
       "confirm_with_staff": [
         "Scallion Pancakes: ask whether it uses lard."
@@ -852,7 +852,7 @@
       ],
       "is_vegetarian": false,
       "is_vegan": false,
-      "contains_pork": null,
+      "contains_pork": false,
       "contains_beef": false,
       "confirm_with_staff": [
         "Chive Pancakes (2): ask whether it uses pork or lard."
@@ -1781,8 +1781,8 @@
       ],
       "is_vegetarian": true,
       "is_vegan": true,
-      "contains_pork": null,
-      "contains_beef": null,
+      "contains_pork": false,
+      "contains_beef": false,
       "confirm_with_staff": [
         "Ma Po Tofu: ask whether it uses pork or lard.",
         "Ma Po Tofu: ask whether it uses beef.",
@@ -1976,7 +1976,7 @@
       ],
       "is_vegetarian": false,
       "is_vegan": false,
-      "contains_pork": null,
+      "contains_pork": false,
       "contains_beef": false,
       "confirm_with_staff": [
         "Eggplants and String Beans: ask whether it uses pork or lard."
@@ -2024,7 +2024,7 @@
       ],
       "is_vegetarian": false,
       "is_vegan": false,
-      "contains_pork": null,
+      "contains_pork": false,
       "contains_beef": false,
       "confirm_with_staff": [
         "Poached Snow Pea Shoots: ask whether it uses pork or lard."
@@ -2068,7 +2068,7 @@
       ],
       "is_vegetarian": true,
       "is_vegan": true,
-      "contains_pork": null,
+      "contains_pork": false,
       "contains_beef": false,
       "confirm_with_staff": [
         "Stir-fried Cabbage: ask whether it uses lard.",
@@ -2113,7 +2113,7 @@
       ],
       "is_vegetarian": true,
       "is_vegan": true,
-      "contains_pork": null,
+      "contains_pork": false,
       "contains_beef": false,
       "confirm_with_staff": [
         "Eggplants in Garlic Sauce: ask whether it uses minced pork."

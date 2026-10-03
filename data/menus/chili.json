@@ -559,7 +559,7 @@
       ],
       "is_vegetarian": true,
       "is_vegan": true,
-      "contains_pork": null,
+      "contains_pork": false,
       "contains_beef": false,
       "confirm_with_staff": [
         "Scallion Pancakes (6 pcs): ask whether it uses lard."
@@ -1665,8 +1665,8 @@
       ],
       "is_vegetarian": true,
       "is_vegan": true,
-      "contains_pork": null,
-      "contains_beef": null,
+      "contains_pork": false,
+      "contains_beef": false,
       "confirm_with_staff": [
         "Ma Po Tofu: ask whether it uses pork or lard.",
         "Ma Po Tofu: ask whether it uses beef.",
@@ -1840,7 +1840,7 @@
       ],
       "is_vegetarian": true,
       "is_vegan": false,
-      "contains_pork": null,
+      "contains_pork": false,
       "contains_beef": false,
       "confirm_with_staff": [
         "Fried Rice with Preserved Vegetable: ask whether it uses pork or lard."
@@ -1961,7 +1961,7 @@
       ],
       "is_vegetarian": true,
       "is_vegan": true,
-      "contains_pork": null,
+      "contains_pork": false,
       "contains_beef": false,
       "confirm_with_staff": [
         "Eggplant in Garlic Sauce: ask whether it uses minced pork."
