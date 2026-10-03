@@ -1,4 +1,4 @@
-"""Map dish names the knowledge base does not recognize to one of its entries, with Claude.
+"""Map dish names the knowledge base does not recognize to one of its entries, with an LLM.
 
 The model only chooses an entry id (or "none") from a fixed list; it never writes
 ingredients. Every answer is stored in `data/knowledge/llm_matches.json`, keyed by the
@@ -6,8 +6,15 @@ normalized printed text, and reused verbatim: the same dish text gets the same m
 time, and a person can review or overwrite any stored answer (set "kb_id" and
 "reviewed": true). Only dishes without a stored answer reach the API.
 
-Requires the optional `llm` extra and an Anthropic credential in the environment
-(ANTHROPIC_API_KEY, e.g. `uv run --env-file .env ...`, or an `ant auth login` profile). Only dish names and descriptions are sent, never images.
+Providers (MICHELIN_LLM_PROVIDER, default gemini), all behind the same closed-list prompt:
+
+  gemini         gemini-2.5-pro on Vertex AI, Google Application Default Credentials
+                 (`gcloud auth application-default login`); project from GOOGLE_CLOUD_PROJECT
+                 or the gcloud default, region from GOOGLE_CLOUD_LOCATION (us-central1)
+  claude-vertex  claude-opus-5-5 on Vertex AI, same credentials (needs Claude quota)
+  claude         claude-opus-5-5 on the Anthropic API, ANTHROPIC_API_KEY
+
+Requires the optional `llm` extra. Only dish names and descriptions are sent, never images.
 """
 
 from __future__ import annotations
@@ -21,7 +28,11 @@ from michelin.parse.knowledge import load_kb, normalize
 from michelin.schemas import Dish
 
 CACHE_PATH = Path(__file__).resolve().parents[3] / "data/knowledge/llm_matches.json"
-MODEL = "claude-opus-5-5"
+MODELS = {
+    "gemini": "gemini-2.5-pro",
+    "claude-vertex": "claude-opus-5-5",
+    "claude": "claude-opus-5-5",
+}
 NONE = "none"
 
 SYSTEM = """You match dishes from Chinese restaurant menus in New York to entries in a \
@@ -86,37 +97,101 @@ def _schema(ids: list[str]) -> dict:
     }
 
 
-def ask_claude(dishes: list[Dish], kb: dict, client=None) -> list[str | None]:
-    """One request for all dishes. Returns a kb id or None per dish, in order."""
-    if client is None:
-        import anthropic
-
-        client = anthropic.Anthropic()
-    ids = sorted(e["id"] for e in kb["dishes"])
-    listing = "\n".join(
+def _listing(dishes: list[Dish]) -> str:
+    return "Dishes:\n" + "\n".join(
         f"{i}. " + " | ".join(filter(None, [d.name_zh, d.name_en, d.description_raw]))
         for i, d in enumerate(dishes)
     )
+
+
+def _parse(text: str | None, n: int, ids: list[str]) -> list[str | None]:
+    """Keep only well-formed answers naming a real id; anything else is no match."""
+    out: list[str | None] = [None] * n
+    if not text:
+        return out
+    for row in json.loads(text).get("matches", []):
+        if isinstance(row.get("dish"), int) and 0 <= row["dish"] < n and row.get("kb_id") in ids:
+            out[row["dish"]] = row["kb_id"]
+    return out
+
+
+def _gcp_project() -> str | None:
+    if os.environ.get("GOOGLE_CLOUD_PROJECT"):
+        return os.environ["GOOGLE_CLOUD_PROJECT"]
+    import google.auth
+
+    return google.auth.default()[1]
+
+
+def _ask_claude(dishes: list[Dish], kb: dict, client, vertex: bool) -> list[str | None]:
+    if client is None:
+        import anthropic
+
+        client = (
+            anthropic.AnthropicVertex(project_id=_gcp_project(), region="global")
+            if vertex
+            else anthropic.Anthropic()
+        )
+    ids = sorted(e["id"] for e in kb["dishes"])
+    # Server-side refusal fallbacks exist on the Anthropic API only, not on Vertex.
+    extra = {} if vertex else {"betas": ["server-side-fallback-2026-07-01"], "fallbacks": "default"}
     response = client.beta.messages.create(
-        model=MODEL,
+        model=MODELS["claude"],
         max_tokens=4000,
-        betas=["server-side-fallback-2026-07-01"],
-        fallbacks="default",
         output_config={"effort": "low", "format": {"type": "json_schema", "schema": _schema(ids)}},
         system=[
             {"type": "text", "text": SYSTEM},
             {"type": "text", "text": catalog_text(kb), "cache_control": {"type": "ephemeral"}},
         ],
-        messages=[{"role": "user", "content": f"Dishes:\n{listing}"}],
+        messages=[{"role": "user", "content": _listing(dishes)}],
+        **extra,
     )
-    out: list[str | None] = [None] * len(dishes)
     if response.stop_reason != "end_turn":  # refusal or truncation: match nothing
-        return out
+        return [None] * len(dishes)
     text = next(b.text for b in response.content if b.type == "text")
-    for row in json.loads(text)["matches"]:
-        if 0 <= row["dish"] < len(dishes) and row["kb_id"] in ids:
-            out[row["dish"]] = row["kb_id"]
-    return out
+    return _parse(text, len(dishes), ids)
+
+
+def _ask_gemini(dishes: list[Dish], kb: dict, client) -> list[str | None]:
+    from google.genai import types
+
+    if client is None:
+        from google import genai
+
+        client = genai.Client(
+            vertexai=True,
+            project=_gcp_project(),
+            location=os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1"),
+        )
+    ids = sorted(e["id"] for e in kb["dishes"])
+    response = client.models.generate_content(
+        model=MODELS["gemini"],
+        contents=_listing(dishes),
+        config=types.GenerateContentConfig(
+            system_instruction=[SYSTEM, catalog_text(kb)],
+            temperature=0,
+            response_mime_type="application/json",
+            response_json_schema=_schema(ids),
+        ),
+    )
+    return _parse(response.text, len(dishes), ids)
+
+
+def provider_name() -> str:
+    name = os.environ.get("MICHELIN_LLM_PROVIDER", "gemini")
+    if name not in MODELS:
+        raise ValueError(f"MICHELIN_LLM_PROVIDER must be one of {sorted(MODELS)}, not {name!r}")
+    return name
+
+
+def ask_llm(
+    dishes: list[Dish], kb: dict, provider: str | None = None, client=None
+) -> list[str | None]:
+    """One request for all dishes. Returns a kb id or None per dish, in order."""
+    provider = provider or provider_name()
+    if provider == "gemini":
+        return _ask_gemini(dishes, kb, client)
+    return _ask_claude(dishes, kb, client, vertex=provider == "claude-vertex")
 
 
 def llm_enabled() -> bool:
@@ -127,6 +202,7 @@ def match_names(
     dishes: list[Dish],
     *,
     call_api: bool | None = None,
+    provider: str | None = None,
     client=None,
     cache_path: Path = CACHE_PATH,
 ) -> dict[str, str]:
@@ -141,10 +217,11 @@ def match_names(
     pending = [d for d in dishes if match(d, kb) is None]
     new = [d for d in pending if cache_key(d) not in cache["matches"]]
     if new and call_api:
-        for dish, kb_id in zip(new, ask_claude(new, kb, client), strict=True):
+        provider = provider or provider_name()
+        for dish, kb_id in zip(new, ask_llm(new, kb, provider, client), strict=True):
             cache["matches"][cache_key(dish)] = {
                 "kb_id": kb_id,
-                "model": MODEL,
+                "model": MODELS[provider],
                 "date": datetime.now(UTC).date().isoformat(),
                 "reviewed": False,
             }

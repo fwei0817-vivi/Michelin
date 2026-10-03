@@ -1,8 +1,8 @@
 """Accuracy and run-to-run consistency of the LLM name matcher (live API, costs money).
 
-    uv run --extra llm --env-file .env python eval/matcher_eval.py --runs 5
+    uv run --extra llm python eval/matcher_eval.py --runs 5   # Gemini on Vertex via ADC
 
-Sends every name in menus/name_variants.json to Claude `--runs` times, bypassing the stored
+Sends every name in menus/name_variants.json to the LLM (MICHELIN_LLM_PROVIDER) `--runs` times, bypassing the stored
 answers, and reports how often each answer matches the expected entry and whether repeated
 runs agree. In the app, stored answers make matching deterministic; this measures what the
 model does before an answer is stored. Results go to eval/results/matcher.md.
@@ -16,7 +16,7 @@ from collections import Counter
 from pathlib import Path
 
 from michelin.parse.knowledge import load_kb, match
-from michelin.parse.matcher import MODEL, ask_claude
+from michelin.parse.matcher import MODELS, ask_llm, provider_name
 from michelin.schemas import Dish
 
 EVAL = Path(__file__).resolve().parent
@@ -38,7 +38,8 @@ def main() -> None:
         rows.append((v, d))
     dishes = [d for _, d in rows]
 
-    answers = [[a or "none" for a in ask_claude(dishes, kb)] for _ in range(args.runs)]
+    provider = provider_name()
+    answers = [[a or "none" for a in ask_llm(dishes, kb, provider)] for _ in range(args.runs)]
     per_name = [[run[i] for run in answers] for i in range(len(rows))]
 
     correct = sum(a == v["expect"] for (v, _), got in zip(rows, per_name, strict=True)
@@ -51,7 +52,7 @@ def main() -> None:
         if v["expect"] == "none" and a != "none"
     ]
     lines = [
-        f"# LLM matcher: {MODEL}, {args.runs} runs x {len(rows)} names",
+        f"# LLM matcher: {MODELS[provider]}, {args.runs} runs x {len(rows)} names",
         "",
         "| Metric | Value |",
         "|---|---|",

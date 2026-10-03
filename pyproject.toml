@@ -11,7 +11,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.5", "httpx>=0.27"]
-llm = ["anthropic>=1.0"]  # optional: LLM dish-name matching (parse/matcher.py)
+llm = ["anthropic[vertex]>=1.0", "google-genai>=1.0"]  # optional: LLM dish-name matching (parse/matcher.py)
 
 [build-system]
 requires = ["hatchling"]

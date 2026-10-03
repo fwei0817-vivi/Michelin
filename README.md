@@ -69,9 +69,10 @@ keep unknown dietary flags. Either way they require explicit review before use. 
 AI calls are made.
 
 To label a whole menu file for review: `uv run python -m michelin.parse.label_menu draft.json
--o data/menus/<slug>.json`. The output is unverified. Add `--llm` (with `uv sync --extra llm`
-and `ANTHROPIC_API_KEY` set) to let Claude map names the knowledge base misses; set
-`MICHELIN_LLM_MATCH=1` to do the same for in-app imports. Stored answers live in
+-o data/menus/<slug>.json`. The output is unverified. Add `--llm` (with `uv sync --extra llm` and
+`gcloud auth application-default login`) to let an LLM map names the knowledge base misses;
+set `MICHELIN_LLM_MATCH=1` to do the same for in-app imports. The default provider is
+`gemini-2.5-pro` on Vertex AI; `MICHELIN_LLM_PROVIDER=claude-vertex` or `claude` switches it. Stored answers live in
 `data/knowledge/llm_matches.json`. The bad-case evaluation lives in
 `eval/` (see `eval/README.md`).
 

@@ -6,7 +6,7 @@ The input is a `Menu` whose dishes need only id, names, price and description; a
 ingredient, allergen or diet labels are replaced. The output is always `verified: false`.
 A person must check every dish against the menu photo, then set `verified: true`. The
 summary lists unrecognized dishes first: those are the ones to review hardest. With `--llm`,
-names the knowledge base misses are sent to Claude (see parse/matcher.py); its answers are
+names the knowledge base misses are sent to an LLM (see parse/matcher.py); its answers are
 stored in data/knowledge/llm_matches.json and reused.
 """
 
@@ -40,7 +40,7 @@ def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("menu", type=Path)
     ap.add_argument("-o", "--out", type=Path, help="write here instead of stdout")
-    ap.add_argument("--llm", action="store_true", help="ask Claude about unrecognized names")
+    ap.add_argument("--llm", action="store_true", help="ask the LLM about unrecognized names")
     args = ap.parse_args(argv)
 
     menu = Menu.model_validate_json(args.menu.read_text(encoding="utf-8"))

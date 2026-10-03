@@ -146,15 +146,20 @@ are often religious, so asking is not enough there. Effect on the evaluation: fa
 4 -> 1 (the remaining one involves dishes the knowledge base does not know), severe
 violations still 0.
 
-## 2026-10-02 — Claude maps unusual dish names to the knowledge base
+## 2026-10-02 — An LLM maps unusual dish names to the knowledge base
 
 `parse/matcher.py` sends dish names the knowledge base does not match exactly (names and
-printed descriptions only, never images) to Claude (`claude-opus-5-5`), which may only answer
-with a knowledge-base id or "none". The answer is stored in `data/knowledge/llm_matches.json`
+printed descriptions only, never images) to an LLM, which may only answer with a
+knowledge-base id or "none". Default: `gemini-2.5-pro` on the course's Vertex AI project with
+gcloud ADC (the organization disallows API keys; Claude on Vertex currently has no quota,
+`MICHELIN_LLM_PROVIDER=claude-vertex` switches once it does). Temperature 0. The answer is stored in `data/knowledge/llm_matches.json`
 and reused for the same text, so labels stay deterministic and reviewable; a dish matched
 this way gets a staff question to confirm it is the same dish, and printed evidence still
-applies. Calls happen only with `MICHELIN_LLM_MATCH=1` (or `label_menu --llm`) and an
-Anthropic credential; without them the app behaves as before.
+applies. Calls happen only with `MICHELIN_LLM_MATCH=1` (or `label_menu --llm`) and credentials;
+without them the app behaves as before.
 Why: exact names miss common spellings ("Spicy Tofu w/ Ground Pork"); letting the model pick
 from a closed list keeps it out of ingredient claims. `eval/matcher_eval.py` measures accuracy
-and run-to-run agreement before answers are stored.
+and run-to-run agreement before answers are stored: on 27 name variants, 5 runs, Gemini
+answered 96% correctly and gave the same answer on every run for all 27. Its one miss maps
+"Shrimp Lo Mein" to the generic lo_mein entry instead of "none"; printed shrimp still blocks
+shellfish allergies.
