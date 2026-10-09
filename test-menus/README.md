@@ -11,7 +11,7 @@ All files were fetched on **2026-10-09**. Prices can change after that date.
 | File | Restaurant | Style | Neighborhood | Source | Dishes in file | Kind |
 |---|---|---|---|---|---|---|
 | `nom-wah-tea-parlor.jpg` | Nom Wah Tea Parlor, 13 Doyers St | Cantonese dim sum | Chinatown | <https://www.nomwah.com/s/NYC-Menu-Legal-8_1.pdf> | 49 | **Real menu**: both pages of the restaurant's PDF, placed side by side as one JPEG (the 2.1 MB PDF is not committed) |
-| `cafe-mandarin.jpg` | Cafe Mandarin, 1st Ave at 67th St | Sichuan / Chinese-American | Upper East Side | <https://cafemandarinnyc.com/wp-content/uploads/2026/07/Menu0707.pdf> | 45 | **Real menu**: pages 1–2 of the restaurant's PDF |
+| `cafe-mandarin.jpg` | Cafe Mandarin, 1st Ave at 67th St | Sichuan / Chinese-American | Upper East Side | <https://cafemandarinnyc.com/wp-content/uploads/2026/07/Menu0707.pdf> | 35 lines (54 orderable versions: 7 lines offer a choice of protein) | **Real menu**: pages 1–2 of the restaurant's PDF |
 | `cafe-mandarin.pdf` | Cafe Mandarin | | | same as above | 74 (4 pages) | **Original PDF** for reference. The app's photo step takes images only, so upload the JPG. |
 | `hwa-yuan.jpg` | Hwa Yuan Szechuan, 42 East Broadway | Sichuan | Chinatown | <https://www.hwayuannyc.com/menu> | 53 | **Rendered from the real HTML text** |
 | `shanghai-21.jpg` | Shanghai 21, 21 Mott St | Shanghainese / soup dumplings | Chinatown | <https://shanghai21nyc.com/menu/> | 45 | **Rendered from the real HTML text** |
@@ -49,15 +49,50 @@ Some other menus were left out on purpose:
 3. In the **photo step**, upload one of the `.jpg` files. Check the dish list it reads
    against the image, then plan.
 
-## Results from the live run (2026-10-09)
+## Results from the live runs (2026-10-09)
 
-These results used gemini-2.5-flash, $40 per person, and the four-person table above.
+The table: four people, $40 each all-in. One has a peanut allergy, one a shellfish allergy, one
+is vegetarian and one eats no pork.
 
-| Menu | Dishes read / in image | Plan | Notes |
-|---|---|---|---|
-| Nom Wah | 48 / 49 | valid | Before the fix, the 40-dish cap silently dropped dishes. The menu has no plain rice, and before the fix that meant there was no plan at all. |
-| Cafe Mandarin | 35 / 45 | valid | 10 dishes were missed on the dense two-page scan. The restaurant name was not printed. Hot & Sour Soup is marked "V" on the menu, but the app treats it as possible pork (stricter than it needs to be). |
-| Hwa Yuan | 53 / 53 | valid | Before the fix, the dishes above 40 were cut off and there was no plan without rice. "Chinese Eggplant in Garlic Sauce with Pork" was offered to the vegetarian and the no-pork diner (fixed). |
-| Shanghai 21 | 45 / 45 | valid | Before the fix, the dishes above 40 were cut off. |
-| Hunan Slurp | 36 / 36 | valid | "Soft Tofu" is printed as "Pork and bean paste bolognese…" but was offered to the vegetarian and the no-pork diner (fixed). |
-| Wo Hop | 48 / 48 | valid | Goon Bo dishes are correctly kept away from the peanut diner. |
+**Run A** was the first run: `google/gemini-2.5-flash`, before the photo step split menu
+choices into separate dishes. **Run B** is the current code: `google/gemini-3.5-flash-lite`
+with reasoning effort "low", and the photo step splits choices and reads the menu's marks.
+
+| Menu | Dishes read, run A | Dishes read, run B | Read + facts time, A / B | Plan, A | Plan, B (first try) | Plan time, A / B |
+|---|---|---|---|---|---|---|
+| Cafe Mandarin | 35 / 35 lines; "Kung Pao" read as one $18 dish | 35 / 35 lines, giving **54 versions** with the right prices ($18 / $20 / $22 / $18); marks V, VP, GF, GP and peppers read | 30 s / 36 s | valid, 6 dishes, $109 | valid, 4 dishes, $81, ordered **Sesame (Tofu)**, **Cumin (Tofu)**, **Mongolian (Beef)** | 2.6 s / 2.6 s |
+| Hunan Slurp | 36 / 36 | 36 / 36 | 8.5 s (facts cached) / 20 s | valid, $126 | valid, $118 | 0.1 s / 0.1 s (cached) |
+| Hwa Yuan | 53 / 53 | 53 / 53 | 88 s / 31 s | valid, $134 | valid, $100 | 3.6 s / 2.0 s |
+| Nom Wah | 48 / 49 ("Pork Siu Mal") | 48 / 49 ("Pork Siu Mai", correct) | 42 s / 31 s | valid, $65 | valid, $36 | 4.2 s / 2.0 s |
+| Shanghai 21 | 45 / 45 | 45 / 45 | 62 s / 33 s | valid, $48 | valid, $53 | 4.0 s / 2.1 s |
+| Wo Hop | 48 / 48, but five dishes read only as "Goon Bo", and others as plain "Beef" or "Squid" | 48 / 48, with full names ("Goon Bo w/Shrimp", "Beef w/Garlic Sauce") | 58 s / 33 s | valid, $85 | valid, $40 | 11 s / 1.7 s |
+
+In both runs, every plan passed the checks on the first try.
+
+**Safety checks after the fixes**
+
+- No dish was offered to someone it is unsafe for. This was checked by script against the
+  printed menus and the classic recipes.
+- Shrimp versions are kept from the shellfish diner. Pork versions are kept from the
+  vegetarian and the no-pork diner. Kung Pao is kept from the peanut diner, because the menu
+  prints "Peanut" for the whole line.
+- The tofu versions marked VP are offered to the vegetarian, with a question for the server:
+  "order it vegetarian and ask whether it uses meat or meat stock".
+
+**Where the model change mattered: hidden shellfish**
+
+- 3.5 Flash Lite flagged hidden shellfish less often than 2.5 Flash. It missed shrimp in
+  wonton soup and spring rolls, and oyster sauce on bok choy and Chinese broccoli.
+- The code's own safety net now flags those dish types whatever the model says.
+- Hunan Slurp's stir-fries are still less cautious with 3.5 Lite: the shellfish diner can eat
+  35 of 36 dishes, against 27 with 2.5 Flash.
+
+**Where the code change mattered**
+
+- Choices now become separate dishes, and the menu's marks are read: V, VP, GF, GP and peppers.
+  A printed "V" now counts as vegetarian (Hot & Sour Soup), unless the dish's own words
+  say meat.
+- "w/" is now read as "with". Before, "Hunan Wild Mushroom (w/ Pork Belly)" was treated as a
+  choice of pork belly.
+- Words for the choice no longer stay in the name of each version: the tofu version is
+  "Yu Xiang (Tofu)", not "Yu Xiang Pork (Tofu)".

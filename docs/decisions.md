@@ -263,7 +263,7 @@ with `MICHELIN_GEMINI_BACKEND=vertex`. Earlier stored matches keep their recorde
 pauses calls and falls back to the non-LLM path (OCR or pasted text; knowledge base only).
 
 **2026-10-09: the LLM recommends; the rules only validate.** `/api/plan` asks the LLM
-(OpenRouter `google/gemini-2.5-flash` when `OPENROUTER_API_KEY` is set, else the free Gemini
+(OpenRouter `google/gemini-2.5-flash` then, `google/gemini-3.5-flash-lite` since 2026-10-09, when `OPENROUTER_API_KEY` is set, else the free Gemini
 key) for the order, using a brief with per-diner eligibility already computed. Each order
 goes through `validate_order` plus a per-diner safety check. Violations go back to the model
 for up to 3 retries. There is no optimizer fallback. If no model answers, or no order

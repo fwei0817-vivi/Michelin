@@ -51,8 +51,9 @@ When the budget is too low, the model proposes the "Change one thing" fix.
 The app uses the first provider that is configured:
 
 1. **OpenRouter** (paid, OpenAI-compatible): set `OPENROUTER_API_KEY`. The default model is
-   `google/gemini-2.5-flash` (about $0.30 per million input tokens and $2.50 per million
-   output tokens; a plan costs well under a cent).
+   `google/gemini-3.5-flash-lite` (about $0.30 per million input tokens and $2.50 per million
+   output tokens, reasoning effort "low"; a plan costs well under a cent). 2.5 Flash is
+   retired on OpenRouter on 2026-10-20.
 2. **Gemini Developer API** (free tier): create a key at <https://aistudio.google.com/apikey>
    and set `GEMINI_API_KEY`. The default model is `gemini-3.8-flash`.
 
@@ -69,7 +70,8 @@ MICHELIN_LLM_MATCH=1 uv run --extra llm uvicorn michelin.api:app   # also LLM na
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `OPENROUTER_API_KEY` | unset | use OpenRouter (preferred when set) |
-| `MICHELIN_OPENROUTER_MODEL` | `google/gemini-2.5-flash` | OpenRouter model for every task |
+| `MICHELIN_OPENROUTER_MODEL` | `google/gemini-3.5-flash-lite` | OpenRouter model for every task |
+| `MICHELIN_OPENROUTER_REASONING` | `low` | reasoning effort sent to OpenRouter (`minimal`, `low`, `medium`, `high`; empty sends none) |
 | `MICHELIN_OPENROUTER_VISION_MODEL` | unset | OpenRouter model for menu photos only (must accept images) |
 | `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) | unset | use the free Gemini API |
 | `MICHELIN_LLM_PROVIDER` | auto | force `openrouter` or `gemini` |
@@ -116,13 +118,13 @@ and portion estimates were removed (2026-10-09). `plan/hints.py` finds the cheap
 order deterministically; it tells the model whether any order fits, and when none does it sets
 the "Raise the budget to $X per person" fix (X = the lowest budget at which an order exists).
 The model writes one server question per chosen dish, naming who it is for and why; rule-based
-risks are passed in as facts and any risk the model skips is added back from the rules. The API accepts up to 60 reviewed dishes.
+risks are passed in as facts and any risk the model skips is added back from the rules. The API accepts up to 80 reviewed dishes (a choice of protein counts once per choice).
 Set `MICHELIN_MOCK=1` only for fixture-based demos.
 
 Menu editing and imports are session-local. Paste one English dish per line with its price
 at the end, or upload an English PNG/JPEG/WebP menu image (up to 8 MB). Image extraction
 uses OpenRouter when `OPENROUTER_API_KEY` is set (the photo goes as a base64 `image_url`; default
-`google/gemini-2.5-flash`, override with `MICHELIN_OPENROUTER_VISION_MODEL`; `/api/health` then
+`google/gemini-3.5-flash-lite`, override with `MICHELIN_OPENROUTER_VISION_MODEL`; `/api/health` then
 reports `photo: "openrouter"`), else Gemini when `GEMINI_API_KEY` is set (see above); otherwise it requires the `tesseract` executable with English language data (included in the Dockerfile).
 If unavailable, text import and manual entry still work.
 

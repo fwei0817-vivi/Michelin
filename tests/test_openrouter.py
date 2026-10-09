@@ -32,7 +32,7 @@ def test_openrouter_is_preferred_over_the_free_gemini_key(monkeypatch):
     assert llm.provider() == "gemini"
     monkeypatch.setenv("OPENROUTER_API_KEY", "o")
     assert llm.provider() == "openrouter"
-    assert llm.model("plan") == "google/gemini-2.5-flash"
+    assert llm.model("plan") == "google/gemini-3.5-flash-lite"
     monkeypatch.setenv("MICHELIN_OPENROUTER_MODEL", "google/gemini-3.8-flash")
     assert llm.model("vision") == "google/gemini-3.8-flash"
     monkeypatch.setenv("MICHELIN_LLM_PROVIDER", "gemini")
@@ -50,10 +50,11 @@ def test_request_shape_and_cost(monkeypatch):
         schema={"type": "object"},
         client=http,
     )
-    assert json.loads(text) == {"a": 1} and used == "google/gemini-2.5-flash"
+    assert json.loads(text) == {"a": 1} and used == "google/gemini-3.5-flash-lite"
     body = http.calls[0]["json"]
     assert [m["role"] for m in body["messages"]] == ["system", "user", "assistant", "user"]
     assert body["response_format"]["type"] == "json_schema"
+    assert body["reasoning"] == {"effort": "low", "exclude": True}
     assert http.calls[0]["headers"]["Authorization"] == "Bearer o"
     assert llm.spent_usd["total"] == pytest.approx(before + 0.0012)
 
@@ -67,7 +68,7 @@ def test_photo_goes_as_a_data_url_and_fills_the_import(monkeypatch):
         "/api/menu/parse", json={"image_base64": base64.b64encode(PNG).decode()}
     )
     assert r.status_code == 200, r.text
-    assert "google/gemini-2.5-flash via OpenRouter" in r.json()["notice"]
+    assert "google/gemini-3.5-flash-lite via OpenRouter" in r.json()["notice"]
     image = http.calls[0]["json"]["messages"][0]["content"][1]["image_url"]["url"]
     assert image.startswith("data:image/png;base64,")
     assert vision.configured()
@@ -79,7 +80,7 @@ def test_photos_can_use_their_own_openrouter_model(monkeypatch):
     monkeypatch.setenv("OPENROUTER_API_KEY", "o")
     monkeypatch.setenv("MICHELIN_OPENROUTER_VISION_MODEL", "openai/gpt-4o-mini")
     assert llm.model("vision") == "openai/gpt-4o-mini"
-    assert llm.model("plan") == "google/gemini-2.5-flash"
+    assert llm.model("plan") == "google/gemini-3.5-flash-lite"
     http = FakeHTTP(ok(json.dumps({"restaurant_name": "", "dishes": []})))
     vision.read_menu_photo(PNG, "image/png", client=http)
     assert http.calls[0]["json"]["model"] == "openai/gpt-4o-mini"

@@ -1,8 +1,11 @@
 """Which LLM answers: OpenRouter (paid key) first, then the free Gemini key, else none.
 
   OPENROUTER_API_KEY            OpenRouter, OpenAI-compatible, https://openrouter.ai/api/v1
-  MICHELIN_OPENROUTER_MODEL     default google/gemini-2.5-flash (plans, dish facts)
+  MICHELIN_OPENROUTER_MODEL     default google/gemini-3.5-flash-lite (photos, plans, dish
+                                facts, swaps); 2.5 Flash is retired on OpenRouter 2026-10-20
   MICHELIN_OPENROUTER_VISION_MODEL  menu photos; must accept images; default as above
+  MICHELIN_OPENROUTER_REASONING  reasoning effort for OpenRouter models: "low" (default),
+                                "minimal", "medium", "high", or "" to send none
   GEMINI_API_KEY                free Gemini Developer API (see michelin.gemini)
   MICHELIN_LLM_PROVIDER         force "openrouter" or "gemini"
 
@@ -22,7 +25,8 @@ from michelin.gemini import RateLimited
 
 log = logging.getLogger("michelin")
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-OPENROUTER_DEFAULT = "google/gemini-2.5-flash"
+OPENROUTER_DEFAULT = "google/gemini-3.5-flash-lite"
+REASONING_DEFAULT = "low"  # thinking tokens are billed as output; low keeps latency down
 TIMEOUT_S = 120
 spent_usd = {"total": 0.0}  # OpenRouter cost reported by the API in this process
 
@@ -162,6 +166,9 @@ def _openrouter(model_id, turns, schema, system, client, temperature=None) -> st
     }
     if temperature is not None:
         body["temperature"] = temperature
+    effort = os.environ.get("MICHELIN_OPENROUTER_REASONING", REASONING_DEFAULT).strip().lower()
+    if effort:
+        body["reasoning"] = {"effort": effort, "exclude": True}
     headers = {
         "Authorization": f"Bearer {openrouter_key()}",
         "X-Title": "Michelin table planner",
@@ -191,10 +198,19 @@ def _openrouter(model_id, turns, schema, system, client, temperature=None) -> st
             if code == 429:
                 raise RateLimited(message="The AI service is rate limited right now.")
             raise RuntimeError(f"OpenRouter error {code}")
-        cost = (data.get("usage") or {}).get("cost")
+        usage = data.get("usage") or {}
+        cost = usage.get("cost")
         if isinstance(cost, int | float):
             spent_usd["total"] += cost
-            log.info("OpenRouter %s cost $%.5f", model_id, cost)
+            thinking = (usage.get("completion_tokens_details") or {}).get("reasoning_tokens")
+            log.info(
+                "OpenRouter %s cost $%.5f (in %s, out %s, reasoning %s)",
+                model_id,
+                cost,
+                usage.get("prompt_tokens"),
+                usage.get("completion_tokens"),
+                thinking,
+            )
         content = data["choices"][0]["message"].get("content") or ""
         if isinstance(content, list):
             content = "".join(c.get("text", "") for c in content if isinstance(c, dict))
