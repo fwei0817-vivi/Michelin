@@ -302,3 +302,16 @@ breaks a rule. Server questions are one plain sentence; rule fallbacks use the s
 menu notes nobody at the table cares about are dropped. The planner cache key now includes the
 prompt. While the AI works the UI lists the real stages on a timer with elapsed seconds, never
 a percentage, because the server does not stream progress.
+
+**2026-10-09: QA round 3 fixes.** Server questions (plan and swap) only ask about diners who can
+eat the dish and about concerns the rules flag on it: a model question that names a "Not for"
+diner, a diner the dish flags nothing for, or an allergen/diet nobody's risk involves is dropped
+for the rule question. Raw ids ("no_pork") are humanised everywhere the model or user sees them.
+The AI swap reason is one short clause that may only name diners who can eat the new dish;
+otherwise the rule line is used. If the model's swap covers fewer diners than a similar-priced
+valid alternative, it is asked once more and the better-covering valid pick wins. When the AI's
+budget figure is more than 1.25x the rules minimum, the conflict offers the minimum first and the
+AI figure as "a fuller meal". The menu sheet disables picks that would break the budget, with
+the amount, and gives one plain reason per diner ("Ben: has pork"). After a swap the summary
+stays (rewritten by the rules if it named the swapped dish), and the choices bar says which
+dishes are kept or won't be suggested again.

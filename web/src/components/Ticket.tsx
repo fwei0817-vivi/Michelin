@@ -362,8 +362,9 @@ function DishCard({ item, dish, diners, cur, kept, ai, expanded, disabled, onTog
           </button>
         )}
         {dish.category !== "staple" && (
-          <button className="dish-action" aria-label={`Swap ${name}`} title="Pick a replacement from the menu" onClick={() => onSwap(dish.id)} disabled={disabled}>
-            <ArrowLeftRight size={15} />
+          <button className="dish-action pick-action" aria-label={`Pick from menu to replace ${name}`} title="Pick a replacement from the menu yourself" onClick={() => onSwap(dish.id)} disabled={disabled}>
+            <ArrowLeftRight size={14} />
+            Pick from menu
           </button>
         )}
         <button className="dish-action remove-action" aria-label={`Remove ${name}`} title={`Remove ${name}`} onClick={() => onRemove(dish.id)} disabled={disabled}>

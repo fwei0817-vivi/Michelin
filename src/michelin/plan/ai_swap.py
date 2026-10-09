@@ -33,11 +33,11 @@ only, never one already ordered or removed). Hard rules: it must fit the money l
 ("menu_price_left" is the most its menu price can be; tax and tip are added on top), and
 it should suit the diners' allergies and diets ("ok_for" lists who can eat it; never pick a
 dish nobody can eat). After the swap every diner must still have at least one non-rice dish
-they can eat. Prefer, in order: a dish every diner can eat (all ids in "ok_for"), a price
-close to the replaced dish, and a dish that does not repeat the main ingredient, category
+they can eat. Prefer, in order: the dish that the MOST diners can eat (longest "ok_for";
+all diners is best), a price close to the replaced dish, and a dish that does not repeat the main ingredient, category
 or cooking method of the dishes that stay. Respect heat limits ("max_spice" 0 means no heat),
-dislikes and likes. Return "dish_id", "reason": a short clause (under 15 words) on who can
-eat it and why it fits, e.g. "Kevin can eat it and it adds a vegetable", and
+dislikes and likes. Return "dish_id", "reason": ONE short clause (under 10 words), naming only diners in
+its "ok_for", e.g. "Kevin can eat it" or "adds a vegetable", and
 "server_question": ONE plain sentence a diner would say to the server about the dish's
 "risks", naming the dish, the concern and who it is for, e.g. "Is there any pork or lard in
 the scallion pancake, since David is vegetarian?" (no lists or semicolons), or "" if none.
@@ -106,7 +106,7 @@ def brief(menu: Menu, request: TableRequest, plan: Plan, old_id: str) -> dict:
         row = {"id": p.id, "name": p.name}
         for key in ("allergies", "diets", "dislikes", "likes"):
             if getattr(p, key):
-                row[key] = [getattr(x, "value", x) for x in getattr(p, key)]
+                row[key] = [llm_planner.humanize(getattr(x, "value", x)) for x in getattr(p, key)]
         if p.max_spice is not None:
             row["max_spice"] = p.max_spice
         diners.append(row)
@@ -185,16 +185,14 @@ def check(
         detail = reason["detail"]
         if reason["code"] == "insufficient_coverage":
             pid = detail.split(":")[0]
-            detail = f"{names.get(pid, pid)} ({pid}) could no longer eat any dish in the order."
+            detail = f"{names.get(pid, pid)} would have nothing left to eat."
         elif reason["code"] == "over_budget":
             subtotal = sum(cents(known[i.dish_id].price) * i.quantity for i in items) / 100
-            cap = subtotal_cap(request.all_in_budget, 1, request.tax_rate, request.tip_rate)
-            detail = (
-                f"With {_name(known[new_id])} the menu prices come to ${subtotal:.2f}, over the "
-                f"${cap:.2f} your budget allows before tax and tip."
-            )
+            t = totals(subtotal, request.n_diners, request.tax_rate, request.tip_rate)
+            over = max(t.total - request.all_in_budget, 0.01)
+            detail = f"it would put the table ${over:.2f} over budget (with tax and tip)."
         elif reason["code"] == "no_eligible_diner":
-            detail = f"{_name(known[new_id])}: nobody at the table can eat it under their allergies and diets."
+            detail = "nobody at the table can eat it."
         problems.append(detail)
     return list(dict.fromkeys(problems)), items
 
@@ -219,15 +217,47 @@ def _line(
     )
     if why and len(ok) < len(request.diners) and everyone.search(why):
         why = None  # the model claimed a dish suits everyone when the rules say it does not
+    if why and any(
+        p.id not in ok and p.name and re.search(rf"\b{re.escape(p.name)}\b", why, re.IGNORECASE)
+        for p in request.diners
+    ):
+        why = None  # it named someone the rules say cannot eat this dish
+    if why and (len(why.split()) > 10 or re.search(r"[;:]|\$\d", why)):
+        why = None  # one short clause only; the price part is computed below
     if not why:
         who = [p.name for p in request.diners if p.id in ok]
-        why = "everyone can eat it" if len(who) == len(request.diners) else f"for {', '.join(who)}"
+        why = (
+            "everyone can eat it"
+            if len(who) == len(request.diners)
+            else f"{_join_names(who)} can eat it"
+        )
     why = why.strip().rstrip(".")
-    first = why.split(" ", 1)[0]
+    first = why.split(" ", 1)[0].rstrip(",")
     if first not in {p.name for p in request.diners}:  # keep names capitalised
         why = why[:1].lower() + why[1:]
     done = "Added" if old_id is None else "Swapped to"
     return f"{done} {_name(new)}, {why}, {_price_note(menu, old_id, new_id)}."
+
+
+def _join_names(names: list[str]) -> str:
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+
+
+def _better(
+    menu: Menu, request: TableRequest, plan: Plan, old_id: str, new_id: str, payload: dict
+) -> list[dict]:
+    """Similar-priced candidates (within $5 or 30%) that more diners can eat than new_id and
+    that pass the same checks. Empty when the model's pick already covers the most."""
+    got = len(edible_by(menu.dish(new_id), request.diners))
+    ref = menu.dish(old_id).price or 0
+    near = max(5.0, 0.3 * ref)
+    out = []
+    for c in payload["candidates"]:
+        if len(c["ok_for"]) <= got or abs((c["price"] or 0) - ref) > near:
+            continue
+        if not check(menu, request, plan, old_id, {"dish_id": c["id"]})[0]:
+            out.append(c)
+    return sorted(out, key=lambda c: (-len(c["ok_for"]), abs(c["price"] - ref)))[:4]
 
 
 def manual(
@@ -287,8 +317,29 @@ def _to_plan(
                 i.model_copy(update={"reason": kept_reasons.get(i.dish_id) or i.reason})
                 for i in out.items
             ],
-            "summary": None,  # the old summary described the old order
+            "summary": _summary_after(menu, request, plan, old_id, out),
         }
+    )
+
+
+def _summary_after(menu: Menu, request: TableRequest, plan: Plan, old_id, out: Plan) -> str:
+    """Keep the plan's summary when it still holds (same dish count, does not name the
+    replaced dish); otherwise a plain rule-written line about the new order."""
+    old = plan.summary or ""
+    shared = sum(1 for i in out.items if menu.dish(i.dish_id).category.value != "staple")
+    gone = _name(menu.dish(old_id)).lower() if old_id else None
+    if (
+        old
+        and old_id is not None
+        and gone not in old.lower()
+        and llm_planner._summary(old, len(out.items)) is not None
+    ):
+        return old
+    fed = {p for i in out.items for p in i.edible_by}
+    who = "everyone has" if len(fed) >= len(request.diners) else "not everyone has"
+    return (
+        f"{shared} shared dish{'es' if shared != 1 else ''} plus rice, "
+        f"${out.per_person:.2f} per person with tax and tip; {who} something to eat."
     )
 
 
@@ -310,6 +361,7 @@ def swap(menu: Menu, request: TableRequest, plan: Plan, old_id: str, client=None
     turns = [llm.Turn("user", "Brief:\n" + json.dumps(payload, ensure_ascii=False))]
     history: list[list[str]] = []
     used = None
+    nudged, first = False, None
     for attempt in range(1 + MAX_RETRIES):
         try:
             text, used = _ask(turns, schema, client)
@@ -324,6 +376,29 @@ def swap(menu: Menu, request: TableRequest, plan: Plan, old_id: str, client=None
             answer = {}
         problems, items = check(menu, request, plan, old_id, answer)
         history.append(problems)
+        better = (
+            []
+            if problems or nudged
+            else _better(menu, request, plan, old_id, answer["dish_id"], payload)
+        )
+        if better and attempt < MAX_RETRIES:
+            nudged, first = True, (answer, items)
+            turns += [
+                llm.Turn("model", text or ""),
+                llm.Turn(
+                    "user",
+                    f"{answer['dish_id']} suits only "
+                    f"{len(edible_by(menu.dish(answer['dish_id']), request.diners))} of "
+                    f"{request.n_diners} diners. These similar-priced dishes suit more: "
+                    + ", ".join(f"{c['id']} (ok_for {', '.join(c['ok_for'])})" for c in better)
+                    + ". Pick the best of them in the same format.",
+                ),
+            ]
+            continue
+        if first is not None:
+            covers = lambda a: len(edible_by(menu.dish(a["dish_id"]), request.diners))
+            if problems or covers(first[0]) > covers(answer):
+                problems, (answer, items) = [], first  # the nudge did not help; first pick stands
         if not problems:
             new_id = answer["dish_id"]
             reason = _line(menu, request, old_id, new_id, str(answer.get("reason") or "")[:120])

@@ -24,6 +24,8 @@ interface Props {
   openAfterImport?: boolean;
   tax: number;
   tip: number;
+  /** The table's all-in budget (tax and tip included), to flag dishes that would break it. */
+  budget?: number;
   onPick: (id: string) => void;
   /** Replacing a dish: let the AI pick instead (only that dish changes). */
   onAiSwap?: (id: string) => void;
@@ -50,8 +52,30 @@ function hiddenIngredients(d: Dish): string | null {
   return notes.length ? notes.join("; ") : null;
 }
 
+const cents = (n: number) => Math.round(n * 100 + 1e-6) / 100;
+
+/** How far an order with this menu-price subtotal would go over the all-in budget (0 if not). */
+function overBudget(subtotal: number, tax: number, tip: number, budget: number): number {
+  const s = cents(subtotal);
+  const total = s + cents(s * tax) + cents(s * tip);
+  return Math.max(0, cents(total - budget));
+}
+
+const CONCERNS = ["peanut", "tree nut", "sesame", "shellfish", "fish", "egg", "dairy", "milk", "soy", "wheat", "gluten", "pork", "chicken", "beef", "lamb", "duck", "meat", "alcohol"];
+
+/** One plain line per diner, e.g. "has pork" or "may have peanut, ask". */
+export function plainReason(reasons: string[], confirm: boolean): string {
+  const text = reasons.join(" ").toLowerCase().replace(/_/g, " ").replace(/\bno pork\b/g, "pork");
+  const items = CONCERNS.filter(w => new RegExp(`\\b${w}s?\\b`).test(w === "fish" ? text.replace(/shellfish/g, "") : text));
+  const named = items.some(w => ["pork", "chicken", "beef", "lamb", "duck"].includes(w));
+  const shown = named ? items.filter(w => w !== "meat") : items; // "has beef", not "has beef and meat"
+  const list = shown.length <= 1 ? shown.join("") : `${shown.slice(0, -1).join(", ")} and ${shown[shown.length - 1]}`;
+  if (!list) return confirm ? `ask if it's ${/vegan/.test(text) ? "vegan" : /vegetarian/.test(text) ? "vegetarian" : "safe"}` : /vegan/.test(text) ? "not vegan" : /vegetarian/.test(text) ? "not vegetarian" : "can't eat it";
+  return confirm ? `may have ${list}, ask` : `has ${list}`;
+}
+
 /** The restaurant menu drawer: browse and edit the menu, import one, or pick a dish to add or swap in. */
-export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mode, initialTab = "browse", initialPhoto = null, openAfterImport = false, tax, tip, onPick, onAiSwap, onClose, onUpdate, onCreate, onSelectMenu }: Props) {
+export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mode, initialTab = "browse", initialPhoto = null, openAfterImport = false, tax, tip, budget, onPick, onAiSwap, onClose, onUpdate, onCreate, onSelectMenu }: Props) {
   const [created, setCreated] = useState<{ id: string; name: string } | null>(null);
   const [prepared, setPrepared] = useState<PreparedInput[]>([]);
   const [preparedId, setPreparedId] = useState("");
@@ -284,7 +308,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                         ? { ...extractedMenu, restaurant_name: name, verified: false }
                         : { restaurant_id: "", restaurant_name: name, cuisine: "custom", source: "User-imported menu", currency: menu.currency, verified: false, dishes: imported };
                       const id = onCreate(fresh);
-                      if (openAfterImport) onSelectMenu(id); // the button says so: an explicit switch
+                      if (openAfterImport) { onSelectMenu(id); onClose(); } // the button says so; the menu is ready, so the window closes
                       else setCreated({ id, name });
                     } else {
                       update({ ...menu, verified: false, dishes: [...menu.dishes, ...imported] });
@@ -358,7 +382,8 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                 const delta = ((d.price ?? 0) * qty - (oldDish?.price ?? 0) * oldQuantity) * (1 + tax + tip);
                 const photo = photoFor(d);
                 const notFor = e ? diners.filter((p) => !e.edible_by.includes(p.id)) : [];
-                const canPick = !!e && e.edible_by.length > 0 && d.price != null && menu.verified && diners.length > 0;
+                const over = plan && budget != null && d.price != null && !onSlip.has(d.id) ? overBudget(plan.subtotal + d.price * qty - (oldDish?.price ?? 0) * (oldDish ? oldQuantity : 0), tax, tip, budget) : 0;
+                const canPick = !!e && e.edible_by.length > 0 && d.price != null && menu.verified && diners.length > 0 && over <= 0;
                 return (
                   <li key={d.id} className="menu-row">
                     {photo ? <img className="menu-thumb" src={photo.src} alt="" width={64} height={64} loading="lazy" /> : <span className="menu-thumb" aria-hidden="true" />}
@@ -379,7 +404,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                         ) : (
                           notFor.length > 0 && (
                             <div className="dish-notes">
-                              {notFor.map(p => <p className="not-for" key={p.id}><UserX size={13}/><span>{p.name}: {e.assessments?.[p.id]?.status === "requires_confirmation" ? "Requires confirmation" : "Recorded conflict"} — {(e.blocked_for[p.id] ?? []).join("; ")}</span></p>)}
+                              {notFor.map(p => <p className="not-for" key={p.id}><UserX size={13}/><span>{p.name}: {plainReason(e.blocked_for[p.id] ?? [], e.assessments?.[p.id]?.status === "requires_confirmation" || (e.blocked_for[p.id] ?? []).every(r => /^confirm/i.test(r)))}</span></p>)}
                             </div>
                           )
                         )}
@@ -406,9 +431,12 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                             <span className="helper"><Check size={13} /> On this order</span>
                           ) : (
                             (mode === "pick" || plan) && (
-                              <button className="btn btn-primary btn-small" disabled={!canPick} onClick={() => onPick(d.id)}>
-                                {oldDish ? "Swap in" : "Add to order"}
-                              </button>
+                              <>
+                                <button className="btn btn-primary btn-small" disabled={!canPick} title={over > 0 ? `Over the table's budget by ${money(over, cur)} with tax and tip` : undefined} onClick={() => onPick(d.id)}>
+                                  {oldDish ? "Swap in" : "Add to order"}
+                                </button>
+                                {over > 0 && <small className="over-budget">Over budget by {money(over, cur)}</small>}
+                              </>
                             )
                           )}
                         </div>

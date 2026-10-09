@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
 import re
 import sys
 from pathlib import Path
@@ -86,6 +87,8 @@ async def step(name, coro):
         await coro
     except Exception as e:  # noqa: BLE001 - keep going so one broken flow does not hide the others
         check(False, f"{name}: {type(e).__name__}: {str(e).splitlines()[0]}")
+        if os.environ.get("E2E_DEBUG"):
+            print(str(e)[:1500])
 
 
 async def run(url: str, shots: Path) -> None:
@@ -244,12 +247,43 @@ async def run(url: str, shots: Path) -> None:
             )
             second = await pg.locator(".dish-card").nth(1).locator("h2").inner_text()
             before = await pg.locator(".dish-card h2").all_inner_texts()
-            await pg.get_by_role("button", name=f"Swap {second}", exact=True).click()
+            await pg.get_by_role(
+                "button", name=f"Pick from menu to replace {second}", exact=True
+            ).click()
             await settle(pg)
-            await dialog(pg).locator("button:enabled", has_text="Swap in").last.click()
-            await settle(pg, 800)
+            notes = await dialog(pg).locator(".not-for").all_inner_texts()
+            check(
+                all(
+                    "Recorded conflict" not in n
+                    and "Requires confirmation" not in n
+                    and "_" not in n
+                    and len(n) < 60
+                    for n in notes
+                ),
+                f"not-for reasons are one plain line per diner: {notes[:3]}",
+            )
+            for row in await dialog(pg).locator(".menu-row:has(.over-budget)").all():
+                check(
+                    await row.locator("button", has_text="Swap in").is_disabled()
+                    and "Over budget by $" in await row.locator(".over-budget").inner_text(),
+                    "over-budget dishes are disabled up front with the amount",
+                )
+                break
+            enabled = dialog(pg).locator("button:enabled", has_text="Swap in")
+            picked = bool(await enabled.count())
+            if not picked:
+                check(
+                    await dialog(pg).locator(".over-budget").count() > 0,
+                    "no dish fits the budget: every pick is disabled up front with the amount",
+                )
+                await close_dialog(pg)
+            else:
+                await enabled.last.click()
+                await settle(pg, 800)
             titles = await pg.locator(".dish-card h2").all_inner_texts()
-            if await pg.locator(".swap-failed").count():
+            if not picked:
+                pass
+            elif await pg.locator(".swap-failed").count():
                 check(
                     "can't replace" in await pg.locator(".swap-failed").inner_text()
                     and titles == before,
@@ -261,6 +295,11 @@ async def run(url: str, shots: Path) -> None:
                 check(
                     second not in titles and others == [t for t in before if t != second],
                     "manual swap changes only that dish and keeps the kept one",
+                )
+                bar = await pg.locator(".choices-summary span").all_inner_texts()
+                check(
+                    not bar or ("kept ·" not in bar[0] and "won't be suggested again" in bar[0]),
+                    f"choices bar is plain: {bar}",
                 )
                 await pg.locator(".change-notice").get_by_role("button", name="Undo").click()
                 await settle(pg, 800)
@@ -282,10 +321,21 @@ async def run(url: str, shots: Path) -> None:
             before = await pg.locator(".dish-card h2").all_inner_texts()
             await pg.get_by_role("button", name=re.compile("Something else in mind")).click()
             await settle(pg)
-            await dialog(pg).locator("button:enabled", has_text="Add to order").first.click()
-            await settle(pg, 800)
+            enabled = dialog(pg).locator("button:enabled", has_text="Add to order")
+            picked = bool(await enabled.count())
+            if not picked:
+                check(
+                    await dialog(pg).locator(".over-budget").count() > 0,
+                    "no dish fits the budget: every add is disabled up front with the amount",
+                )
+                await close_dialog(pg)
+            else:
+                await enabled.first.click()
+                await settle(pg, 800)
             after = await pg.locator(".dish-card h2").all_inner_texts()
-            if await pg.locator(".swap-failed").count():
+            if not picked:
+                pass
+            elif await pg.locator(".swap-failed").count():
                 check(
                     "can't be added" in await pg.locator(".swap-failed").inner_text()
                     and after == before,
@@ -492,21 +542,25 @@ async def demo(browser, url: str, shots: Path, errors: list[str]) -> None:
     await pg.screenshot(path=str(shots / "step1b_import_review.png"), full_page=True)
     await dialog(pg).get_by_role("button", name="Import and open Sky Pavilion").click()
     await settle(pg)
-    check((await selected(pg)).startswith("Sky Pavilion"), "import from step 1 opens Sky Pavilion")
+    check(
+        await pg.get_by_role("dialog").count() == 0
+        and await pg.get_by_role("heading", name="Your menu is ready").count() == 1,
+        "import closes the window on 'Your menu is ready'",
+    )
+    check(
+        await pg.locator(".menu-choice h2").first.inner_text() == "Sky Pavilion",
+        "import from step 1 opens Sky Pavilion",
+    )
+    await pg.screenshot(path=str(shots / "step1c_menu_ready.png"), full_page=True)
+    await pg.locator(".menu-choice-head").get_by_role("button", name="View menu").click()
+    await settle(pg)
     eggplant = dialog(pg).locator(".menu-row", has_text="Eggplant with Garlic Sauce")
     flag = await eggplant.locator(".hidden-flag").all_inner_texts()
     check(any("minced pork" in f for f in flag), f"eggplant flagged for hidden minced pork: {flag}")
     await pg.screenshot(path=str(shots / "step1c_browse_hidden_flags.png"), full_page=True)
-    await dialog(pg).get_by_label("I have reviewed this menu against the source.").check()
-    await dialog(pg).get_by_role("button", name="Mark reviewed").click()
-    await dialog(pg).get_by_role("button", name="Use this menu").click()
+    await close_dialog(pg)
+    await pg.get_by_role("button", name="Looks right, use this menu").click()
     await settle(pg)
-    check(
-        await pg.locator(".menu-choice h2").first.inner_text() == "Sky Pavilion",
-        "Sky Pavilion is the menu",
-    )
-
-    await pg.get_by_role("button", name="Continue with this menu").click()
     people = [
         ("Ana", ["vegetarian"], []),
         ("Ben", [], ["shellfish"]),

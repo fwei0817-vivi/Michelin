@@ -184,7 +184,7 @@ def brief(menu: Menu, request: TableRequest, hint: rules_hints.Hints | None = No
         row = {"id": p.id, "name": p.name}
         for key in ("allergies", "diets", "dislikes", "likes"):
             if getattr(p, key):
-                row[key] = [getattr(x, "value", x) for x in getattr(p, key)]
+                row[key] = [humanize(getattr(x, "value", x)) for x in getattr(p, key)]
         if p.max_spice is not None:
             row["max_spice"] = p.max_spice
         diners.append(row)
@@ -440,6 +440,71 @@ def _to_plan(menu: Menu, request: TableRequest, answer: dict, items: list) -> Pl
     )
 
 
+# Allergy and diet words a server question can raise; each must match a flagged risk.
+_CONCERNS = [
+    "peanut",
+    "sesame",
+    "shellfish",
+    "shrimp",
+    "prawn",
+    "crab",
+    "oyster",
+    "fish",
+    "egg",
+    "dairy",
+    "milk",
+    "butter",
+    "cream",
+    "soy",
+    "wheat",
+    "gluten",
+    "flour",
+    "nut",
+    "cashew",
+    "almond",
+    "walnut",
+    "pork",
+    "lard",
+    "bacon",
+    "ham",
+    "beef",
+    "lamb",
+    "chicken",
+    "meat",
+    "broth",
+    "stock",
+]
+
+
+def humanize(text: str) -> str:
+    """Raw ids never reach the user: "no_pork" -> "no pork", "tree_nut" -> "tree nut"."""
+    return re.sub(r"\b([a-z]+)_([a-z]+)\b", r"\1 \2", text)
+
+
+def _off_topic(text: str, dish, diners, flagged) -> bool:
+    """True when a question names someone the dish is not for, someone it flags nothing for,
+    or raises an allergy/diet concern that no flagged risk on this dish involves."""
+    label = (dish.name_en or dish.name_zh or dish.id).lower()
+    low = humanize(text).lower().replace(label, " ")
+    eaters = set(edible_by(dish, diners))
+    concerned = {n for r in flagged for n in r.names}
+    for p in diners:
+        if p.name and re.search(rf"\b{re.escape(p.name.lower())}\b", low):
+            if p.id not in eaters or (concerned and p.name not in concerned):
+                return True
+            if not flagged:
+                return True
+    allowed = {w for r in flagged for w in r.words} | {
+        w for r in flagged for w in re.findall(r"[a-z]+", r.about.lower())
+    }
+    for term in _CONCERNS:
+        if re.search(rf"\b{term}s?\b", low) and not any(
+            term == w or w.startswith(term) or term.startswith(w) for w in allowed if len(w) > 2
+        ):
+            return True
+    return False
+
+
 def _misstates(text: str, diners) -> bool:
     """True when the text gives a diner an allergy or diet they do not have
     ("Kevin has a peanut allergy", "David is allergic to sesame", "Li is vegan")."""
@@ -482,8 +547,10 @@ def server_questions(answer: dict, selected, request: TableRequest) -> dict[str,
         label = d.name_en or d.name_zh or d.id
         flagged = risks(d, request.diners)
         mine = _plain(written.get(d.id, ""), label)
-        if _misstates(mine, request.diners):
-            mine = ""  # never show a need the diner does not have; the rule questions stand
+        if _misstates(mine, request.diners) or _off_topic(mine, d, request.diners, flagged):
+            # Never show a need the diner does not have, a question for someone the dish is
+            # not for, or a concern nothing on this dish involves; the rule questions stand.
+            mine = ""
         missing = [r for r in flagged if not (mine and r.covered_by(mine))]
         if not mine and not missing:
             continue
@@ -500,7 +567,7 @@ def _plain(text: str, label: str) -> str:
     text = " ".join(str(text or "").split())[:240]
     if text.lower().startswith(label.lower()) and text[len(label) : len(label) + 1] in ":-–—":
         text = text[len(label) :].lstrip(" :-–—").strip()
-    text = text.replace(";", ",").strip()
+    text = humanize(text.replace(";", ",")).strip()
     if not text:
         return ""
     text = text[0].upper() + text[1:]
@@ -562,7 +629,13 @@ def _conflict(menu: Menu, request: TableRequest, info: dict, problems: list[str]
             if hint is not None and (floor is None or price < floor):
                 price = None  # the rules show nothing fits at that figure
         if price is not None and request.budget_per_person < price <= 500:
-            relaxations.append(_raise_to(price))
+            floor = hint.min_budget if hint is not None else None
+            if floor is not None and request.budget_per_person < floor and price > 1.25 * floor:
+                # The AI-dish amount is far above the smallest budget that works: offer the
+                # smallest first, and the AI's amount as the fuller option.
+                relaxations += [_raise_to(floor), _raise_to(price, fuller=True)]
+            else:
+                relaxations.append(_raise_to(price))
     if hint is not None:
         kinds = {r.kind for r in relaxations}
         if (
@@ -581,8 +654,10 @@ def _conflict(menu: Menu, request: TableRequest, info: dict, problems: list[str]
     )
     if relaxations and relaxations[0].kind == "budget":
         price = relaxations[0].new_value
+        fuller = next((r.new_value for r in relaxations[1:] if r.kind == "budget"), None)
         if hint is not None and hint.min_budget is not None and price == hint.min_budget:
-            message += f" The lowest budget that works is ${price:.2f} per person."
+            message += f" The lowest budget that works is ${price:.2f} per person"
+            message += f"; ${fuller:.2f} buys a fuller meal." if fuller else "."
         else:  # priced from the AI's suggested dishes: it works, but is not the minimum
             message += f" A budget that works: ${price:.2f} per person."
     if problems:
@@ -590,11 +665,12 @@ def _conflict(menu: Menu, request: TableRequest, info: dict, problems: list[str]
     return Conflict(code="no_solution", message=message, relaxations=relaxations)
 
 
-def _raise_to(price: float) -> Relaxation:
+def _raise_to(price: float, fuller: bool = False) -> Relaxation:
+    more = " for a fuller meal" if fuller else ""
     return Relaxation(
         kind="budget",
         new_value=price,
-        description=f"Raise the budget to ${price:.2f} per person (tax and tip included).",
+        description=f"Raise the budget to ${price:.2f} per person{more} (tax and tip included).",
     )
 
 

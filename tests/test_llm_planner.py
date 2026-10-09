@@ -166,7 +166,12 @@ def test_model_no_fit_becomes_a_verified_change_one_thing(setup, tmp_path):
     assert out.plan is None and len(fake.calls) == 1
     assert out.conflict.code in ("no_solution", "missing_information")
     assert "Too little money" in out.conflict.message
-    [change] = out.conflict.relaxations
+    floor = hints.min_budget(menu, tight)
+    # QA r3: the AI's dishes cost far more than the rules minimum, so the smallest budget
+    # that works comes first and the AI's amount is offered as the fuller meal.
+    low, change = out.conflict.relaxations
+    assert (low.kind, low.new_value) == ("budget", floor) and change.new_value > 1.25 * floor
+    assert "fuller meal" in change.description and "fuller" not in low.description
     assert change.kind == "budget" and change.new_value * 2 == int(change.new_value * 2)
     # The suggested order really passes at the suggested budget, and not 50 cents below.
     raised = tight.model_copy(update={"budget_per_person": change.new_value})
@@ -176,11 +181,10 @@ def test_model_no_fit_becomes_a_verified_change_one_thing(setup, tmp_path):
     ]
     assert validate_order(menu, raised, items)["valid"]
     assert not validate_order(menu, lower, items)["valid"]
-    # The AI's dishes cost more than the rules minimum, so the amount is not called "lowest".
-    floor = hints.min_budget(menu, tight)
-    assert change.new_value > floor
-    assert f"A budget that works: ${change.new_value:.2f} per person." in out.conflict.message
-    assert "lowest" not in out.conflict.message
+    assert (
+        f"The lowest budget that works is ${floor:.2f} per person; "
+        f"${change.new_value:.2f} buys a fuller meal." in out.conflict.message
+    )
     # An order that breaks another rule (an unsafe dish for everyone) gives no budget fix,
     # and a model figure below the current budget is ignored; the rules' minimal budget is
     # offered instead, so there is always one thing to change.
@@ -322,3 +326,22 @@ def test_brief_marks_likely_hot_names(setup):
     payload = llm_planner.brief(menu.model_copy(update={"dishes": [hot, mild]}), request)
     spice = {d["id"]: d.get("spice") for d in payload["dishes"]}
     assert spice[hot.id] == "unknown, name suggests hot" and spice["soup"] is None
+
+
+def test_raise_suggestion_prefers_the_smallest_sensible_budget(setup, monkeypatch):
+    menu, request, _ = setup
+    tight = request.model_copy(update={"budget_per_person": 2})
+    hint = SimpleNamespace(min_budget=10.0)
+    info = {"reason": "", "change": "budget", "dish_ids": ["x"]}
+    # Close to the minimum: one figure, not called "lowest".
+    monkeypatch.setattr(llm_planner, "_budget_for", lambda *a: 12.0)
+    out = llm_planner._conflict(menu, tight, info, [], hint)
+    assert [r.new_value for r in out.relaxations] == [12.0]
+    assert "A budget that works: $12.00 per person." in out.message and "lowest" not in out.message
+    # Far above it: the minimum first, the AI amount as the fuller option.
+    monkeypatch.setattr(llm_planner, "_budget_for", lambda *a: 25.0)
+    out = llm_planner._conflict(menu, tight, info, [], hint)
+    assert [r.new_value for r in out.relaxations] == [10.0, 25.0]
+    assert (
+        "lowest budget that works is $10.00 per person; $25.00 buys a fuller meal." in out.message
+    )

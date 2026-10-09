@@ -74,11 +74,26 @@ def test_only_the_swapped_dish_changes(table, monkeypatch):
         for d in menu.dishes
         if d.category.value != "staple" and 0 < len(edible_by(d, request.diners)) < 6
     )
-    who = ", ".join(
-        p.name for p in request.diners if p.id in edible_by(menu.dish(meat), request.diners)
+    who = ai_swap._join_names(
+        [p.name for p in request.diners if p.id in edible_by(menu.dish(meat), request.diners)]
     )
-    line = ai_swap._line(menu, request, old, meat, "Tom likes beef and it suits all diets")
-    assert "all diets" not in line and f", for {who}, " in line  # no false "everyone"
+    line = ai_swap._line(menu, request, old, meat, "it suits all diets")
+    assert "all diets" not in line and f", {who} can eat it, " in line  # no false "everyone"
+    # QA r3: never name someone the rules say cannot eat the new dish.
+    cannot = next(
+        p.name for p in request.diners if p.id not in edible_by(menu.dish(meat), request.diners)
+    )
+    line = ai_swap._line(menu, request, old, meat, f"{cannot} can eat it")
+    assert cannot not in line.split(",", 1)[1] and f", {who} can eat it, " in line
+    # One short clause: long or priced reasons are replaced by the rule line.
+    long = ai_swap._line(
+        menu,
+        request,
+        old,
+        meat,
+        "a rich, warming braise that balances the lighter dishes nicely on the table",
+    )
+    assert f", {who} can eat it, " in long
     assert ai_swap._line(menu, request, old, new, "Tom likes beef").startswith(
         f"Swapped to {menu.dish(new).name_en}, Tom likes beef, "
     )
@@ -162,7 +177,7 @@ def test_over_budget_and_lost_coverage_are_rejected(table):
     tight = swapped.model_copy(update={"budget_per_person": plan.per_person})
     problems, _ = ai_swap.check(menu, tight, plan, old, {"dish_id": dear})
     if menu.dish(dear).price > menu.dish(old).price:
-        assert any("your budget allows" in p for p in problems)
+        assert any("over budget" in p for p in problems)
     # Coverage: a one-dish order for someone who can then eat nothing.
     vegetarian = DinerProfile(id="v", name="Vee", diets=["vegetarian"])
     solo = swapped.model_copy(update={"diners": [vegetarian], "budget_per_person": 500})
@@ -232,7 +247,7 @@ def test_manual_pick_that_breaks_a_rule_says_why(table, monkeypatch):
     assert menu.dish(dear).price > menu.dish(old).price
     tight = request.model_copy(update={"budget_per_person": plan.per_person})
     out = ai_swap.manual(menu, tight, plan, old, dear)
-    assert out.plan is None and "your budget allows" in out.message
+    assert out.plan is None and "over budget" in out.message
     assert out.message.startswith(f"{menu.dish(dear).name_en} can't replace")
     taken = next(i.dish_id for i in plan.items if i.dish_id != old)
     out = ai_swap.manual(menu, request, plan, old, taken)
@@ -285,9 +300,7 @@ def test_adding_a_dish_changes_nothing_else(table, monkeypatch):
     # Over budget: refused with the reason, not rebalanced.
     tight = request.model_copy(update={"budget_per_person": plan.per_person})
     out = ai_swap.manual(menu, tight, plan, None, new)
-    assert (
-        out.plan is None and "can't be added" in out.message and "your budget allows" in out.message
-    )
+    assert out.plan is None and "can't be added" in out.message and "over budget" in out.message
     taken = plan.items[0].dish_id
     out = ai_swap.manual(menu, request, plan, None, taken)
     assert out.plan is None and "already in the order" in out.message
@@ -309,3 +322,56 @@ def test_add_endpoint(table, monkeypatch):
     assert data["kind"] == "plan" and len(data["plan"]["items"]) == len(plan.items) + 1
     assert data["message"].startswith("Added ")
     assert client.post("/api/plan/swap", json={**body, "new_dish_id": None}).status_code == 422
+
+
+def _coverage_pair(menu, request, plan):
+    """A dish to replace, a valid low-coverage pick, and a similar-priced valid pick that
+    more diners can eat."""
+    for old in [i.dish_id for i in plan.items if menu.dish(i.dish_id).category.value != "staple"]:
+        req = ai_swap._swap_request(request, old)
+        brief = ai_swap.brief(menu, req, plan, old)
+        for c in brief["candidates"]:
+            if ai_swap.check(menu, req, plan, old, {"dish_id": c["id"]})[0]:
+                continue
+            better = ai_swap._better(menu, req, plan, old, c["id"], brief)
+            if better:
+                return old, c["id"], better[0]["id"]
+    pytest.skip("no low-coverage pick with a better similar-priced alternative")
+
+
+def test_a_pick_fewer_diners_can_eat_is_retried_once(table, monkeypatch):
+    menu, request, plan = table
+    old, weak, strong = _coverage_pair(menu, request, plan)
+    fake = Fake(
+        {"dish_id": weak, "reason": "", "server_question": ""},
+        {"dish_id": strong, "reason": "", "server_question": ""},
+    )
+    monkeypatch.setattr(ai_swap, "_ask", fake)
+    out = ai_swap.swap(menu, request, plan, old)
+    assert len(fake.calls) == 2 and out.new_dish_id == strong
+    assert "suit more" in fake.calls[1]["turns"][-1].text
+
+
+def test_a_failed_coverage_retry_keeps_the_first_valid_pick(table, monkeypatch):
+    menu, request, plan = table
+    old, weak, _ = _coverage_pair(menu, request, plan)
+    taken = next(i.dish_id for i in plan.items if i.dish_id != old)
+    fake = Fake(
+        {"dish_id": weak, "reason": "", "server_question": ""},
+        {"dish_id": taken, "reason": "", "server_question": ""},
+    )
+    monkeypatch.setattr(ai_swap, "_ask", fake)
+    out = ai_swap.swap(menu, request, plan, old)
+    assert len(fake.calls) == 2 and out.new_dish_id == weak and out.plan is not None
+
+
+def test_summary_stays_visible_after_a_swap(table):
+    menu, request, plan = table
+    old, new, _ = _target_and_candidate(menu, request, plan)
+    kept = plan.model_copy(update={"summary": "A balanced spread the whole table can share."})
+    out = ai_swap.manual(menu, request, kept, old, new)
+    assert out.plan.summary == "A balanced spread the whole table can share."
+    named = plan.model_copy(update={"summary": f"Built around {menu.dish(old).name_en}."})
+    out = ai_swap.manual(menu, request, named, old, new)
+    assert out.plan.summary and menu.dish(old).name_en not in out.plan.summary
+    assert "per person with tax and tip" in out.plan.summary

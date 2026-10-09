@@ -160,3 +160,68 @@ def test_a_question_that_invents_an_allergy_falls_back_to_the_rules():
         "Amy has a shellfish allergy and David is vegetarian: oyster sauce?", diners
     )
     assert not _misstates("Amy is allergic to fish; any fish sauce?", diners)
+
+
+# QA round 3, Q-2 repros (Sky Pavilion; Alice peanut, Ben vegetarian, Cai shellfish + no pork).
+def _asked(dish_id: str, question: str) -> str | None:
+    selected = [(MENU.dish(dish_id), 1)]
+    body = {"dishes": [{"dish_id": dish_id, "server_question": question}]}
+    return llm_planner.server_questions(body, selected, REQUEST).get(dish_id)
+
+
+def test_q2_no_allergy_the_dish_does_not_involve():
+    # Hot and Sour Soup is flagged egg/soy/wheat; nobody here avoids those, and only Alice
+    # can eat it. A peanut question is dropped and nothing replaces it.
+    assert (
+        _asked(
+            "hot_and_sour_soup",
+            "Does the hot and sour soup contain peanuts, because Alice has a peanut allergy?",
+        )
+        is None
+    )
+
+
+def test_q2_no_question_for_someone_the_dish_is_not_for():
+    # Mapo Tofu is "Not for Ben" (pork), so asking about beef for Ben is moot.
+    assert _asked("mapo_tofu", "Is there any beef in the Mapo Tofu, as Ben is vegetarian?") is None
+    from michelin.plan.edibility import risks
+
+    assert risks(MENU.dish("mapo_tofu"), DINERS) == []
+    assert risks(MENU.dish("dry_fried_green_beans"), DINERS) == []  # not for Ben or Cai
+
+
+def test_q2_raw_labels_are_humanised():
+    q = _asked(
+        "scallion_pancake",
+        "Is there any lard in the scallion pancake, for Ben (vegetarian) and Cai (no_pork)?",
+    )
+    assert q == "Is there any lard in the scallion pancake, for Ben (vegetarian) and Cai (no pork)?"
+    # Rule fallbacks and the brief never carry raw ids either.
+    assert "_" not in _asked("eggplant_with_garlic_sauce", "")
+    brief = json.dumps(llm_planner.brief(MENU, REQUEST))
+    assert "no_pork" not in brief
+
+
+def test_q2_a_true_question_still_passes():
+    q = "Is there any minced pork in the eggplant, since Ben is vegetarian and Cai avoids pork?"
+    assert _asked("eggplant_with_garlic_sauce", q) == q
+
+
+def test_q2_swap_path_drops_the_same_questions(tmp_path, monkeypatch):
+    from michelin.plan import ai_swap
+
+    out, _ = plan_with(answer({}), tmp_path)
+    plan = out.plan
+    fake_answer = {
+        "dish_id": "hot_and_sour_soup",
+        "reason": "Alice can eat it",
+        "server_question": "Does the hot and sour soup contain peanuts, because Alice has a "
+        "peanut allergy?",
+    }
+    monkeypatch.setattr(ai_swap, "_ask", lambda *a: (json.dumps(fake_answer), "m"))
+    request = REQUEST.model_copy(update={"budget_per_person": 40})
+    swapped = ai_swap.swap(MENU, request, plan, "fish_fillet_in_hot_chili_oil")
+    assert swapped.plan is not None
+    soup = next(i for i in swapped.plan.items if i.dish_id == "hot_and_sour_soup")
+    assert soup.server_question is None
+    assert not any("peanut" in q for q in swapped.plan.confirm_with_staff)

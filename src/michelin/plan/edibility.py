@@ -349,4 +349,13 @@ def risks(dish: Dish, diners: list[DinerProfile]) -> list[Risk]:
                     f"{label}: {f.reason} (someone is allergic to {f.allergen.value})",
                 )
             )
-    return out
+    # Only people who may eat the dish are asked about; a "Not for Ben" dish asks nothing
+    # for Ben. Labels are humanised ("no_pork" -> "no pork").
+    eaters = {p.name or p.id for p in diners if p.id in edible_by(dish, diners)}
+    kept = []
+    for r in out:
+        names = [n for n in r.names if n in eaters]
+        if r.names and not names:
+            continue
+        kept.append(Risk(r.about.replace("_", " "), names, r.words, r.question))
+    return kept
