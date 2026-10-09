@@ -255,3 +255,9 @@ from typical NYC recipes, exported to a review sheet (one dropdown per restricti
 the LLM owner and accepted as a whole with no changes. That is a sanity check, not an
 entry-by-entry verification: present it as "AI-drafted, team-reviewed typical recipes", and
 keep `possible` components as staff questions.
+
+**2026-10-09: free Gemini Developer API by default.** Menu photo reading and the name matcher
+now default to `gemini-3.8-flash` on the free Gemini Developer API (`GEMINI_API_KEY` from AI
+Studio) instead of `gemini-2.5-pro` on Vertex AI, which needs billing. Vertex stays available
+with `MICHELIN_GEMINI_BACKEND=vertex`. Earlier stored matches keep their recorded model. A 429
+pauses calls and falls back to the non-LLM path (OCR or pasted text; knowledge base only).

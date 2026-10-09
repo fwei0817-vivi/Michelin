@@ -3,6 +3,8 @@
 import json
 from types import SimpleNamespace
 
+import pytest
+
 from michelin.parse.knowledge import label_dish
 from michelin.parse.matcher import cache_key, load_cache, match_names
 from michelin.schemas import Allergen, Dish, EvidenceTier
@@ -126,10 +128,44 @@ def test_gemini_provider_uses_the_same_closed_list(tmp_path):
     got = match_names(menu, call_api=True, provider="gemini", client=fake, cache_path=cache)
     assert got == {"b": "mapo_tofu"}
     config = fake.calls[0]["config"]
-    assert fake.calls[0]["model"] == "gemini-2.5-pro"
-    assert config.temperature == 0
+    assert fake.calls[0]["model"] == "gemini-3.8-flash"
+    assert config.temperature is None
     assert "mapo_tofu" in str(config.response_json_schema)
-    assert load_cache(cache)["matches"][cache_key(menu[0])]["model"] == "gemini-2.5-pro"
+    assert load_cache(cache)["matches"][cache_key(menu[0])]["model"] == "gemini-3.8-flash"
+
+
+def test_gemini_model_env_and_2x_temperature(tmp_path, monkeypatch):
+    monkeypatch.setenv("MICHELIN_LLM_MODEL", "gemini-2.5-flash")
+    fake = FakeGemini(json.dumps({"matches": [{"dish": 0, "kb_id": "mapo_tofu"}]}))
+    menu = [dish("b", "Spicy Tofu w/ Ground Pork")]
+    match_names(menu, call_api=True, provider="gemini", client=fake, cache_path=tmp_path / "m.json")
+    assert fake.calls[0]["model"] == "gemini-2.5-flash"
+    assert fake.calls[0]["config"].temperature == 0
+
+
+def test_rate_limit_falls_back_to_knowledge_base_only(tmp_path):
+    from google.genai import errors
+
+    from michelin.parse.matcher import match_names_status
+
+    class Limited:
+        def __init__(self):
+            self.models = SimpleNamespace(generate_content=self.generate)
+
+        def generate(self, **_kwargs):
+            raise errors.ClientError(429, {"error": {"code": 429, "status": "RESOURCE_EXHAUSTED"}})
+
+    menu = [dish("b", "Spicy Tofu w/ Ground Pork")]
+    cache = tmp_path / "m.json"
+    got, status = match_names_status(
+        menu, call_api=True, provider="gemini", client=Limited(), cache_path=cache
+    )
+    assert (got, status) == ({}, "rate_limited")
+    assert not cache.exists()  # nothing stored, so the dish is asked again next time
+    from michelin.gemini import RateLimited
+
+    with pytest.raises(RateLimited):
+        match_names(menu, call_api=True, provider="gemini", client=Limited(), cache_path=cache)
 
 
 def test_invented_ids_and_bad_rows_are_dropped(tmp_path):

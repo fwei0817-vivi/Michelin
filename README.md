@@ -37,6 +37,38 @@ uv run uvicorn michelin.api:app          # http://localhost:8000 serves API and 
 
 Tests: `uv run pytest` and `cd web && npm run lint`.
 
+### Gemini (free tier, optional)
+
+Menu photo reading and LLM dish-name matching use Gemini through the free Gemini Developer
+API (Google AI Studio). No billing account or Vertex project is needed.
+
+1. Create a key at <https://aistudio.google.com/apikey>.
+2. Export it (or put it in a git-ignored `.env` that your shell loads; never commit it):
+
+```bash
+export GEMINI_API_KEY=...            # your AI Studio key
+uv sync --extra dev --extra llm      # installs google-genai
+cd web && npm run build && cd ..
+uv run --extra llm uvicorn michelin.api:app        # photos are read by Gemini
+MICHELIN_LLM_MATCH=1 uv run --extra llm uvicorn michelin.api:app   # also LLM name matching
+```
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) | unset | turns Gemini on |
+| `MICHELIN_GEMINI_MODEL` | `gemini-3.8-flash` | model for every Gemini call (free tier) |
+| `MICHELIN_VISION_MODEL`, `MICHELIN_LLM_MODEL` | unset | per-task overrides |
+| `MICHELIN_GEMINI_FALLBACK_MODEL` | `gemini-2.5-flash` | tried once when the model is overloaded (503); empty disables |
+| `MICHELIN_GEMINI_BACKEND=vertex` | unset | use Vertex AI (billing, `gcloud auth application-default login`) |
+| `MICHELIN_VISION=off` | unset | never send photos to a model |
+
+The free tier is small (for Gemini 3.8 Flash about 5 requests per minute and 20 per day).
+On a 429 the app says so, pauses Gemini calls (a minute, or an hour when the daily quota is
+gone) and falls back: photos to local OCR if `tesseract` is installed, otherwise to pasting
+the menu text; name matching to the reviewed knowledge base alone. Without a key nothing is
+sent anywhere. Gemini only transcribes names and prices or picks knowledge-base entries; it
+never writes ingredient labels.
+
 ## Deploy
 
 ```bash
@@ -66,7 +98,7 @@ Set `MICHELIN_MOCK=1` only for fixture-based demos.
 
 Menu editing and imports are session-local. Paste one English dish per line with its price
 at the end, or upload an English PNG/JPEG/WebP menu image (up to 8 MB). Image extraction
-requires the `tesseract` executable with English language data (included in the Dockerfile).
+uses Gemini when `GEMINI_API_KEY` is set (see above); otherwise it requires the `tesseract` executable with English language data (included in the Dockerfile).
 If unavailable, text import and manual entry still work. Imported dishes are labeled from the
 reviewed hidden-ingredient knowledge base (`data/knowledge/`); dishes it does not recognize
 keep unknown dietary flags. Either way they require explicit review before use. By default no
@@ -74,9 +106,10 @@ external AI calls are made; LLM name matching is opt-in (below).
 
 To label a whole menu file for review: `uv run python -m michelin.parse.label_menu draft.json
 -o data/menus/<slug>.json`. The output is unverified. Add `--llm` (with `uv sync --extra llm` and
-`gcloud auth application-default login`) to let an LLM map names the knowledge base misses;
+`GEMINI_API_KEY`, see above) to let an LLM map names the knowledge base misses;
 set `MICHELIN_LLM_MATCH=1` to do the same for in-app imports. The default provider is
-`gemini-2.5-pro` on Vertex AI; `MICHELIN_LLM_PROVIDER=claude-vertex` or `claude` switches it. Stored answers live in
+Gemini (`gemini-3.8-flash` on the free Developer API, or Vertex AI with
+`MICHELIN_GEMINI_BACKEND=vertex`); `MICHELIN_LLM_PROVIDER=claude-vertex` or `claude` switches it. Stored answers live in
 `data/knowledge/llm_matches.json`.
 
 Dishes neither matches go to a spreadsheet for hand labeling: `uv run python -m

@@ -4,15 +4,10 @@ Gemini only transcribes what is printed: names (English and Chinese), prices, an
 printed description. It never labels ingredients or diets; `label_imported` does that from
 the reviewed knowledge base, and every row still needs human review before planning.
 
-Configuration (any one; otherwise the API falls back to local OCR, then to text paste):
-
-  GEMINI_API_KEY or GOOGLE_API_KEY      Gemini Developer API
-  MICHELIN_VISION=vertex                Vertex AI with Application Default Credentials,
-                                        GOOGLE_CLOUD_PROJECT / GOOGLE_CLOUD_LOCATION
-  MICHELIN_VISION=off                   never call a model
-  MICHELIN_VISION_MODEL                 default gemini-2.5-flash
-
-Requires the optional `llm` extra (google-genai). Only the image is sent.
+Configuration lives in `michelin.gemini`: GEMINI_API_KEY (free Google AI Studio key) or
+MICHELIN_GEMINI_BACKEND=vertex. MICHELIN_VISION=off never calls a model; MICHELIN_VISION_MODEL
+overrides the model (default gemini-3.8-flash). Without a backend the API falls back to local
+OCR, then to text paste. Only the image is sent.
 """
 
 from __future__ import annotations
@@ -22,9 +17,9 @@ import os
 import re
 import unicodedata
 
+from michelin import gemini
 from michelin.schemas import Dish
 
-MODEL = "gemini-2.5-flash"
 MAX_DISHES = 40
 
 PROMPT = """Transcribe the dishes on this restaurant menu photo.
@@ -58,34 +53,13 @@ SCHEMA = {
 
 
 def configured() -> bool:
-    mode = os.environ.get("MICHELIN_VISION", "").lower()
-    if mode == "off":
+    if os.environ.get("MICHELIN_VISION", "").lower() == "off":
         return False
-    if not (
-        mode == "vertex" or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-    ):
-        return False
-    try:
-        import google.genai  # noqa: F401
-    except ImportError:
-        return False
-    return True
+    return gemini.available()
 
 
-def _client():
-    from google import genai
-
-    if os.environ.get("MICHELIN_VISION", "").lower() == "vertex":
-        from michelin.parse.matcher import _gcp_project
-
-        return genai.Client(
-            vertexai=True,
-            project=_gcp_project(),
-            location=os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1"),
-        )
-    return genai.Client(
-        api_key=os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-    )
+def model_name() -> str:
+    return gemini.model("vision")
 
 
 def slug(text: str, taken: set[str]) -> str:
@@ -121,20 +95,23 @@ def rows_to_dishes(rows: list[dict]) -> list[Dish]:
     return dishes
 
 
-def read_menu_photo(image: bytes, mime: str, client=None) -> tuple[list[Dish], str | None]:
-    """(dishes, restaurant name if printed). Raises on transport or malformed output."""
+def read_menu_photo(image: bytes, mime: str, client=None) -> tuple[list[Dish], str | None, str]:
+    """(dishes, restaurant name if printed, model used). Raises gemini.RateLimited on 429,
+    and other errors on transport or malformed output."""
     from google.genai import types
 
-    client = client or _client()
-    response = client.models.generate_content(
-        model=os.environ.get("MICHELIN_VISION_MODEL", MODEL),
+    client = client or gemini.client()
+    model_id = model_name()
+    response, used = gemini.generate(
+        client,
+        model=model_id,
         contents=[types.Part.from_bytes(data=image, mime_type=mime), PROMPT],
         config=types.GenerateContentConfig(
-            temperature=0,
+            **gemini.sampling(model_id),
             response_mime_type="application/json",
             response_json_schema=SCHEMA,
         ),
     )
     body = json.loads(response.text)
     name = str(body.get("restaurant_name") or "").strip() or None
-    return rows_to_dishes(body.get("dishes") or []), name
+    return rows_to_dishes(body.get("dishes") or []), name, used

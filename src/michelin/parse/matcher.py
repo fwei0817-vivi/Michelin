@@ -8,9 +8,10 @@ time, and a person can review or overwrite any stored answer (set "kb_id" and
 
 Providers (MICHELIN_LLM_PROVIDER, default gemini), all behind the same closed-list prompt:
 
-  gemini         gemini-2.5-pro on Vertex AI, Google Application Default Credentials
-                 (`gcloud auth application-default login`); project from GOOGLE_CLOUD_PROJECT
-                 or the gcloud default, region from GOOGLE_CLOUD_LOCATION (us-central1)
+  gemini         gemini-3.8-flash (MICHELIN_LLM_MODEL or MICHELIN_GEMINI_MODEL to change) on
+                 the Gemini Developer API with GEMINI_API_KEY (free tier from
+                 aistudio.google.com/apikey); with MICHELIN_GEMINI_BACKEND=vertex, or with no
+                 key, on Vertex AI with Application Default Credentials (see michelin.gemini)
   claude-vertex  claude-opus-5-5 on Vertex AI, same credentials
   claude         claude-opus-5-5 on the Anthropic API, ANTHROPIC_API_KEY
 
@@ -24,12 +25,13 @@ import os
 from datetime import UTC, datetime
 from pathlib import Path
 
+from michelin import gemini
 from michelin.parse.knowledge import load_kb, normalize
 from michelin.schemas import Dish
 
 CACHE_PATH = Path(__file__).resolve().parents[3] / "data/knowledge/llm_matches.json"
 MODELS = {
-    "gemini": "gemini-2.5-pro",
+    "gemini": gemini.DEFAULT_MODEL,
     "claude-vertex": "claude-opus-5-5",
     "claude": "claude-opus-5-5",
 }
@@ -116,11 +118,14 @@ def _parse(text: str | None, n: int, ids: list[str]) -> list[str | None]:
 
 
 def _gcp_project() -> str | None:
-    if os.environ.get("GOOGLE_CLOUD_PROJECT"):
-        return os.environ["GOOGLE_CLOUD_PROJECT"]
-    import google.auth
+    return gemini.gcp_project()
 
-    return google.auth.default()[1]
+
+_last_model: dict[str, str] = {}  # model that actually answered (after a fallback)
+
+
+def model_name(provider: str) -> str:
+    return gemini.model("match") if provider == "gemini" else MODELS[provider]
 
 
 def _ask_claude(dishes: list[Dish], kb: dict, client, vertex: bool) -> list[str | None]:
@@ -155,25 +160,21 @@ def _ask_claude(dishes: list[Dish], kb: dict, client, vertex: bool) -> list[str 
 def _ask_gemini(dishes: list[Dish], kb: dict, client) -> list[str | None]:
     from google.genai import types
 
-    if client is None:
-        from google import genai
-
-        client = genai.Client(
-            vertexai=True,
-            project=_gcp_project(),
-            location=os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1"),
-        )
+    client = client or gemini.client()
     ids = sorted(e["id"] for e in kb["dishes"])
-    response = client.models.generate_content(
-        model=MODELS["gemini"],
+    model_id = model_name("gemini")
+    response, used = gemini.generate(
+        client,
+        model=model_id,
         contents=_listing(dishes),
         config=types.GenerateContentConfig(
             system_instruction=[SYSTEM, catalog_text(kb)],
-            temperature=0,
+            **gemini.sampling(model_id),
             response_mime_type="application/json",
             response_json_schema=_schema(ids),
         ),
     )
+    _last_model["gemini"] = used
     return _parse(response.text, len(dishes), ids)
 
 
@@ -210,7 +211,25 @@ def match_names(
     answer) maps. Stored answers are always used; the API is called only for new dish
     text, and only when `call_api` (default: MICHELIN_LLM_MATCH=1). A stored "none" from an
     older knowledge-base version is asked again, since a new entry may now fit; reviewed
-    answers are never replaced."""
+    answers are never replaced. Provider errors propagate (see match_names_status)."""
+    return _match(dishes, call_api, provider, client, cache_path, swallow=False)[0]
+
+
+def match_names_status(
+    dishes: list[Dish],
+    *,
+    call_api: bool | None = None,
+    provider: str | None = None,
+    client=None,
+    cache_path: Path = CACHE_PATH,
+) -> tuple[dict[str, str], str]:
+    """Like match_names, but never raises for the provider. Status is one of "off" (no new
+    names were sent), "called", "rate_limited" or "failed"; on the last two only stored
+    answers are used and nothing new is stored, so the knowledge-base-only labels apply."""
+    return _match(dishes, call_api, provider, client, cache_path, swallow=True)
+
+
+def _match(dishes, call_api, provider, client, cache_path, *, swallow):
     from michelin.parse.knowledge import match
 
     kb = load_kb()
@@ -226,24 +245,36 @@ def match_names(
             or stored.get("kb_version") == kb.get("version")
         )
 
+    status = "off"
     new = [d for d in pending if not settled(d)]
     if new and call_api:
         provider = provider or provider_name()
-        for dish, kb_id in zip(new, ask_llm(new, kb, provider, client), strict=True):
-            cache["matches"][cache_key(dish)] = {
-                "kb_id": kb_id,
-                "model": MODELS[provider],
-                "kb_version": kb.get("version"),
-                "date": datetime.now(UTC).date().isoformat(),
-                "reviewed": False,
-            }
-        save_cache(cache, cache_path)
+        try:
+            answers = ask_llm(new, kb, provider, client)
+        except Exception as exc:
+            if not swallow:
+                raise
+            answers, status = None, "rate_limited" if gemini.is_rate_limit(exc) else "failed"
+            if getattr(exc, "daily", False):
+                status = "daily_limit"
+        if answers is not None:
+            status = "called"
+            used_model = _last_model.pop(provider, None) or model_name(provider)
+            for dish, kb_id in zip(new, answers, strict=True):
+                cache["matches"][cache_key(dish)] = {
+                    "kb_id": kb_id,
+                    "model": used_model,
+                    "kb_version": kb.get("version"),
+                    "date": datetime.now(UTC).date().isoformat(),
+                    "reviewed": False,
+                }
+            save_cache(cache, cache_path)
     out = {}
     for dish in pending:
         stored = cache["matches"].get(cache_key(dish))
         if stored and stored["kb_id"]:
             out[dish.id] = stored["kb_id"]
-    return out
+    return out, status
 
 
 def reviewed_ids(dishes: list[Dish], cache_path: Path = CACHE_PATH) -> set[str]:

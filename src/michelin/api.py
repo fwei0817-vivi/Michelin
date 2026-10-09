@@ -397,17 +397,69 @@ def _image_mime(image: bytes) -> str | None:
     return None
 
 
+def _parse_notice(
+    mode: str, matched: str, fallback: str | None = None, vision_model: str | None = None
+) -> str:
+    """Say which steps used a model, so the notice is true whether Gemini is on or off."""
+    from michelin import gemini
+    from michelin.parse.matcher import model_name, provider_name
+
+    parts = []
+    if fallback == "rate_limited":
+        parts.append("Gemini's free-tier rate limit was reached, so local OCR read the photo.")
+    elif fallback == "daily_limit":
+        parts.append("Today's free Gemini quota is used up, so local OCR read the photo.")
+    elif fallback == "failed":
+        parts.append("Gemini could not read the photo, so local OCR read it.")
+    if mode == "gemini":
+        parts.append(
+            f"Gemini ({vision_model or gemini.model('vision')}) read the dish names and prices."
+        )
+    elif mode == "local_ocr" and not fallback:
+        parts.append("Local OCR read the photo.")
+    elif mode == "local_text":
+        parts.append("The pasted text was split into dishes locally.")
+    if matched == "called":
+        parts.append(
+            f"{model_name(provider_name())} matched names the knowledge base did not "
+            "recognize to reviewed entries (it picks entries only, never ingredients)."
+        )
+    elif matched == "rate_limited":
+        parts.append(
+            "The LLM name matcher hit its rate limit, so unrecognized names use the "
+            "knowledge base alone."
+        )
+    elif matched == "daily_limit":
+        parts.append(
+            "Today's free Gemini quota is used up, so unrecognized names use the knowledge "
+            "base alone."
+        )
+    elif matched == "failed":
+        parts.append(
+            "The LLM name matcher was unavailable, so unrecognized names use the knowledge "
+            "base alone."
+        )
+    parts.append("Ingredient labels come from the reviewed knowledge base.")
+    if mode != "gemini" and matched != "called" and not fallback:
+        parts.append("No model API was called.")
+    parts.append("Check every row against the menu.")
+    return " ".join(parts)
+
+
 @app.post("/api/menu/parse")
 def parse_menu(req: ParseRequest) -> dict:
     import base64
     import binascii
+    import logging
     import shutil
     import subprocess
     import tempfile
 
-    from michelin.parse import label_imported, parse_text, vision
+    from michelin import gemini
+    from michelin.parse import label_imported_status, parse_text, vision
 
     text = req.text
+    fallback = None  # why a configured Gemini photo read was not used
     if req.image_base64 and vision.configured():
         try:
             image = base64.b64decode(req.image_base64, validate=True)
@@ -417,21 +469,35 @@ def parse_menu(req: ParseRequest) -> dict:
         if mime is None:
             raise HTTPException(422, "Use a PNG, JPEG, or WebP menu image.")
         try:
-            dishes, printed_name = vision.read_menu_photo(image, mime)
-        except Exception:  # noqa: BLE001 - any provider failure falls back below
-            dishes, printed_name = None, None
+            dishes, printed_name, used_model = vision.read_menu_photo(image, mime)
+        except gemini.RateLimited as exc:
+            limited = "daily_limit" if exc.daily else "rate_limited"
+            dishes, printed_name, used_model, fallback = None, None, None, limited
+        except Exception as exc:  # noqa: BLE001 - any provider failure falls back below
+            logging.getLogger("michelin").warning(
+                "Gemini photo read failed: %s: %s", type(exc).__name__, str(exc)[:300]
+            )
+            dishes, printed_name, used_model, fallback = None, None, None, "failed"
         if dishes:
+            labeled, matched = label_imported_status(dishes)
             return {
-                "dishes": [d.model_dump() for d in label_imported(dishes)],
+                "dishes": [d.model_dump() for d in labeled],
                 "text": "\n".join(f"{d.name_en} {d.price:.2f}" for d in dishes),
                 "restaurant_name": printed_name,
                 "mode": "gemini",
-                "notice": "Gemini read the dish names and prices; ingredient labels come from "
-                "the reviewed knowledge base. Check every row against the photo.",
+                "notice": _parse_notice("gemini", matched, vision_model=used_model),
             }
         if dishes is not None:
             raise HTTPException(422, "No dishes with prices were found. Try a clearer photo.")
         if not shutil.which("tesseract"):
+            if fallback == "rate_limited":
+                raise HTTPException(429, gemini.RATE_LIMIT_MESSAGE)
+            if fallback == "daily_limit":
+                raise HTTPException(
+                    429,
+                    "Today's free Gemini quota is used up, so photos can't be read right now. "
+                    "Paste the menu text instead; the quota resets daily.",
+                )
             raise HTTPException(
                 502, "Gemini could not read this photo. Try again, or paste the menu text."
             )
@@ -473,11 +539,13 @@ def parse_menu(req: ParseRequest) -> dict:
             )
     if not text.strip():
         raise HTTPException(422, "Paste menu text or choose an image first.")
+    mode = "local_ocr" if req.image_base64 else "local_text"
+    labeled, matched = label_imported_status(parse_text(text))
     return {
-        "dishes": [d.model_dump() for d in label_imported(parse_text(text))],
+        "dishes": [d.model_dump() for d in labeled],
         "text": text,
-        "mode": "local_ocr" if req.image_base64 else "local_text",
-        "notice": "Local deterministic extraction; no model API called. Review all rows.",
+        "mode": mode,
+        "notice": _parse_notice(mode, matched, fallback),
     }
 
 

@@ -42,10 +42,17 @@ def label_imported(dishes: list[Dish]) -> list[Dish]:
     question in favour of specific ones; an unrecognized dish keeps it. Names the knowledge
     base misses go to the LLM matcher (stored answers always; new ones only when
     MICHELIN_LLM_MATCH=1)."""
-    from michelin.parse.knowledge import label_dish
-    from michelin.parse.matcher import match_names, reviewed_ids
+    return label_imported_status(dishes)[0]
 
-    suggested, accepted = match_names(dishes), reviewed_ids(dishes)
+
+def label_imported_status(dishes: list[Dish]) -> tuple[list[Dish], str]:
+    """label_imported plus the matcher status ("off", "called", "rate_limited",
+    "daily_limit", "failed").
+    A failed or rate-limited LLM call falls back to knowledge-base-only labels."""
+    from michelin.parse.knowledge import label_dish
+    from michelin.parse.matcher import match_names_status, reviewed_ids
+
+    (suggested, status), accepted = match_names_status(dishes), reviewed_ids(dishes)
     out = []
     for dish in dishes:
         labeled = label_dish(
@@ -57,4 +64,4 @@ def label_imported(dishes: list[Dish]) -> list[Dish]:
             out.append(labeled.dish.model_copy(update={"confirm_with_staff": questions}))
         else:
             out.append(labeled.dish)
-    return out
+    return out, status
