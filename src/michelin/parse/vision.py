@@ -1,8 +1,8 @@
 """Read dish names and prices from a menu photo with Gemini.
 
 Gemini only transcribes what is printed: names (English and Chinese), prices, and the
-printed description. It never labels ingredients or diets; `label_imported` does that from
-the reviewed knowledge base, and every row still needs human review before planning.
+printed description. It never labels ingredients or diets; the AI dish facts (plan/dish_facts.py) do that from
+the name, and every row still needs human review before planning.
 
 Configuration lives in `michelin.llm`: OPENROUTER_API_KEY (preferred), else GEMINI_API_KEY
 (free Google AI Studio key) or MICHELIN_GEMINI_BACKEND=vertex. MICHELIN_VISION=off never calls a model; MICHELIN_VISION_MODEL

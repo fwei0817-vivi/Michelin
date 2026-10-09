@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ALLERGENS, ALLERGEN_LABEL, DIETS, DIET_LABEL, SPICE_LABEL, splitList } from "../lib/format";
+import { ALLERGENS, ALLERGEN_LABEL, DIETS, DIET_LABEL } from "../lib/format";
 import type { Allergen, Diet, DinerProfile } from "../types";
 import { Sheet } from "./Sheet";
 
@@ -24,16 +24,11 @@ export function personId(name: string, taken: string[]): string {
   return id;
 }
 
-const chip = (on: boolean) =>
-  `rounded-full border px-3 py-1.5 text-sm ${on ? "border-brand bg-brand text-surface" : "border-line-strong text-fg-2 hover:border-fg-3"}`;
-
 export function DinerSheet({ diner, existingIds, saved, tonight, atTable, onSave, onPick, onRemove, onForget, onClose }: Props) {
   const [name, setName] = useState(diner?.name ?? "");
   const [allergies, setAllergies] = useState<Allergen[]>(diner?.allergies ?? []);
   const [diets, setDiets] = useState<Diet[]>(diner?.diets ?? []);
-  const [spice, setSpice] = useState<number | null>(diner?.max_spice ?? null);
-  const [dislikes, setDislikes] = useState((diner?.dislikes ?? []).join(", "));
-  const [likes, setLikes] = useState((diner?.likes ?? []).join(", "));
+  const [notes, setNotes] = useState(diner?.notes ?? "");
 
   const match = !diner ? saved.find((p) => p.name.trim().toLowerCase() === name.trim().toLowerCase()) : undefined;
   const [confirmForget, setConfirmForget] = useState(false);
@@ -44,7 +39,7 @@ export function DinerSheet({ diner, existingIds, saved, tonight, atTable, onSave
     if (!trimmed) return;
     if (!diner && match) return; // pick the saved person instead of creating a duplicate
     const id = diner?.id ?? personId(trimmed, existingIds);
-    onSave({ id, name: trimmed, allergies, diets, max_spice: spice, dislikes: splitList(dislikes), likes: splitList(likes) });
+    onSave({ id, name: trimmed, allergies, diets, notes: notes.trim() });
   };
 
   return (
@@ -79,63 +74,45 @@ export function DinerSheet({ diner, existingIds, saved, tonight, atTable, onSave
           </div>
         )}
 
-        <fieldset>
+        <fieldset className="diner-checks">
           <legend className="text-sm text-fg-2">Allergies</legend>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="check-grid">
             {ALLERGENS.map((a) => (
-              <button key={a} type="button" aria-pressed={allergies.includes(a)} onClick={() => setAllergies(toggle(allergies, a))} className={chip(allergies.includes(a))}>
+              <label key={a} className={`check-chip ${allergies.includes(a) ? "on" : ""}`}>
+                <input type="checkbox" checked={allergies.includes(a)} onChange={() => setAllergies(toggle(allergies, a))} />
                 {ALLERGEN_LABEL[a]}
-              </button>
+              </label>
             ))}
           </div>
         </fieldset>
 
-        <fieldset>
+        <fieldset className="diner-checks">
           <legend className="text-sm text-fg-2">Diet</legend>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="check-grid">
             {DIETS.map((d) => (
-              <button key={d} type="button" aria-pressed={diets.includes(d)} onClick={() => setDiets(toggle(diets, d))} className={chip(diets.includes(d))}>
+              <label key={d} className={`check-chip ${diets.includes(d) ? "on" : ""}`}>
+                <input type="checkbox" checked={diets.includes(d)} onChange={() => setDiets(toggle(diets, d))} />
                 {DIET_LABEL[d]}
-              </button>
+              </label>
             ))}
           </div>
           <p className="mt-2 text-xs text-fg-3">
-            Recorded conflicts exclude a dish for this person. Unknown ingredients remain questions to confirm with the kitchen.
+            Allergies and diets are hard rules: a dish that may break one is left out or becomes a question for your server.
           </p>
         </fieldset>
 
-        <fieldset>
-          <legend className="text-sm text-fg-2">Heat</legend>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {SPICE_LABEL.map((label, i) => (
-              <button key={label} type="button" aria-pressed={spice === i} onClick={() => setSpice(spice === i ? null : i)} className={chip(spice === i)}>
-                {label}
-              </button>
-            ))}
-          </div>
-          <p className="mt-2 text-xs text-fg-3">Heat and dislikes affect preferences. Spicier dishes may still appear, with a note.</p>
-        </fieldset>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block text-sm">
-            <span className="text-fg-2">Dislikes</span>
-            <input
-              value={dislikes}
-              onChange={(e) => setDislikes(e.target.value)}
-              placeholder="cilantro, offal"
-              className="field"
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="text-fg-2">Likes</span>
-            <input
-              value={likes}
-              onChange={(e) => setLikes(e.target.value)}
-              placeholder="tofu, spicy"
-              className="field"
-            />
-          </label>
-        </div>
+        <label className="block text-sm">
+          <span className="text-fg-2">Tastes and preferences</span>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            maxLength={500}
+            rows={2}
+            placeholder="No spicy food, loves tofu, not a fan of cilantro"
+            className="field"
+          />
+          <small className="text-xs text-fg-3">In their own words. The AI reads this when it picks dishes.</small>
+        </label>
 
         <div className="drawer-footer flex flex-wrap items-center justify-between gap-3">
           {diner ? (

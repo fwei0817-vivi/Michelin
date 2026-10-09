@@ -526,3 +526,8 @@ details[open] > summary .who-count svg { transform: rotate(180deg); }
 .progress-note { margin-left: 8px; color: var(--color-fg-3); }
 .pick-action { white-space: nowrap; }
 .over-budget { display: block; margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--color-danger, #b42318); text-align: right; }
+.check-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.check-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--color-line-strong); border-radius: 999px; font-size: 14px; color: var(--color-fg-2); cursor: pointer; user-select: none; }
+.check-chip input { width: 15px; height: 15px; accent-color: var(--color-brand); }
+.check-chip.on { border-color: var(--color-brand); background: var(--color-brand-soft); color: var(--color-fg); font-weight: 600; }
+.check-chip:focus-within { outline: 2px solid var(--color-brand); outline-offset: 2px; }

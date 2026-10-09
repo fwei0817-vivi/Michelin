@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AlertCircle, BookOpen, LoaderCircle, RefreshCw, Users, UtensilsCrossed, ArrowLeft } from "lucide-react";
-import { applyPeopleAction, deletePerson, getHealth, getMenu, getMenus, getProfiles, getSavedPeople, postPlan, postSwap, savePerson } from "./api";
+import { applyPeopleAction, deletePerson, getHealth, getMenu, getMenus, getProfiles, getSavedPeople, menuFacts, postPlan, postSwap, savePerson } from "./api";
 import { ConflictNote } from "./components/ConflictNote";
 import { SetupFlow } from "./components/SetupFlow";
 import { Stepper } from "./components/Stepper";
@@ -228,6 +228,11 @@ export default function App() {
   const updateMenu = (m: Menu) => {
     invalidate(); menuCache.current.set(menuId, m); setMenu(m);
     setMenus(prev => prev.map(x => x.slug === menuId ? { ...x, verified: m.verified, n_dishes: m.dishes.length } : x));
+    // Edited or added rows get the AI's dish facts (the server re-derives them for planning anyway).
+    if (m.dishes.some(d => !d.main_ingredients.length)) {
+      const id = menuId;
+      menuFacts(m).then(f => { const withFacts = { ...m, dishes: f.dishes }; if (menuCache.current.get(id) === m) { menuCache.current.set(id, withFacts); setMenu(cur => cur === m ? withFacts : cur); } }).catch(() => {});
+    }
   };
   const selectMenu = (id: string) => { if (id !== menuId) { setBrowser(b => b && { ...b, initialTab: "browse", photo: undefined, fromStart: false }); setMenuId(id); } };
   const applyRelaxation = (r: Relaxation) => {

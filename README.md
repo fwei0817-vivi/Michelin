@@ -72,7 +72,7 @@ MICHELIN_LLM_MATCH=1 uv run --extra llm uvicorn michelin.api:app   # also LLM na
 | `MICHELIN_OPENROUTER_MODEL` | `google/gemini-2.5-flash` | OpenRouter model for every task |
 | `MICHELIN_OPENROUTER_VISION_MODEL` | unset | OpenRouter model for menu photos only (must accept images) |
 | `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) | unset | use the free Gemini API |
-| `MICHELIN_LLM_PROVIDER` | auto | force `openrouter` or `gemini` (the matcher also accepts `claude`, `claude-vertex`) |
+| `MICHELIN_LLM_PROVIDER` | auto | force `openrouter` or `gemini` |
 | `MICHELIN_GEMINI_MODEL` | `gemini-3.8-flash` | Gemini model for every task |
 | `MICHELIN_VISION_MODEL`, `MICHELIN_LLM_MODEL`, `MICHELIN_PLANNER_MODEL` | unset | Gemini per-task overrides |
 | `MICHELIN_GEMINI_FALLBACK_MODEL` | `gemini-2.5-flash` | tried once when Gemini is overloaded (503); empty disables |
@@ -82,11 +82,12 @@ MICHELIN_LLM_MATCH=1 uv run --extra llm uvicorn michelin.api:app   # also LLM na
 The free Gemini tier is small: for Gemini 3.8 Flash, about 5 requests a minute and 20 a day.
 On a 429, or when OpenRouter credit runs out (402), the app says so. It pauses Gemini calls
 for a minute, or for an hour once the daily quota is gone. Photos fall back to local OCR if
-`tesseract` is installed, and otherwise to pasting the menu text. Name matching falls back
-to the reviewed knowledge base alone. The planner returns an explained "No recommendation
+`tesseract` is installed, and otherwise to pasting the menu text. Without a model, dish facts
+stay unknown (nobody with a restriction can eat an unknown dish). The planner returns an explained "No recommendation
 right now". Identical plan requests are cached in `data/local/llm_plans.json`, which is
-git-ignored. The models only transcribe menus, pick knowledge-base entries, or choose dishes
-from the brief. They never write ingredient labels.
+git-ignored. The models transcribe menus, infer each dish's likely ingredients and allergen
+risks from its name (cached per dish name in `data/facts/dish_facts.json`), and choose dishes
+from the brief; the rules enforce every diner's allergies and diets on top.
 
 ## Deploy
 
@@ -123,25 +124,16 @@ at the end, or upload an English PNG/JPEG/WebP menu image (up to 8 MB). Image ex
 uses OpenRouter when `OPENROUTER_API_KEY` is set (the photo goes as a base64 `image_url`; default
 `google/gemini-2.5-flash`, override with `MICHELIN_OPENROUTER_VISION_MODEL`; `/api/health` then
 reports `photo: "openrouter"`), else Gemini when `GEMINI_API_KEY` is set (see above); otherwise it requires the `tesseract` executable with English language data (included in the Dockerfile).
-If unavailable, text import and manual entry still work. Imported dishes are labeled from the
-reviewed hidden-ingredient knowledge base (`data/knowledge/`); dishes it does not recognize
-keep unknown dietary flags. Either way they require explicit review before use. By default no
-external AI calls are made; LLM name matching is opt-in (below).
+If unavailable, text import and manual entry still work.
 
-To label a whole menu file for review: `uv run python -m michelin.parse.label_menu draft.json
--o data/menus/<slug>.json`. The output is unverified. Add `--llm` (with `uv sync --extra llm` and
-`GEMINI_API_KEY`, see above) to let an LLM map names the knowledge base misses;
-set `MICHELIN_LLM_MATCH=1` to do the same for in-app imports. The matcher uses the same
-provider as the planner: OpenRouter when `OPENROUTER_API_KEY` is set, otherwise
-Gemini (`gemini-3.8-flash` on the free Developer API, or Vertex AI with
-`MICHELIN_GEMINI_BACKEND=vertex`); `MICHELIN_LLM_PROVIDER=claude-vertex` or `claude` switches it. Stored answers live in
-`data/knowledge/llm_matches.json`.
-
-Dishes neither matches go to a spreadsheet for hand labeling: `uv run python -m
-michelin.parse.review_workbook export data/menus/<slug>.json -o review.xlsx`, fill the dropdowns,
-then `... review_workbook import review.xlsx data/menus/<slug>.json`. The answers used for the
-three restaurant menus are kept in `data/menus/review_answers.xlsx`; to rebuild a menu, run
-`label_menu` and then this import. Setting `verified: true` stays a manual step. The bad-case evaluation lives in
+**Menus are only name, price and category.** Every other dish field is ignored at runtime:
+`plan/dish_facts.py` asks the planner's model once per menu what each dish is usually made
+of (likely and possible ingredients, the nine allergens, pork/beef, vegetarian/vegan, heat),
+caches the answer by dish name in `data/facts/dish_facts.json` (shipped for the bundled
+menus), and the rules enforce diners against it: a likely or possible allergen keeps an
+allergic diner off the dish; a "possible" diet risk (e.g. lard in a pancake) keeps the dish
+with a question for the server; anything unanswered stays unknown and excluded. Imported
+menus still require explicit review before use. The bad-case evaluation lives in
 `eval/` (see `eval/README.md`).
 
 **Swapping one dish.** Each recommended dish has "AI swap" (one model call, same provider and
@@ -180,10 +172,11 @@ Send `X-Profile-Scope: synthetic-group-a` consistently for stored profiles and p
 All person routes require a scope. Scoped lookups never fall back to another scope or the
 sample group. The header is a namespace, **not authentication**: use only synthetic data in
 this prototype until a trusted identity/access-control layer binds scopes to callers.
-Likes/dislikes/spice preferences remain separate from allergies/diets. Planning with saved
-`diner_ids` uses the latest snapshot. An inline profile controls current restrictions and
-explicit preference values; omitted soft fields inherit saved preferences in that scope.
-An inline empty list clears that preference for the request.
+A person is allergies and diets (one-tap checkboxes, hard rules) plus one free-text
+`notes` field for tastes ("no spicy food, loves tofu") that only the AI reads. Older saved
+people with heat/likes/dislikes are migrated into `notes`. Planning with saved `diner_ids`
+uses the latest snapshot. An inline profile controls current restrictions; an omitted
+`notes` inherits the saved note in that scope, and an empty one clears it for the request.
 
 The web app saves **everyone** you add: each add/edit is a `PUT /api/profiles/{id}` with no
 `expected_revision` (upsert of the person's single current record), under the fixed scope

@@ -11,6 +11,16 @@ from pathlib import Path
 
 from michelin.schemas import DinerProfile
 
+LEGACY = {"max_spice", "likes", "dislikes"}
+
+
+def _current(raw: dict) -> dict:
+    """A stored body in today's shape (older bodies are migrated on read)."""
+    try:
+        return DinerProfile.model_validate(raw).model_dump(mode="json")
+    except ValueError:
+        return raw
+
 
 class ProfileStore:
     def __init__(self, path: Path):
@@ -34,7 +44,31 @@ class ProfileStore:
                 "ORDER BY revision",
                 (scope, person),
             ).fetchall()
-        return [{"revision": r, "profile": json.loads(b), "created_at": t} for r, b, t in rows]
+        return [
+            {"revision": r, "profile": _current(json.loads(b)), "created_at": t} for r, b, t in rows
+        ]
+
+    def migrate(self) -> int:
+        """Rewrite saved people whose latest record predates the free-text taste note
+        (heat/likes/dislikes fields) as a new revision in the current shape. Idempotent."""
+        changed = 0
+        with self.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            rows = db.execute(
+                "SELECT scope, person, revision, body FROM profiles p WHERE revision="
+                "(SELECT MAX(revision) FROM profiles WHERE scope=p.scope AND person=p.person)"
+            ).fetchall()
+            for scope, person, revision, body in rows:
+                raw = json.loads(body)
+                if not LEGACY & raw.keys():
+                    continue
+                new = DinerProfile.model_validate(raw).model_dump_json()
+                db.execute(
+                    "INSERT INTO profiles(scope, person, revision, body) VALUES (?, ?, ?, ?)",
+                    (scope, person, revision + 1, new),
+                )
+                changed += 1
+        return changed
 
     def list(self, scope: str):
         with self.connection() as db:

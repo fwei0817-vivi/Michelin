@@ -164,11 +164,20 @@ def printed_dish(dish: dict) -> dict:
 
 
 def kb_labels(dish: dict) -> tuple[dict, str | None]:
-    from michelin.parse.knowledge import label_dish
-    from michelin.schemas import Dish
+    """Since 2026-10-09 the rule knowledge base is gone: "kb" labels are the AI's dish facts
+    from the name (plan/dish_facts.py; needs a model key, answers are cached)."""
+    from michelin.plan import dish_facts
+    from michelin.schemas import Dish, Menu
 
-    labeled = label_dish(Dish.model_validate(printed_dish(dish)))
-    return labeled.dish.model_dump(mode="json"), labeled.match
+    one = Menu(
+        restaurant_id="eval",
+        restaurant_name="eval",
+        cuisine="",
+        source="eval",
+        dishes=[Dish.model_validate(printed_dish(dish))],
+    )
+    labeled = dish_facts.prepare(one).dishes[0]
+    return labeled.model_dump(mode="json"), "ai" if dish_facts.known(one) else None
 
 
 def label_kb(dish: dict) -> dict:

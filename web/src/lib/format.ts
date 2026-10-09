@@ -1,10 +1,10 @@
 import type { Allergen, AllergenFlag, Diet, DinerProfile, Dish } from "../types";
 
 export const ALLERGENS: Allergen[] = [
-  "shellfish",
-  "fish",
   "peanut",
   "tree_nut",
+  "shellfish",
+  "fish",
   "egg",
   "dairy",
   "soy",
@@ -18,7 +18,7 @@ export const ALLERGEN_LABEL: Record<Allergen, string> = {
   peanut: "peanuts",
   tree_nut: "tree nuts",
   egg: "egg",
-  dairy: "dairy",
+  dairy: "milk",
   soy: "soy",
   wheat: "wheat",
   sesame: "sesame",
@@ -33,7 +33,6 @@ export const DIET_LABEL: Record<Diet, string> = {
   no_beef: "no beef",
 };
 
-export const SPICE_LABEL = ["no heat", "mild", "medium", "hot"];
 
 export function money(n: number | null | undefined, currency = "$"): string {
   if (n == null) return "—";
@@ -65,8 +64,13 @@ export function dinerSummary(p: DinerProfile): string {
     ...p.diets.map((d) => DIET_LABEL[d]),
     ...p.allergies.map((a) => `no ${ALLERGEN_LABEL[a]}`),
   ];
-  if (p.max_spice === 0) parts.push("no heat");
+  if (avoidsHeat(p)) parts.push("no heat");
   return parts.join(", ");
+}
+
+/** The diner's own note says they avoid spicy food ("no spicy food", "mild only"). */
+export function avoidsHeat(p: DinerProfile): boolean {
+  return /\b(no|not|avoids?|hates?|without|can't|cannot|don't)\b[^.;]*\b(spic|heat|hot|chil)|\bmild\b/i.test(p.notes ?? "");
 }
 
 /** "David", "David and Tom", "David, Amy and Tom". */

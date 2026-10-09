@@ -1,4 +1,4 @@
-"""Menu photo reading with Gemini, using a fake client: transcription only, labels from the KB."""
+"""Menu photo reading with Gemini, using a fake client: transcription only, facts from the AI."""
 
 import base64
 import json
@@ -46,7 +46,33 @@ def test_rows_become_unlabeled_dishes_with_unique_ids():
     assert dishes[0].is_vegetarian is None and not dishes[0].allergens
 
 
-def test_photo_uses_gemini_and_knowledge_base(monkeypatch):
+@pytest.mark.real_dish_facts
+def test_photo_uses_gemini_and_ai_dish_facts(monkeypatch):
+    from michelin.plan import dish_facts
+
+    def facts(dishes, client=None):
+        rows = []
+        for d in dishes:
+            egg = "Eggplant" in (d.name_en or "")
+            rows.append(
+                {
+                    "id": d.id,
+                    "ingredients": [{"name": "minced pork", "certainty": "possible"}]
+                    if egg
+                    else [{"name": "rice", "certainty": "likely"}],
+                    "allergens": [{"allergen": "soy", "certainty": "likely", "why": "soy sauce"}]
+                    if egg
+                    else [],
+                    "pork": "possible" if egg else "no",
+                    "beef": "no",
+                    "vegetarian": "possible" if egg else "yes",
+                    "vegan": "possible" if egg else "yes",
+                    "spice": 1 if egg else 0,
+                }
+            )
+        return json.dumps({"dishes": rows}), "fake"
+
+    monkeypatch.setattr(dish_facts, "_ask", facts)
     fake_client = fake(
         {
             "restaurant_name": "Sky Pavilion",
@@ -63,7 +89,7 @@ def test_photo_uses_gemini_and_knowledge_base(monkeypatch):
     body = r.json()
     assert body["mode"] == "gemini" and body["restaurant_name"] == "Sky Pavilion"
     eggplant = body["dishes"][0]
-    # Looks vegetarian, but the knowledge base knows it often hides minced pork.
+    # Looks vegetarian, but the AI knows it often hides minced pork.
     assert any("pork" in i["name"] and i["tier"] != "menu" for i in eggplant["main_ingredients"])
     assert any("minced pork" in q for q in eggplant["confirm_with_staff"])
     evaluation = client.post(
@@ -87,6 +113,7 @@ def test_photo_uses_gemini_and_knowledge_base(monkeypatch):
     assert call["config"].temperature is None  # Gemini 3: keep the default temperature
     assert "Gemini (gemini-3.8-flash) read the dish names" in body["notice"]
     assert "No model API" not in body["notice"]
+    assert "likely ingredients and allergens from its name" in body["notice"]
 
 
 def test_photo_without_gemini_or_ocr_asks_for_text(monkeypatch):

@@ -35,8 +35,8 @@ it should suit the diners' allergies and diets ("ok_for" lists who can eat it; n
 dish nobody can eat). After the swap every diner must still have at least one non-rice dish
 they can eat. Prefer, in order: the dish that the MOST diners can eat (longest "ok_for";
 all diners is best), a price close to the replaced dish, and a dish that does not repeat the main ingredient, category
-or cooking method of the dishes that stay. Respect heat limits ("max_spice" 0 means no heat),
-dislikes and likes. Return "dish_id", "reason": ONE short clause (under 10 words), naming only diners in
+or cooking method of the dishes that stay. Follow each diner's "notes" (tastes in their own
+words, e.g. "no spicy food"). Return "dish_id", "reason": ONE short clause (under 10 words), naming only diners in
 its "ok_for", e.g. "Kevin can eat it" or "adds a vegetable", and
 "server_question": ONE plain sentence a diner would say to the server about the dish's
 "risks", naming the dish, the concern and who it is for, e.g. "Is there any pork or lard in
@@ -104,11 +104,11 @@ def brief(menu: Menu, request: TableRequest, plan: Plan, old_id: str) -> dict:
     diners = []
     for p in request.diners:
         row = {"id": p.id, "name": p.name}
-        for key in ("allergies", "diets", "dislikes", "likes"):
+        for key in ("allergies", "diets"):
             if getattr(p, key):
                 row[key] = [llm_planner.humanize(getattr(x, "value", x)) for x in getattr(p, key)]
-        if p.max_spice is not None:
-            row["max_spice"] = p.max_spice
+        if p.notes:
+            row["notes"] = p.notes
         diners.append(row)
     return {
         "replace": {

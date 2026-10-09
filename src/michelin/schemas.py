@@ -138,9 +138,33 @@ class DinerProfile(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     allergies: list[Allergen] = Field(default_factory=list)  # HARD
     diets: list[Diet] = Field(default_factory=list)  # HARD
-    max_spice: int | None = Field(default=None, ge=0, le=3)  # SOFT
-    dislikes: list[str] = Field(default_factory=list)  # SOFT, free text ("cilantro")
-    likes: list[str] = Field(default_factory=list)  # SOFT
+    # SOFT: tastes and preferences in the diner's own words; the AI reads it, the rules don't.
+    notes: str = Field(default="", max_length=500)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_preferences(cls, data):
+        """Saved people from before 2026-10-09 had heat/likes/dislikes fields: fold them into
+        the one free-text note so nothing they told us is lost."""
+        if not isinstance(data, dict) or not ({"max_spice", "likes", "dislikes"} & data.keys()):
+            return data
+        data = dict(data)
+        spice, likes, dislikes = (
+            data.pop("max_spice", None),
+            data.pop("likes", None),
+            data.pop("dislikes", None),
+        )
+        parts = [data.get("notes") or ""]
+        if spice is not None:
+            heat = ["no spicy food", "mild heat at most", "medium heat at most", "likes it hot"]
+            parts.append(heat[spice] if isinstance(spice, int) and 0 <= spice <= 3 else "")
+        if likes:
+            parts.append("likes " + ", ".join(map(str, likes)))
+        if dislikes:
+            parts.append("dislikes " + ", ".join(map(str, dislikes)))
+        note = "; ".join(p.strip() for p in parts if p and p.strip())
+        data["notes"] = note[:1].upper() + note[1:] if note else ""
+        return data
 
 
 class TableRequest(BaseModel):

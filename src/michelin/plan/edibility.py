@@ -158,8 +158,6 @@ def open_questions(dish: Dish, diners: list[DinerProfile]) -> list[str]:
     """Staff questions that matter for someone at this table: the dish's own questions plus
     any `unknown`-tier flag that matches a diner's allergy."""
     questions = list(dish.confirm_with_staff)
-    if dish.spice_level is None and (not diners or any(p.max_spice is not None for p in diners)):
-        questions.append(f"{dish.name_en or dish.id}: spice level unknown. Confirm heat.")
     # One question per dish and concern, naming everyone it matters for (names, not ids).
     who: dict[str, list[str]] = {}
     for person in diners:
@@ -316,16 +314,6 @@ def risks(dish: Dish, diners: list[DinerProfile]) -> list[Risk]:
         if m and diners and not names:
             continue  # e.g. "uses soy" when nobody at the table avoids soy
         out.append(Risk(about, names, words, q))
-    hot = [p.name or p.id for p in diners if p.max_spice is not None]
-    if dish.spice_level is None and hot:
-        out.append(
-            Risk(
-                "spice level",
-                [],
-                ["spic", "heat", "hot", "chili", "mild"],
-                f"{label}: spice level unknown. Confirm heat.",
-            )
-        )
     who: dict[str, list[str]] = {}
     for person in diners:
         for r in assessment(dish, person)["reasons"]:

@@ -56,15 +56,7 @@ def apply_people_action(request: PeopleAction) -> list[DinerProfile]:
             # Existing participants keep all current hard restrictions and identity.
             # New participants start from their explicitly loaded saved snapshot.
             people[saved.id] = (
-                current.model_copy(
-                    update={
-                        "likes": saved.likes,
-                        "dislikes": saved.dislikes,
-                        "max_spice": saved.max_spice,
-                    }
-                )
-                if current
-                else saved
+                current.model_copy(update={"notes": saved.notes}) if current else saved
             )
     if len(people) > 6:
         raise ValueError("At most six diners are supported; remove someone before loading more")

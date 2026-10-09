@@ -71,9 +71,8 @@ export interface DinerProfile {
   name: string;
   allergies: Allergen[];
   diets: Diet[];
-  max_spice: number | null;
-  dislikes: string[];
-  likes: string[];
+  /** Tastes and preferences in their own words; the AI reads it, the rules don't. */
+  notes: string;
 }
 
 export interface PlanItem {

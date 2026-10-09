@@ -65,11 +65,12 @@ def test_unknown_values_remain_unknown_and_estimate_is_disclosed():
     dish = Dish(id="d", name_en="Synthetic")
     assert dish.spice_level is None and dish.portion is None
     assert not any("portion" in x for x in open_questions(dish, []))  # no portion rules
-    assert any("spice level unknown" in x for x in open_questions(dish, []))
+    # Heat is a taste in the diner's notes now; the rules ask nothing about it.
+    assert not any("spice" in x for x in open_questions(dish, []))
 
 
 def test_meal_actions_identity_and_explicit_loading():
-    first = {"id": "p", "name": "Same name", "allergies": ["sesame"], "likes": ["tofu"]}
+    first = {"id": "p", "name": "Same name", "allergies": ["sesame"], "notes": "likes tofu"}
     second = {"id": "q", "name": "Same name"}
 
     def action(diners, action, **extra):
@@ -80,9 +81,11 @@ def test_meal_actions_identity_and_explicit_loading():
     assert len(added["diners"]) == 2
     assert action([first], "add", person=first).status_code == 422
     loaded = action(
-        added["diners"], "load_preferences", saved=[{**first, "allergies": [], "likes": ["rice"]}]
+        added["diners"],
+        "load_preferences",
+        saved=[{**first, "allergies": [], "notes": "rice please"}],
     ).json()["diners"]
-    assert loaded[0]["allergies"] == ["sesame"] and loaded[0]["likes"] == ["rice"]
+    assert loaded[0]["allergies"] == ["sesame"] and loaded[0]["notes"] == "rice please"
     assert loaded[1]["id"] == "q"
     updated = action(loaded, "update", person={**first, "diets": ["no_pork"]}).json()["diners"]
     assert updated[0]["diets"] == ["no_pork"]

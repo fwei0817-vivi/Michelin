@@ -1,11 +1,10 @@
 """Which LLM answers: OpenRouter (paid key) first, then the free Gemini key, else none.
 
   OPENROUTER_API_KEY            OpenRouter, OpenAI-compatible, https://openrouter.ai/api/v1
-  MICHELIN_OPENROUTER_MODEL     default google/gemini-2.5-flash (plans, name matching)
+  MICHELIN_OPENROUTER_MODEL     default google/gemini-2.5-flash (plans, dish facts)
   MICHELIN_OPENROUTER_VISION_MODEL  menu photos; must accept images; default as above
   GEMINI_API_KEY                free Gemini Developer API (see michelin.gemini)
-  MICHELIN_LLM_PROVIDER         force "openrouter" or "gemini" (the matcher also accepts
-                                "claude" / "claude-vertex", see parse/matcher.py)
+  MICHELIN_LLM_PROVIDER         force "openrouter" or "gemini"
 
 Every call asks for JSON that matches a schema. Callers validate the content themselves.
 Never log keys.

@@ -47,7 +47,22 @@ def no_live_model_calls(monkeypatch):
     gemini.reset_cooldown()
 
 
+@pytest.fixture(autouse=True)
+def recorded_dish_facts(request, monkeypatch, tmp_path):
+    """At runtime the AI supplies each dish's facts (plan/dish_facts.py). Tests use the facts
+    already recorded in the bundled menu files as that AI answer, so they stay offline and
+    deterministic; tests marked real_dish_facts exercise the real path with a fake model."""
+    from michelin.plan import dish_facts
+
+    monkeypatch.setattr(dish_facts, "CACHE_PATH", tmp_path / "dish_facts.json")
+    if "real_dish_facts" not in request.keywords:
+        monkeypatch.setattr(dish_facts, "prepare", lambda menu, client=None: menu)
+
+
 def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "real_dish_facts: use the real AI dish-facts path (tests pass a fake)"
+    )
     config.addinivalue_line(
         "markers", "real_llm_path: use the real planner model call (tests pass their own fake)"
     )

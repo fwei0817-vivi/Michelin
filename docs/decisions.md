@@ -315,3 +315,21 @@ AI figure as "a fuller meal". The menu sheet disables picks that would break the
 the amount, and gives one plain reason per diner ("Ben: has pork"). After a swap the summary
 stays (rewritten by the rules if it named the swapped dish), and the choices bar says which
 dishes are kept or won't be suggested again.
+
+**2026-10-09: dish facts come from the AI; menus are name + price (+ category).** The rule
+knowledge base (`data/knowledge/hidden_ingredients.json`, `parse/knowledge.py`) and the LLM
+name matcher are gone from the runtime path. `plan/dish_facts.py` strips every menu to name,
+price and category, then asks the planner's model once per menu for each dish's likely and
+possible ingredients, allergens, pork/beef, vegetarian/vegan and heat, cached by dish name in
+`data/facts/dish_facts.json`. The prompt is biased to "possible" when any well-known version
+has it. The rules are unchanged and enforce diners against these facts: a likely or possible
+allergen excludes an allergic diner (strict); a possible diet ingredient keeps the dish with a
+server question; anything the AI did not answer is unknown and excluded. Client-sent dish facts
+are never trusted. Why: one source of dish knowledge that covers any menu, not only dishes a
+person had labelled. Sanity check on the four bundled menus is in the commit report.
+
+**2026-10-09: people are allergies + diets + one taste note.** The add-person form has one-tap
+checkboxes for peanut, tree nut, shellfish, fish, egg, milk, soy, wheat, sesame and the diets
+vegetarian, vegan, no pork, no beef; heat, likes and dislikes are replaced by one free-text
+"Tastes and preferences" note that only the AI reads. Saved people are migrated (heat, likes
+and dislikes folded into the note) on read and as a new revision at server start.

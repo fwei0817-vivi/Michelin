@@ -4,9 +4,9 @@ There is no rules-optimizer fallback: recommendations come only from the model
 (OpenRouter first, then the free Gemini key; see michelin.llm).
 
 The model sees a compact brief: each shareable dish with its price, category, spice,
-allergen flags, hidden-ingredient knowledge and rule-flagged risks, and which diners the
-server's rules already allow to eat it; the diners' allergies, diets, heat limits, likes
-and dislikes; the menu-price cap left after tax, tip and rice; kept dishes. The model
+the AI's own likely-ingredient and allergen facts (plan/dish_facts.py) and rule-flagged
+risks, and which diners the server's rules already allow to eat it; the diners' allergies,
+diets and free-text taste notes; the menu-price cap left after tax, tip and rice; kept dishes. The model
 decides how many dishes to order (guideline: about one per person, plus rice). It answers
 in a JSON schema with dish ids, a reason and a server question per dish, who each dish is
 for, a one-line summary, and, when nothing can fit, why.
@@ -71,8 +71,9 @@ rice are already taken out of the budget).
 You decide how many dishes to order. A good guideline is about one dish per person (rice \
 is added for everyone), more if dishes are small and the budget allows, fewer if they are \
 large or money is tight; make sure each diner has a fair share they can eat. Then, softly: \
-vary the main ingredients and cooking methods, respect heat limits ("max_spice" 0 means no heat; do not recommend a hot dish to \
-that diner in "for" or in the reason), avoid dislikes, include likes.
+vary the main ingredients and cooking methods, and follow each diner's "notes" (their tastes \
+in their own words, e.g. "no spicy food, loves tofu": do not recommend a hot dish to someone \
+who avoids heat, in "for" or in the reason).
 For each dish give one short, specific reason (under 20 words) naming who it suits.
 For each chosen dish that has "risks", write "server_question": ONE plain sentence (under \
 25 words) that a diner would actually say to the server: name the dish, ask about every \
@@ -182,11 +183,11 @@ def brief(menu: Menu, request: TableRequest, hint: rules_hints.Hints | None = No
     diners = []
     for p in request.diners:
         row = {"id": p.id, "name": p.name}
-        for key in ("allergies", "diets", "dislikes", "likes"):
+        for key in ("allergies", "diets"):
             if getattr(p, key):
                 row[key] = [humanize(getattr(x, "value", x)) for x in getattr(p, key)]
-        if p.max_spice is not None:
-            row["max_spice"] = p.max_spice
+        if p.notes:
+            row["notes"] = p.notes
         diners.append(row)
     return {
         "diners": diners,

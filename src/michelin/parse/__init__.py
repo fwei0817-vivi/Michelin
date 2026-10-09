@@ -1,8 +1,8 @@
-"""Extract explicit name/price rows, then label them from the reviewed knowledge base.
+"""Extract explicit name/price rows from menu text.
 
-`parse_text` never guesses: it returns names and prices only. `label_imported` adds what the
-printed text and `knowledge.py` support, with evidence tiers; unrecognized dishes stay
-unknown. Either way the result is unverified until a person reviews it.
+`parse_text` never guesses: it returns names and prices only. Likely ingredients and
+allergen risks come from the AI (plan/dish_facts.py); the menu stays unverified until a
+person reviews it.
 """
 
 import re
@@ -30,38 +30,6 @@ def parse_text(text: str) -> list[Dish]:
                 id=f"import_{uuid.uuid4().hex[:12]}",
                 name_en=name,
                 price=float(price),
-                description_raw=line,
-                confirm_with_staff=[generic_question(name)],
             )
         )
     return dishes[:40]
-
-
-def label_imported(dishes: list[Dish]) -> list[Dish]:
-    """Knowledge-base labels for imported rows. A recognized dish drops the generic
-    question in favour of specific ones; an unrecognized dish keeps it. Names the knowledge
-    base misses go to the LLM matcher (stored answers always; new ones only when
-    MICHELIN_LLM_MATCH=1)."""
-    return label_imported_status(dishes)[0]
-
-
-def label_imported_status(dishes: list[Dish]) -> tuple[list[Dish], str]:
-    """label_imported plus the matcher status ("off", "called", "rate_limited",
-    "daily_limit", "failed").
-    A failed or rate-limited LLM call falls back to knowledge-base-only labels."""
-    from michelin.parse.knowledge import label_dish
-    from michelin.parse.matcher import match_names_status, reviewed_ids
-
-    (suggested, status), accepted = match_names_status(dishes), reviewed_ids(dishes)
-    out = []
-    for dish in dishes:
-        labeled = label_dish(
-            dish, suggested=suggested.get(dish.id), suggestion_reviewed=dish.id in accepted
-        )
-        if labeled.match:
-            generic = generic_question(dish.name_en or "")
-            questions = [q for q in labeled.dish.confirm_with_staff if q != generic]
-            out.append(labeled.dish.model_copy(update={"confirm_with_staff": questions}))
-        else:
-            out.append(labeled.dish)
-    return out, status

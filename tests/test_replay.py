@@ -173,7 +173,7 @@ store = ProfileStore(Path(os.environ['MICHELIN_PROFILE_DB']))
             sys.executable,
             "-c",
             code
-            + "store.save('synthetic', DinerProfile(id='p', name='Synthetic', likes=['tofu']), 0)",
+            + "store.save('synthetic', DinerProfile(id='p', name='Synthetic', notes='tofu'), 0)",
         ],
         env=env,
         check=True,
@@ -182,7 +182,7 @@ store = ProfileStore(Path(os.environ['MICHELIN_PROFILE_DB']))
         [
             sys.executable,
             "-c",
-            code + "print(store.history('synthetic', 'p')[0]['profile']['likes'][0])",
+            code + "print(store.history('synthetic', 'p')[0]['profile']['notes'])",
         ],
         env=env,
         check=True,

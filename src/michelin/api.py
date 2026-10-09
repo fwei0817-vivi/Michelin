@@ -22,7 +22,7 @@ from michelin import llm
 from michelin.explain import explain
 from michelin.meal import PeopleAction, apply_people_action
 from michelin.model import ExtractionRequest, ExtractionResponse
-from michelin.plan import ai_swap, llm_planner
+from michelin.plan import ai_swap, dish_facts, llm_planner
 from michelin.plan.budget import subtotal_cap, totals
 from michelin.plan.edibility import assessment, edible_by, open_questions
 from michelin.plan.score import variety_score
@@ -48,6 +48,19 @@ FIXTURE_DIR = ROOT / "data/fixtures"
 MOCK = os.environ.get("MICHELIN_MOCK", "") not in ("", "0", "false")
 
 app = FastAPI(title="Michelin", version="0.1.0")
+
+
+@app.on_event("startup")
+def _migrate_saved_people() -> None:
+    """Saved people from before the free-text taste note get a new revision in that shape."""
+    import logging
+
+    try:
+        n = ProfileStore(PROFILE_DB).migrate()
+        if n:
+            logging.getLogger("michelin").info("Migrated %d saved people to taste notes", n)
+    except Exception:
+        logging.getLogger("michelin").warning("Saved-people migration failed", exc_info=True)
 
 
 @app.post("/api/meal/people")
@@ -175,7 +188,7 @@ def get_menu(slug: str) -> Menu:
     menus = load_menus()
     if slug not in menus:
         raise HTTPException(404, f"unknown menu {slug!r}")
-    return menus[slug]
+    return dish_facts.prepare(menus[slug])
 
 
 @app.get("/api/profiles", response_model=list[DinerProfile])
@@ -261,7 +274,7 @@ def _resolve_diners(req: PlanRequest, scope: str | None = None) -> list[DinerPro
                 d = d.model_copy(
                     update={
                         key: getattr(saved, key)
-                        for key in ("likes", "dislikes", "max_spice")
+                        for key in ("notes",)
                         if key not in d.model_fields_set
                     }
                 )
@@ -287,6 +300,8 @@ def _prepare(req: PlanRequest, x_profile_scope: str | None) -> tuple[Menu, Table
     for dish_id in req.locked_dish_ids + req.excluded_dish_ids:
         if dish_id not in known:
             raise HTTPException(404, f"unknown dish {dish_id!r}")
+    # Only name, price and category are trusted; the AI's dish facts are filled in here.
+    menu = dish_facts.prepare(menu)
 
     request = TableRequest(
         menu_id=req.menu_id,
@@ -473,12 +488,9 @@ def _image_mime(image: bytes) -> str | None:
 
 
 def _parse_notice(
-    mode: str, matched: str, fallback: str | None = None, vision_model: str | None = None
+    mode: str, facts: bool, fallback: str | None = None, vision_model: str | None = None
 ) -> str:
-    """Say which steps used a model, so the notice is true whether Gemini is on or off."""
-    from michelin import llm
-    from michelin.parse.matcher import model_name, provider_name
-
+    """Say which steps used a model, so the notice is true whether a model is on or off."""
     parts = []
     if fallback == "rate_limited":
         parts.append("Gemini's free-tier rate limit was reached, so local OCR read the photo.")
@@ -495,31 +507,34 @@ def _parse_notice(
         parts.append("Local OCR read the photo.")
     elif mode == "local_text":
         parts.append("The pasted text was split into dishes locally.")
-    if matched == "called":
+    if facts:
         parts.append(
-            f"{llm.label(model_name(provider_name()))} matched names the knowledge base did not "
-            "recognize to reviewed entries (it picks entries only, never ingredients)."
+            "The AI guessed each dish's likely ingredients and allergens from its name; "
+            "anything uncertain becomes a question for your server."
         )
-    elif matched == "rate_limited":
+    else:
         parts.append(
-            "The LLM name matcher hit its rate limit, so unrecognized names use the "
-            "knowledge base alone."
+            "No AI model was available to guess ingredients, so every dish is unknown for "
+            "allergies and diets until one is."
         )
-    elif matched == "daily_limit":
-        parts.append(
-            "Today's free Gemini quota is used up, so unrecognized names use the knowledge "
-            "base alone."
-        )
-    elif matched == "failed":
-        parts.append(
-            "The LLM name matcher was unavailable, so unrecognized names use the knowledge "
-            "base alone."
-        )
-    parts.append("Ingredient labels come from the reviewed knowledge base.")
-    if mode != "gemini" and matched != "called" and not fallback:
+    if mode != "gemini" and not facts and not fallback:
         parts.append("No model API was called.")
     parts.append("Check every row against the menu.")
     return " ".join(parts)
+
+
+def _with_facts(dishes: list) -> tuple[list, bool]:
+    """Imported rows with the AI's dish facts (cached, so planning later reuses them)."""
+    menu = dish_facts.prepare(
+        Menu(
+            restaurant_id="import",
+            restaurant_name="import",
+            cuisine="",
+            source="import",
+            dishes=dishes,
+        )
+    )
+    return menu.dishes, dish_facts.known(menu)
 
 
 @app.post("/api/menu/parse")
@@ -532,7 +547,7 @@ def parse_menu(req: ParseRequest) -> dict:
     import tempfile
 
     from michelin import gemini
-    from michelin.parse import label_imported_status, parse_text, vision
+    from michelin.parse import parse_text, vision
 
     text = req.text
     fallback = None  # why a configured Gemini photo read was not used
@@ -555,13 +570,13 @@ def parse_menu(req: ParseRequest) -> dict:
             )
             dishes, printed_name, used_model, fallback = None, None, None, "failed"
         if dishes:
-            labeled, matched = label_imported_status(dishes)
+            labeled, facts = _with_facts(dishes)
             return {
                 "dishes": [d.model_dump() for d in labeled],
                 "text": "\n".join(f"{d.name_en} {d.price:.2f}" for d in dishes),
                 "restaurant_name": printed_name,
                 "mode": "gemini",
-                "notice": _parse_notice("gemini", matched, vision_model=used_model),
+                "notice": _parse_notice("gemini", facts, vision_model=used_model),
             }
         if dishes is not None:
             raise HTTPException(422, "No dishes with prices were found. Try a clearer photo.")
@@ -611,13 +626,21 @@ def parse_menu(req: ParseRequest) -> dict:
     if not text.strip():
         raise HTTPException(422, "Paste menu text or choose an image first.")
     mode = "local_ocr" if req.image_base64 else "local_text"
-    labeled, matched = label_imported_status(parse_text(text))
+    labeled, facts = _with_facts(parse_text(text))
     return {
         "dishes": [d.model_dump() for d in labeled],
         "text": text,
         "mode": mode,
-        "notice": _parse_notice(mode, matched, fallback),
+        "notice": _parse_notice(mode, facts, fallback),
     }
+
+
+@app.post("/api/menu/facts", response_model=Menu)
+def menu_facts(menu: Menu) -> Menu:
+    """The menu as name/price/category plus the AI's dish facts, for display."""
+    if len(menu.dishes) > 40:
+        raise HTTPException(422, "Use up to 40 dishes.")
+    return menu.model_copy(update={"dishes": dish_facts.prepare(menu).dishes})
 
 
 class EvaluateRequest(BaseModel):
@@ -627,6 +650,7 @@ class EvaluateRequest(BaseModel):
 
 @app.post("/api/menu/evaluate")
 def evaluate_menu(req: EvaluateRequest) -> dict:
+    menu = dish_facts.prepare(req.menu)
     return {
         d.id: {
             "edible_by": edible_by(d, req.diners),
@@ -638,7 +662,7 @@ def evaluate_menu(req: EvaluateRequest) -> dict:
             "assessments": {p.id: assessment(d, p) for p in req.diners},
             "questions": open_questions(d, req.diners),
         }
-        for d in req.menu.dishes
+        for d in menu.dishes
     }
 
 
@@ -650,7 +674,7 @@ class OrderValidationRequest(BaseModel):
 
 @app.post("/api/order/validate")
 def order_validation(body: OrderValidationRequest):
-    return validate_order(body.menu, body.request, body.items)
+    return validate_order(dish_facts.prepare(body.menu), body.request, body.items)
 
 
 # ---------------------------------------------------------------------------

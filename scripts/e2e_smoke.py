@@ -49,10 +49,15 @@ async def seat(scope, name: str, chips: list[str] = ()) -> None:
         await reuse.click()
         await settle(pg)
         await scope.get_by_role("button", name=f"Edit {name}").click()
+    notes = []
     for c in chips:
-        btn = dialog(pg).get_by_role("button", name=c, exact=True)
-        if await btn.get_attribute("aria-pressed") != "true":
-            await btn.click()
+        box = dialog(pg).get_by_role("checkbox", name=c, exact=True)
+        if await box.count():
+            await box.check()
+        else:  # a taste ("no heat"): one free-text note the AI reads
+            notes.append(c)
+    if notes:
+        await dialog(pg).get_by_label("Tastes and preferences").fill(", ".join(notes))
     submit = dialog(pg).get_by_role("button", name=re.compile(r"^(Add to table|Save)$"))
     await submit.click()
     await settle(pg)
@@ -151,6 +156,8 @@ async def run(url: str, shots: Path) -> None:
                 .fill("Garlic greens $12.95\nMapo Tofu $14.95\nSteamed rice $2.00")
             )
             await dialog(pg).get_by_role("button", name="Extract dishes").click()
+            # The AI dish-facts step may call a model for names it has not seen.
+            await dialog(pg).get_by_text(re.compile("dishes found")).wait_for(timeout=90000)
             await settle(pg)
             check(
                 "3 dishes found" in await dialog(pg).inner_text(), "text import extracts 3 dishes"
@@ -372,9 +379,7 @@ async def run(url: str, shots: Path) -> None:
             await seat(dialog(pg), "Zoe", ["peanuts"])
             await settle(pg, 800)
             await dialog(pg).get_by_role("button", name="Edit Tom").click()
-            dairy = dialog(pg).get_by_role("button", name="dairy")
-            if await dairy.get_attribute("aria-pressed") != "true":
-                await dairy.click()
+            await dialog(pg).get_by_role("checkbox", name="milk", exact=True).check()
             await dialog(pg).get_by_role("button", name="Save", exact=True).click()
             await settle(pg, 800)
             people = await dialog(pg).locator(".people-list li").all_inner_texts()
@@ -382,7 +387,7 @@ async def run(url: str, shots: Path) -> None:
                 any("Zoe" in p for p in people) and not any("Kevin" in p for p in people),
                 "add Zoe, remove Kevin",
             )
-            check(any("Tom" in p and "dairy" in p for p in people), "edit Tom adds dairy")
+            check(any("Tom" in p and "milk" in p for p in people), "edit Tom adds milk")
             budget = dialog(pg).locator("input").first
             await budget.fill("40")
             await budget.press("Tab")
@@ -411,11 +416,10 @@ async def run(url: str, shots: Path) -> None:
             await settle(pg)
             await pg.get_by_role("button", name="Edit Zoe").click()
             check(
-                await dialog(pg).get_by_role("button", name="peanuts").get_attribute("aria-pressed")
-                == "true",
+                await dialog(pg).get_by_role("checkbox", name="peanuts", exact=True).is_checked(),
                 "Zoe's saved allergy came back",
             )
-            await dialog(pg).get_by_role("button", name="sesame").click()
+            await dialog(pg).get_by_role("checkbox", name="sesame", exact=True).check()
             await dialog(pg).get_by_role("button", name="Save", exact=True).click()
             await settle(pg)
             check(
@@ -538,6 +542,7 @@ async def demo(browser, url: str, shots: Path, errors: list[str]) -> None:
     await dialog(pg).get_by_label("New restaurant name").fill("Sky Pavilion")
     await dialog(pg).get_by_label("Menu text").fill(SKY)
     await dialog(pg).get_by_role("button", name="Extract dishes").click()
+    await dialog(pg).get_by_text(re.compile("dishes found")).wait_for(timeout=90000)
     await settle(pg)
     await pg.screenshot(path=str(shots / "step1b_import_review.png"), full_page=True)
     await dialog(pg).get_by_role("button", name="Import and open Sky Pavilion").click()
@@ -569,6 +574,18 @@ async def demo(browser, url: str, shots: Path, errors: list[str]) -> None:
         ("Dana", [], []),
         ("Eli", [], []),
     ]
+    await pg.get_by_role("button", name="Add a new person").click()
+    boxes = await dialog(pg).get_by_role("checkbox").all_inner_texts()
+    labels = await dialog(pg).locator(".check-chip").all_inner_texts()
+    check(
+        len(labels) == 13
+        and {"peanuts", "tree nuts", "shellfish", "milk", "sesame", "no pork"} <= set(labels)
+        and await dialog(pg).get_by_label("Tastes and preferences").count() == 1
+        and await dialog(pg).get_by_text("Dislikes").count() == 0,
+        f"add-person form: one-tap allergies and diets, one taste note ({len(boxes)} boxes)",
+    )
+    await pg.screenshot(path=str(shots / "step2a_add_person_form.png"))
+    await close_dialog(pg)
     for name, diets, allergies in people:
         await seat(pg, name, diets + allergies + (["no heat"] if name == "Kevin" else []))
     budget = pg.locator(".setup-table input").first

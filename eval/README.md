@@ -7,14 +7,13 @@ not a pass/fail gate, and baselines may come from live models.
 
 ```bash
 uv run python eval/run_eval.py                    # planner, labels from printed menu text
-uv run python eval/run_eval.py --labels kb        # planner, labels from the knowledge base
+uv run python eval/run_eval.py --labels kb        # planner, AI dish facts from the name (needs a key)
 uv run python eval/run_eval.py --labels oracle    # planner, labels from ground truth
 uv run python eval/run_eval.py --answers eval/baselines/<file>.json   # score a baseline
 ```
 
-LLM name matching has its own live check (calls the API, costs a little):
-`uv run --extra llm python eval/matcher_eval.py --runs 5` (Gemini on Vertex via gcloud ADC by default; see `src/michelin/parse/matcher.py` for providers) reports accuracy and run-to-run
-agreement on `menus/name_variants.json`.
+The rule knowledge base and the LLM name matcher were removed on 2026-10-09: dish facts now
+come from the AI (`src/michelin/plan/dish_facts.py`). `kb` keeps its name for older result files.
 
 On Windows with a non-UTF-8 locale, set `PYTHONUTF8=1` first. Reports land in `eval/results/`.
 
@@ -26,8 +25,8 @@ On Windows with a non-UTF-8 locale, set `PYTHONUTF8=1` first. Reports land in `e
 - `scenarios/*.json`: one table per file: diners, budget, rates, locks/exclusions, optional
   `dish_subset`, `expect` (`plan` | `conflict` | `any`) and the trap being tested.
 - `labels.py`: builds the menu the planner sees. `current` labels only what is printed (today's
-  pipeline without a knowledge base); `kb` runs `src/michelin/parse/knowledge.py` on the
-  printed name and description; `oracle` labels from truth (perfect extraction);
+  pipeline without a knowledge base); `kb` asks the AI for dish facts from the
+  printed name (`src/michelin/plan/dish_facts.py`); `oracle` labels from truth (perfect extraction);
   `reference` keeps only `definite`/`likely` truth and decides whether a safe order exists.
 - `truth.py`: scoring, shared by the planner and every baseline.
 

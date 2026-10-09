@@ -1,7 +1,7 @@
 """Run the bad-case scenarios and score the answers against ground truth.
 
     uv run python eval/run_eval.py                      # our planner, labels from the menu text
-    uv run python eval/run_eval.py --labels kb          # our planner, knowledge-base labels
+    uv run python eval/run_eval.py --labels kb          # our planner, AI dish facts (was: KB)
     uv run python eval/run_eval.py --labels oracle      # our planner, perfect labels
     uv run python eval/run_eval.py --answers eval/baselines/chatgpt_run1.json --name chatgpt
 
@@ -24,7 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from labels import build_menu, load_eval_menu, printed_dish
+from labels import build_menu, load_eval_menu
 from truth import Answer, LabelFinding, Score, score, score_labels
 
 EVAL = Path(__file__).resolve().parent
@@ -129,16 +129,9 @@ def _yn(flag: bool | None, good: str = "ok", bad: str = "off") -> str:
 
 
 def in_knowledge_base(menu_name: str) -> dict[str, bool]:
-    """Whether each eval dish is matched by the knowledge base. Holdouts must not be."""
-    from michelin.parse.knowledge import match
-    from michelin.schemas import Dish
-
-    out = {}
-    for dish_id, dish in load_eval_menu(menu_name).items():
-        out[dish_id] = match(Dish.model_validate(printed_dish(dish))) is not None
-        if dish.get("holdout") and out[dish_id]:
-            raise SystemExit(f"holdout dish {dish_id} leaked into the knowledge base")
-    return out
+    """The rule knowledge base was removed on 2026-10-09 (dish facts come from the AI), so no
+    eval dish is "in" it; the split is kept so older result files still compare."""
+    return {dish_id: False for dish_id in load_eval_menu(menu_name)}
 
 
 def label_findings(labels: str) -> tuple[list[LabelFinding], dict[str, bool]]:
