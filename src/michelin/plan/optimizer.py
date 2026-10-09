@@ -75,7 +75,9 @@ def _search(menu: Menu, req: TableRequest, *, budget: bool = True, min_cost: boo
                 return
             dishes = [choices[j] for j in chosen]
             target = req.dish_count_target or n + len(base)
-            score = 20 * variety_score(dishes) - 4 * abs(len(dishes) + len(base) - target)
+            # The course count is what the user asked for ("Dishes to order"), so it dominates
+            # variety and taste: the plan meets it exactly whenever a valid order can.
+            score = 20 * variety_score(dishes) - 100 * abs(len(dishes) + len(base) - target)
             for d in dishes:
                 ingredients = " ".join(x.name.lower() for x in d.main_ingredients)
                 if req.style_preference == "lighter":
@@ -164,7 +166,7 @@ def solve(menu: Menu, request: TableRequest) -> Plan | Conflict:
                     )
                 )
         uncertain = any(
-            assessment(d, p)["status"] == "requires_confirmation"
+            not (a := assessment(d, p))["eligible"] and a["status"] == "requires_confirmation"
             for d in menu.dishes
             for p in request.diners
         )

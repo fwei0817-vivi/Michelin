@@ -109,8 +109,13 @@ def test_real_plan_and_eligibility(monkeypatch):
         },
     )
     assert r.status_code == 200
-    assert r.json()["kind"] == "conflict"
-    assert r.json()["conflict"]["code"] == "missing_information"
+    # The example group gets a plan; allergy safety is checked below and in test_example_flow.
+    body = r.json()
+    assert body["kind"] == "plan"
+    by_id = {d["id"]: d for d in menu["dishes"]}
+    for item in body["plan"]["items"]:
+        flags = {f["allergen"] for f in by_id[item["dish_id"]]["allergens"]}
+        assert not ("amy" in item["edible_by"] and flags & {"fish", "shellfish"})
     evaluation = client.post("/api/menu/evaluate", json={"menu": menu, "diners": profiles}).json()
     fish = evaluation["boiled_fish_chili_oil"]
     assert "amy" not in fish["edible_by"]

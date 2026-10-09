@@ -35,8 +35,29 @@ def blocking_diets(dish: Dish, diner: DinerProfile) -> list[Diet]:
     return out
 
 
+def _diet_labeled_ok(dish: Dish, diet: Diet) -> bool:
+    """The dish carries a positive label for this diet (e.g. is_vegetarian is True)."""
+    field, required = DIET_FIELDS[diet]
+    return getattr(dish, field) is required
+
+
+DIET_FIELDS = {
+    Diet.VEGETARIAN: ("is_vegetarian", True),
+    Diet.VEGAN: ("is_vegan", True),
+    Diet.NO_PORK: ("contains_pork", False),
+    Diet.NO_BEEF: ("contains_beef", False),
+}
+
+
 def assessment(dish: Dish, diner: DinerProfile) -> dict:
-    conflicts, unknown = [], []
+    """Allergies are strict, diets ask (docs/decisions.md).
+
+    - conflicts: recorded or inferred evidence against a restriction; never eligible.
+    - unknown: unresolved allergen evidence, or a diet field with no label; not eligible.
+    - ask: a dish positively labeled for a diet that only *possibly* contains a breaking
+      ingredient (unknown tier). Eligible, with a question for the server.
+    """
+    conflicts, unknown, ask = [], [], []
     # A small explicit vocabulary is contradiction detection, not an ingredient
     # extractor. Unrecognized text never establishes absence or safety.
     terms = {
@@ -67,6 +88,10 @@ def assessment(dish: Dish, diner: DinerProfile) -> dict:
                     conflicts.append(
                         f"Recorded or inferred {label} ingredient conflicts with restrictions"
                     )
+                elif not allergens.intersection(diner.allergies) and all(
+                    _diet_labeled_ok(dish, d) for d in diets.intersection(diner.diets)
+                ):
+                    ask.append(f"Confirm {label} ingredient/preparation")
                 else:
                     unknown.append(f"Confirm {label} ingredient/preparation")
     for allergen in diner.allergies:
@@ -78,12 +103,7 @@ def assessment(dish: Dish, diner: DinerProfile) -> dict:
             or allergen not in dish.reviewed_allergens
         ):
             unknown.append(f"Confirm {allergen.value}, including sauces and cross-contact")
-    fields = {
-        Diet.VEGETARIAN: ("is_vegetarian", True),
-        Diet.VEGAN: ("is_vegan", True),
-        Diet.NO_PORK: ("contains_pork", False),
-        Diet.NO_BEEF: ("contains_beef", False),
-    }
+    fields = DIET_FIELDS
     # Positive labels cannot erase contradictory recorded evidence. Allergen evidence
     # still wins over reviewed_allergens. Unknown claims remain confirmation questions.
     animal_allergens = {Allergen.FISH, Allergen.SHELLFISH}
@@ -102,6 +122,8 @@ def assessment(dish: Dish, diner: DinerProfile) -> dict:
                         conflicts.append(
                             f"Recorded or inferred {flag.allergen.value} conflicts with {diet.value}"
                         )
+                    elif _diet_labeled_ok(dish, diet):
+                        ask.append(f"Confirm {flag.allergen.value} for {diet.value} preparation")
                     else:
                         unknown.append(
                             f"Confirm {flag.allergen.value} for {diet.value} preparation"
@@ -116,14 +138,15 @@ def assessment(dish: Dish, diner: DinerProfile) -> dict:
         "status": "conflict"
         if conflicts
         else "requires_confirmation"
-        if unknown
+        if unknown or ask
         else "validated_under_known_data",
-        "reasons": conflicts + unknown,
+        "reasons": conflicts + unknown + [q for q in ask if q not in unknown],
+        "eligible": not conflicts and not unknown,
     }
 
 
 def can_eat(dish: Dish, diner: DinerProfile) -> bool:
-    return assessment(dish, diner)["status"] == "validated_under_known_data"
+    return assessment(dish, diner)["eligible"]
 
 
 def edible_by(dish: Dish, diners: list[DinerProfile]) -> list[str]:

@@ -22,14 +22,16 @@
         {"name": "chili oil", "tier": "inferred"}
       ],
       "allergens": [
+        {"allergen": "sesame", "tier": "unknown", "confidence": 0.4, "reason": "some kitchens add sesame oil or seeds"},
         {"allergen": "soy", "tier": "inferred", "confidence": 0.8, "reason": "soy sauce in the dressing"},
-        {"allergen": "sesame", "tier": "unknown", "confidence": 0.4, "reason": "some kitchens add sesame oil or seeds"}
+        {"allergen": "wheat", "tier": "inferred", "confidence": 0.7, "reason": "soy sauce: likely in typical recipes"}
       ],
       "is_vegetarian": false,
       "is_vegan": false,
       "contains_pork": true,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": ["Sliced Pork Belly in Garlic Sauce: ask whether it uses sesame oil."],
+      "reviewed_allergens": ["shellfish", "fish", "peanut", "tree_nut", "egg", "dairy", "soy", "wheat", "sesame"]
     },
     {
       "id": "mapo_tofu",
@@ -48,13 +50,14 @@
       ],
       "allergens": [
         {"allergen": "soy", "tier": "menu", "confidence": 0.95, "reason": "tofu and bean paste"},
-        {"allergen": "wheat", "tier": "unknown", "confidence": 0.5, "reason": "chili bean paste often contains wheat"}
+        {"allergen": "wheat", "tier": "inferred", "confidence": 0.7, "reason": "doubanjiang: likely in typical recipes"}
       ],
       "is_vegetarian": null,
       "is_vegan": null,
       "contains_pork": null,
       "contains_beef": false,
-      "confirm_with_staff": ["Is the mapo tofu made with ground pork? Can it be made without?"]
+      "confirm_with_staff": ["Is the mapo tofu made with ground pork? Can it be made without?", "Mapo Tofu: ask whether it uses minced beef."],
+      "reviewed_allergens": ["shellfish", "fish", "peanut", "tree_nut", "egg", "dairy", "soy", "wheat", "sesame"]
     },
     {
       "id": "yuxiang_shredded_pork",
@@ -79,7 +82,8 @@
       "is_vegan": false,
       "contains_pork": true,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": ["shellfish", "fish", "peanut", "tree_nut", "egg", "dairy", "soy", "wheat", "sesame"]
     },
     {
       "id": "kung_pao_chicken",
@@ -105,7 +109,8 @@
       "is_vegan": false,
       "contains_pork": false,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": ["shellfish", "fish", "peanut", "tree_nut", "egg", "dairy", "soy", "wheat", "sesame"]
     },
     {
       "id": "dry_fried_string_beans",
@@ -123,13 +128,16 @@
         {"name": "minced pork", "tier": "inferred", "note": "traditional; sometimes omitted"}
       ],
       "allergens": [
-        {"allergen": "soy", "tier": "inferred", "confidence": 0.7, "reason": "soy sauce"}
+        {"allergen": "shellfish", "tier": "unknown", "confidence": 0.3, "reason": "dried shrimp: possible in typical recipes"},
+        {"allergen": "soy", "tier": "inferred", "confidence": 0.7, "reason": "soy sauce"},
+        {"allergen": "wheat", "tier": "inferred", "confidence": 0.7, "reason": "soy sauce: likely in typical recipes"}
       ],
       "is_vegetarian": null,
       "is_vegan": null,
       "contains_pork": null,
       "contains_beef": false,
-      "confirm_with_staff": ["Do the dry-fried string beans contain minced pork?"]
+      "confirm_with_staff": ["Do the dry-fried string beans contain minced pork?", "Dry-Fried String Beans: ask whether it uses dried shrimp."],
+      "reviewed_allergens": ["shellfish", "fish", "peanut", "tree_nut", "egg", "dairy", "soy", "wheat", "sesame"]
     },
     {
       "id": "garlic_seasonal_greens",
@@ -145,12 +153,15 @@
         {"name": "leafy greens", "tier": "menu"},
         {"name": "garlic", "tier": "menu"}
       ],
-      "allergens": [],
+      "allergens": [
+        {"allergen": "shellfish", "tier": "unknown", "confidence": 0.3, "reason": "oyster sauce: possible in typical recipes"}
+      ],
       "is_vegetarian": true,
       "is_vegan": true,
       "contains_pork": false,
       "contains_beef": false,
-      "confirm_with_staff": ["Are the greens cooked with oil and garlic only, no oyster sauce or chicken stock?"]
+      "confirm_with_staff": ["Are the greens cooked with oil and garlic only, no oyster sauce or chicken stock?", "Garlic Seasonal Greens: ask whether it uses oyster sauce.", "Garlic Seasonal Greens: ask whether it uses chicken broth or powder."],
+      "reviewed_allergens": ["shellfish", "fish", "peanut", "tree_nut", "egg", "dairy", "soy", "wheat", "sesame"]
     },
     {
       "id": "di_san_xian",
@@ -168,14 +179,16 @@
         {"name": "green pepper", "tier": "menu"}
       ],
       "allergens": [
+        {"allergen": "shellfish", "tier": "unknown", "confidence": 0.3, "reason": "some kitchens use oyster sauce in the brown sauce"},
         {"allergen": "soy", "tier": "inferred", "confidence": 0.8, "reason": "brown sauce is soy based"},
-        {"allergen": "shellfish", "tier": "unknown", "confidence": 0.3, "reason": "some kitchens use oyster sauce in the brown sauce"}
+        {"allergen": "wheat", "tier": "inferred", "confidence": 0.7, "reason": "soy sauce: likely in typical recipes"}
       ],
       "is_vegetarian": true,
       "is_vegan": true,
       "contains_pork": false,
       "contains_beef": false,
-      "confirm_with_staff": ["Is the brown sauce made with oyster sauce?"]
+      "confirm_with_staff": ["Is the brown sauce made with oyster sauce?", "Three Treasures (Potato, Eggplant, Pepper): ask whether it uses oyster sauce."],
+      "reviewed_allergens": ["shellfish", "fish", "peanut", "tree_nut", "egg", "dairy", "soy", "wheat", "sesame"]
     },
     {
       "id": "dry_pot_cauliflower",
@@ -217,13 +230,15 @@
       ],
       "allergens": [
         {"allergen": "fish", "tier": "menu", "confidence": 0.99, "reason": "fish fillet"},
-        {"allergen": "soy", "tier": "inferred", "confidence": 0.8, "reason": "bean paste and soy sauce"}
+        {"allergen": "soy", "tier": "inferred", "confidence": 0.8, "reason": "bean paste and soy sauce"},
+        {"allergen": "wheat", "tier": "inferred", "confidence": 0.7, "reason": "doubanjiang: likely in typical recipes"}
       ],
       "is_vegetarian": false,
       "is_vegan": false,
       "contains_pork": false,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": ["shellfish", "fish", "peanut", "tree_nut", "egg", "dairy", "soy", "wheat", "sesame"]
     },
     {
       "id": "hot_and_sour_soup",
@@ -250,7 +265,8 @@
       "is_vegan": false,
       "contains_pork": null,
       "contains_beef": false,
-      "confirm_with_staff": ["Is the hot and sour soup made with pork or chicken stock?"]
+      "confirm_with_staff": ["Is the hot and sour soup made with pork or chicken stock?"],
+      "reviewed_allergens": ["shellfish", "fish", "peanut", "tree_nut", "egg", "dairy", "soy", "wheat", "sesame"]
     },
     {
       "id": "dan_dan_noodles",
@@ -268,15 +284,17 @@
         {"name": "sesame paste", "tier": "menu"}
       ],
       "allergens": [
-        {"allergen": "wheat", "tier": "menu", "confidence": 0.98, "reason": "wheat noodles"},
+        {"allergen": "peanut", "tier": "inferred", "confidence": 0.6, "reason": "the sauce often includes peanut"},
         {"allergen": "sesame", "tier": "menu", "confidence": 0.95, "reason": "sesame sauce listed"},
-        {"allergen": "peanut", "tier": "inferred", "confidence": 0.6, "reason": "the sauce often includes peanut"}
+        {"allergen": "soy", "tier": "inferred", "confidence": 0.9, "reason": "soy sauce: definite in typical recipes"},
+        {"allergen": "wheat", "tier": "menu", "confidence": 0.98, "reason": "wheat noodles"}
       ],
       "is_vegetarian": false,
       "is_vegan": false,
       "contains_pork": true,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": ["shellfish", "fish", "peanut", "tree_nut", "egg", "dairy", "soy", "wheat", "sesame"]
     },
     {
       "id": "steamed_rice",
@@ -288,13 +306,16 @@
       "cooking_method": "steam",
       "spice_level": 0,
       "portion": "individual",
-      "main_ingredients": [{"name": "rice", "tier": "menu"}],
+      "main_ingredients": [
+        {"name": "rice", "tier": "menu"}
+      ],
       "allergens": [],
       "is_vegetarian": true,
       "is_vegan": true,
       "contains_pork": false,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": ["shellfish", "fish", "peanut", "tree_nut", "egg", "dairy", "soy", "wheat", "sesame"]
     }
   ]
 }

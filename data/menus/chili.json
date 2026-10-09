@@ -68,7 +68,18 @@
       "is_vegan": false,
       "contains_pork": false,
       "contains_beef": true,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
+      ]
     },
     {
       "id": "mouth_watering_chicken",
@@ -132,7 +143,18 @@
       "is_vegan": false,
       "contains_pork": false,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
+      ]
     },
     {
       "id": "szechuan_cold_noodle",
@@ -196,7 +218,18 @@
       "is_vegan": true,
       "contains_pork": false,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
+      ]
     },
     {
       "id": "cucumber_salad",
@@ -241,6 +274,17 @@
       "confirm_with_staff": [
         "Cucumber Salad: ask whether it uses sesame.",
         "Cucumber Salad: ask whether it uses soy."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -296,6 +340,17 @@
       "contains_beef": false,
       "confirm_with_staff": [
         "Pork in Garlic Dressing: ask whether it uses sesame oil."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -357,6 +412,17 @@
       "contains_beef": false,
       "confirm_with_staff": [
         "Mung Bean Jelly: ask whether it uses crushed peanuts."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -399,7 +465,18 @@
       "is_vegan": false,
       "contains_pork": false,
       "contains_beef": true,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
+      ]
     },
     {
       "id": "poached_okra",
@@ -454,6 +531,17 @@
       "contains_beef": false,
       "confirm_with_staff": [
         "Poached Okra: ask whether it uses sesame."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -514,6 +602,17 @@
       "contains_beef": true,
       "confirm_with_staff": [
         "Beef Pancake Wrap: ask whether it uses sesame."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -563,6 +662,17 @@
       "contains_beef": false,
       "confirm_with_staff": [
         "Scallion Pancakes (6 pcs): ask whether it uses lard."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -610,7 +720,18 @@
       "is_vegan": false,
       "contains_pork": true,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
+      ]
     },
     {
       "id": "vegetable_pot_stickers",
@@ -671,6 +792,17 @@
       "confirm_with_staff": [
         "Vegetable Pot Stickers (6 pcs): ask whether it uses tofu in filling.",
         "Vegetable Pot Stickers (6 pcs): ask whether it uses egg in filling."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -731,6 +863,17 @@
       "contains_beef": false,
       "confirm_with_staff": [
         "Pork Pot Stickers (6 pcs): ask whether it uses sesame oil."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -789,7 +932,18 @@
       "is_vegan": false,
       "contains_pork": true,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
+      ]
     },
     {
       "id": "spicy_wonton",
@@ -873,6 +1027,17 @@
         "Spicy Wonton (6 pcs): ask whether it uses egg in wrapper.",
         "Spicy Wonton (6 pcs): ask whether it uses sesame.",
         "Spicy Wonton (6 pcs): ask whether it uses crushed peanuts."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -938,6 +1103,17 @@
       "contains_beef": false,
       "confirm_with_staff": [
         "Wonton Soup: ask whether it uses egg in wrapper."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -1019,6 +1195,17 @@
       "contains_beef": false,
       "confirm_with_staff": [
         "Dan Dan Noodles: ask whether it uses peanut butter."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -1086,6 +1273,17 @@
       "confirm_with_staff": [
         "Chungking Spicy Chicken: ask whether it uses peanuts.",
         "Chungking Spicy Chicken: ask whether it uses sesame seeds."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -1130,6 +1328,17 @@
       "contains_beef": false,
       "confirm_with_staff": [
         "Pickled Fish Stew: ask whether it uses egg white marinade."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -1202,6 +1411,17 @@
       "confirm_with_staff": [
         "Braised Tofu with Crab Meat: ask whether it uses egg.",
         "Braised Tofu with Crab Meat: ask whether it uses wheat."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -1257,6 +1477,17 @@
       "contains_beef": true,
       "confirm_with_staff": [
         "Shredded Beef with Green Chili: ask whether it uses oyster sauce."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -1306,6 +1537,17 @@
       "contains_beef": false,
       "confirm_with_staff": [
         "Tea Smoked Duck: ask whether it uses wheat buns."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -1354,7 +1596,18 @@
       "is_vegan": false,
       "contains_pork": false,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
+      ]
     },
     {
       "id": "fragrant_fish_fillet",
@@ -1420,6 +1673,17 @@
       "contains_beef": false,
       "confirm_with_staff": [
         "Fragrant Fish Fillet: ask whether it uses egg."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -1479,7 +1743,18 @@
       "is_vegan": false,
       "contains_pork": false,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
+      ]
     },
     {
       "id": "shredded_pork_in_garlic_sauce",
@@ -1521,7 +1796,18 @@
       "is_vegan": false,
       "contains_pork": true,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
+      ]
     },
     {
       "id": "twice_cooked_pork",
@@ -1568,7 +1854,18 @@
       "is_vegan": false,
       "contains_pork": true,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
+      ]
     },
     {
       "id": "spicy_cumin_lamb",
@@ -1610,7 +1907,18 @@
       "is_vegan": false,
       "contains_pork": null,
       "contains_beef": null,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
+      ]
     },
     {
       "id": "ma_po_tofu",
@@ -1672,6 +1980,17 @@
         "Ma Po Tofu: ask whether it uses beef.",
         "Ma Po Tofu: ask whether it uses lamb or other meat.",
         "Ma Po Tofu: Menu marks it vegetarian; confirm it is made without minced meat."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -1725,7 +2044,18 @@
       "is_vegan": false,
       "contains_pork": false,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
+      ]
     },
     {
       "id": "kung_pao_shrimp",
@@ -1784,7 +2114,18 @@
       "is_vegan": false,
       "contains_pork": false,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
+      ]
     },
     {
       "id": "fried_rice_with_preserved_vegetable",
@@ -1844,6 +2185,17 @@
       "contains_beef": false,
       "confirm_with_staff": [
         "Fried Rice with Preserved Vegetable: ask whether it uses pork or lard."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -1903,7 +2255,18 @@
       "is_vegan": false,
       "contains_pork": false,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
+      ]
     },
     {
       "id": "white_rice",
@@ -1921,7 +2284,18 @@
       "is_vegan": true,
       "contains_pork": false,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
+      ]
     },
     {
       "id": "eggplant_in_garlic_sauce",
@@ -1965,6 +2339,17 @@
       "contains_beef": false,
       "confirm_with_staff": [
         "Eggplant in Garlic Sauce: ask whether it uses minced pork."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -2004,6 +2389,17 @@
       "confirm_with_staff": [
         "Bok Choy with Garlic: ask whether it uses oyster sauce.",
         "Bok Choy with Garlic: ask whether it uses chicken broth or powder."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -2049,6 +2445,17 @@
       "confirm_with_staff": [
         "Sautéed Potato Shreds: ask whether it uses soy.",
         "Sautéed Potato Shreds: ask whether it uses wheat."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -2104,6 +2511,17 @@
       "contains_beef": false,
       "confirm_with_staff": [
         "Sautéed String Beans: ask whether it uses dried shrimp."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -2143,6 +2561,17 @@
       "confirm_with_staff": [
         "Sautéed Chinese Broccoli: ask whether it uses meat stock or chicken powder.",
         "Sautéed Chinese Broccoli: ask whether it uses shellfish or oyster sauce."
+      ],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
       ]
     },
     {
@@ -2190,7 +2619,18 @@
       "is_vegan": false,
       "contains_pork": true,
       "contains_beef": false,
-      "confirm_with_staff": []
+      "confirm_with_staff": [],
+      "reviewed_allergens": [
+        "shellfish",
+        "fish",
+        "peanut",
+        "tree_nut",
+        "egg",
+        "dairy",
+        "soy",
+        "wheat",
+        "sesame"
+      ]
     }
   ]
 }
