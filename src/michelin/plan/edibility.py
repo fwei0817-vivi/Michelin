@@ -7,6 +7,7 @@ A review establishes only no recorded evidence, never an allergy safety guarante
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 
 from michelin.schemas import Allergen, Diet, DinerProfile, Dish, EvidenceTier
 
@@ -157,10 +158,6 @@ def open_questions(dish: Dish, diners: list[DinerProfile]) -> list[str]:
     """Staff questions that matter for someone at this table: the dish's own questions plus
     any `unknown`-tier flag that matches a diner's allergy."""
     questions = list(dish.confirm_with_staff)
-    if dish.portion is None:
-        questions.append(
-            f"{dish.name_en or dish.id}: portion unknown; planning estimates 1 unit per non-staple order, not people fed. Confirm size."
-        )
     if dish.spice_level is None and (not diners or any(p.max_spice is not None for p in diners)):
         questions.append(f"{dish.name_en or dish.id}: spice level unknown. Confirm heat.")
     # One question per dish and concern, naming everyone it matters for (names, not ids).
@@ -178,3 +175,144 @@ def open_questions(dish: Dish, diners: list[DinerProfile]) -> list[str]:
             label = dish.name_en or dish.name_zh or dish.id
             questions.append(f"{label}: {f.reason} (someone is allergic to {f.allergen.value})")
     return questions
+
+
+def merge_questions(questions: list[str], dishes: list[Dish]) -> list[str]:
+    """One line per dish for the server: "Eggplant (for Ben, Cai): ask whether it uses
+    minced pork; confirm pork ingredient/preparation." Questions about no single dish stay."""
+    labels = sorted({d.name_en or d.name_zh or d.id for d in dishes}, key=len, reverse=True)
+    merged: dict[str, dict] = {}
+    out: list = []
+    for q in questions:
+        q = q.strip()
+        label = next(
+            (
+                lab
+                for lab in labels
+                if q.lower().startswith(lab.lower())
+                and q[len(lab) : len(lab) + 1] in (":", " ")
+                and (q[len(lab) :].lstrip().startswith((":", "(for ")))
+            ),
+            None,
+        )
+        if label is None:
+            if q and q not in out:
+                out.append(q)
+            continue
+        rest = q[len(label) :].strip()
+        names: list[str] = []
+        if rest.startswith("(for "):
+            close = rest.find(")")
+            names = [n.strip() for n in rest[5:close].split(",") if n.strip()]
+            rest = rest[close + 1 :].strip()
+        body = rest.lstrip(":").strip().rstrip(".")
+        if label not in merged:
+            merged[label] = {"names": [], "bodies": []}
+            out.append(merged[label])
+        entry = merged[label]
+        entry["names"] += [n for n in names if n not in entry["names"]]
+        if body and body.lower() not in (b.lower() for b in entry["bodies"]):
+            entry["bodies"].append(body)
+        entry["label"] = label
+    lines = []
+    for item in out:
+        if isinstance(item, str):
+            lines.append(item)
+            continue
+        who = f" (for {', '.join(item['names'])})" if item["names"] else ""
+        bodies = [b[0].lower() + b[1:] if i else b for i, b in enumerate(item["bodies"])]
+        text = "; ".join(bodies)
+        lines.append(f"{item['label']}{who}: {text}{'' if text.endswith('?') else '.'}")
+    return lines
+
+
+# Words that show a server question covers a risk ("lard" covers a pork risk, etc.).
+_SYNONYMS = {
+    "pork": ["pork", "lard", "bacon"],
+    "lard": ["lard", "pork"],
+    "beef": ["beef"],
+    "chicken": ["chicken", "meat"],
+    "fish": ["fish", "seafood", "anchov"],
+    "shellfish": ["shellfish", "shrimp", "prawn", "crab", "oyster", "seafood"],
+    "peanut": ["peanut"],
+    "tree_nut": ["nut", "cashew", "almond", "walnut"],
+    "egg": ["egg"],
+    "dairy": ["dairy", "milk", "butter", "cream", "cheese"],
+    "wheat": ["wheat", "gluten", "flour"],
+    "soy": ["soy"],
+    "sesame": ["sesame"],
+    "vegetarian": ["vegetarian", "meat", "animal", "pork", "lard", "chicken", "broth"],
+    "vegan": ["vegan", "animal", "egg", "dairy", "meat", "lard"],
+    "no_pork": ["pork", "lard"],
+    "no_beef": ["beef"],
+}
+_STOP = {"with", "from", "that", "this", "uses", "used", "sauce", "made", "fresh", "dried"}
+
+
+@dataclass
+class Risk:
+    """Something the rules flag for this dish that a server question must cover."""
+
+    about: str  # e.g. "pork", "sesame", "spice level"
+    names: list[str]  # diners it matters for; empty = the whole table
+    words: list[str]  # any of these in a question counts as covering it
+    question: str  # the rule-based question, used if the model's question misses it
+
+    def covered_by(self, text: str) -> bool:
+        low = text.lower()
+        return any(w in low for w in self.words) and all(n.lower() in low for n in self.names)
+
+
+def _words(term: str) -> list[str]:
+    key = term.lower().strip().replace(" ", "_")
+    if key in _SYNONYMS:
+        return _SYNONYMS[key]
+    words = [w for w in re.findall(r"[a-z]+", term.lower()) if len(w) > 3 and w not in _STOP]
+    for w in list(words):
+        words += _SYNONYMS.get(w, [])
+    return list(dict.fromkeys(words)) or [term.lower()]
+
+
+def risks(dish: Dish, diners: list[DinerProfile]) -> list[Risk]:
+    """The rule-flagged risks behind open_questions, one per dish and concern."""
+    label = dish.name_en or dish.name_zh or dish.id
+    out: list[Risk] = []
+    for q in dish.confirm_with_staff:
+        m = re.search(r"uses (.+?)\.?$", q)
+        about = m.group(1) if m else "ingredients"
+        words = _words(about) if m else ["ingredient", "allergen", "contain", "made", "use"]
+        out.append(Risk(about, [], words, q))
+    hot = [p.name or p.id for p in diners if p.max_spice is not None]
+    if dish.spice_level is None and hot:
+        out.append(
+            Risk(
+                "spice level",
+                [],
+                ["spic", "heat", "hot", "chili", "mild"],
+                f"{label}: spice level unknown. Confirm heat.",
+            )
+        )
+    who: dict[str, list[str]] = {}
+    for person in diners:
+        for r in assessment(dish, person)["reasons"]:
+            if r.startswith("Confirm"):
+                who.setdefault(r, []).append(person.name or person.id)
+    for reason, names in who.items():
+        term = re.match(r"Confirm (\S+?)(,| ingredient| for| preparation|$)", reason)
+        about = term.group(1) if term else reason
+        out.append(Risk(about, names, _words(about), f"{label} (for {', '.join(names)}): {reason}"))
+    table = {a for p in diners for a in p.allergies}
+    for f in dish.allergens:
+        if f.tier == EvidenceTier.UNKNOWN and f.allergen in table:
+            names = [p.name or p.id for p in diners if f.allergen in p.allergies]
+            if any(r.about == f.allergen.value and r.names == names for r in out):
+                continue
+            out.append(
+                Risk(
+                    f.allergen.value,
+                    names,
+                    _words(f.allergen.value),
+                    f"{label}: {f.reason} (someone is allergic to {f.allergen.value})",
+                )
+            )
+    return out

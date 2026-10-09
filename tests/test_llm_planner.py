@@ -8,9 +8,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from michelin import api, gemini
-from michelin.plan import llm_planner
+from michelin.plan import hints, llm_planner
 from michelin.plan.edibility import edible_by
-from michelin.plan.optimizer import solve
 from michelin.plan.validation import validate_order
 from michelin.schemas import DinerProfile, Menu, PlanItem, TableRequest
 
@@ -51,16 +50,13 @@ def setup():
     rows = json.loads((ROOT / "data/profiles/sample_group.json").read_text())
     diners = [DinerProfile.model_validate(r) for r in rows]
     request = TableRequest(menu_id=menu.restaurant_id, diners=diners, budget_per_person=40)
-    rules = solve(menu, request)
-    assert rules.items, "the rules planner must find an order for this group"
-    shared = [i for i in rules.items if menu.dish(i.dish_id).category.value != "staple"]
-    good = {
-        "dishes": [
-            {"dish_id": i.dish_id, "reason": f"AI reason for {i.dish_id}", "for": i.edible_by}
-            for i in shared
-        ],
-        "server_questions": ["Is the broth made with pork?"],
-    }
+    from conftest import _oracle_answer
+
+    good = _oracle_answer(menu, request)
+    assert good["dishes"], "a valid order must exist for this group"
+    for row in good["dishes"]:
+        row["reason"] = f"AI reason for {row['dish_id']}"
+    good["server_questions"] = ["Is the broth made with pork?"]
     return menu, request, good
 
 
@@ -87,11 +83,23 @@ def test_valid_answer_becomes_the_plan(setup, tmp_path):
 
 def test_invalid_answer_gets_violations_and_a_retry(setup, tmp_path):
     menu, request, good = setup
-    too_few = {"dishes": good["dishes"][:1], "server_questions": []}
-    out, fake = run(menu, request, too_few, good, tmp_path=tmp_path)
+    allergic = next(p for p in request.diners if p.allergies)
+    others = next(
+        d
+        for d in menu.dishes
+        if d.category.value != "staple"
+        and edible_by(d, request.diners)
+        and allergic.id not in edible_by(d, request.diners)
+    )
+    left_out = {
+        "dishes": [{"dish_id": others.id, "reason": "x", "for": []}],
+        "server_questions": [],
+    }
+    out, fake = run(menu, request, left_out, good, tmp_path=tmp_path)
     assert out.plan and out.attempts == 2 and "after 1 correction" in out.note
     feedback = fake.calls[1]["contents"][-1].parts[0].text
-    assert "breaks these rules" in feedback and "needs 2" in feedback
+    assert "breaks these rules" in feedback
+    assert f"{allergic.name} ({allergic.id}) cannot eat any chosen dish" in feedback
 
 
 def test_hallucinated_dish_is_rejected(setup, tmp_path):
@@ -114,6 +122,7 @@ def test_dish_claimed_for_an_allergic_diner_is_rejected(setup, tmp_path):
         if d.category.value != "staple"
         and allergic.id not in edible_by(d, request.diners)
         and edible_by(d, request.diners)
+        and d.id not in {r["dish_id"] for r in good["dishes"]}
     )
     bad = {
         "dishes": [
@@ -146,7 +155,7 @@ def test_no_model_answer_is_an_explained_error_not_another_planner(setup, tmp_pa
 
 def test_model_no_fit_becomes_a_verified_change_one_thing(setup, tmp_path):
     menu, request, good = setup
-    tight = request.model_copy(update={"budget_per_person": 10})
+    tight = request.model_copy(update={"budget_per_person": 2})
     order = [d["dish_id"] for d in good["dishes"]]
     no_fit = {
         "dishes": [],
@@ -168,10 +177,80 @@ def test_model_no_fit_becomes_a_verified_change_one_thing(setup, tmp_path):
     assert validate_order(menu, raised, items)["valid"]
     assert not validate_order(menu, lower, items)["valid"]
     # An order that breaks another rule (an unsafe dish for everyone) gives no budget fix,
-    # and a model figure below the current budget is ignored.
-    bad = {**no_fit, "no_fit": {**no_fit["no_fit"], "dish_ids": order[:1], "new_value": 5}}
+    # and a model figure below the current budget is ignored; the rules' minimal budget is
+    # offered instead, so there is always one thing to change.
+    said = "Too little money. You would need $28.45 each."
+    bad = {
+        "dishes": [],
+        "no_fit": {"reason": said, "change": "budget", "dish_ids": ["lobster"], "new_value": 1},
+    }
     out, _ = run(menu, tight, bad, tmp_path=tmp_path)
-    assert out.conflict.relaxations == []
+    floor = hints.min_budget(menu, tight)
+    assert [(r.kind, r.new_value) for r in out.conflict.relaxations] == [("budget", floor)]
+    # Only the rules' figure is shown; the model's own arithmetic is dropped.
+    assert "$28.45" not in out.conflict.message and "Too little money." in out.conflict.message
+    assert f"lowest budget that works is ${floor:.2f} per person" in out.conflict.message
+
+
+def test_no_fit_always_offers_the_minimal_budget(setup, tmp_path):
+    """Whatever the model says, a budget no-fit offers 'Raise to $X', X minimal."""
+    menu, request, good = setup
+    tight = request.model_copy(update={"budget_per_person": 3})
+    out, fake = run(menu, tight, good, tmp_path=tmp_path)  # over budget: no retries needed
+    assert out.plan is None and len(fake.calls) == 1
+    [change] = [r for r in out.conflict.relaxations if r.kind == "budget"]
+    assert "Raise the budget to $" in change.description
+    price = change.new_value
+    assert hints.fits(menu, tight.model_copy(update={"budget_per_person": price}))
+    assert not hints.fits(menu, tight.model_copy(update={"budget_per_person": price - 0.5}))
+    # The same with a model that returns nothing usable at all.
+    out, _ = run(menu, tight, {"dishes": [], "server_questions": []}, tmp_path=tmp_path)
+    assert [r.new_value for r in out.conflict.relaxations if r.kind == "budget"] == [price]
+
+
+def test_giving_up_when_an_order_exists_is_retried_with_hints(setup, tmp_path):
+    menu, request, good = setup
+    give_up = {
+        "dishes": [],
+        "server_questions": [],
+        "no_fit": {"reason": "Nothing fits.", "change": "budget"},
+    }
+    out, fake = run(menu, request, give_up, good, tmp_path=tmp_path)
+    assert out.plan is not None and len(fake.calls) == 2
+    feedback = str(fake.calls[1]["contents"][-1])
+    assert "exists within the cap" in feedback
+
+
+def test_brief_names_a_diners_only_option_and_sets_no_dish_count():
+    """Ben can eat exactly one dish here, so it must be ordered; the model picks the count."""
+    menu = Menu.model_validate_json((ROOT / "data/menus/sample_sichuan.json").read_text())
+    only = next(d.id for d in menu.dishes if d.category.value != "staple")
+    diners = [DinerProfile(id="ann", name="Ann"), DinerProfile(id="ben", name="Ben")]
+    request = TableRequest(menu_id="x", diners=diners, budget_per_person=40)
+    payload = llm_planner.brief(menu, request, hints.Hints(True, None, {"ben": [only]}))
+    assert payload["only_option"] == {"Ben": only} and payload["an_order_fits"] is True
+    assert not {"portion_units", "target_dishes", "min_dishes_per_diner"} & payload.keys()
+    assert all("units" not in d for d in payload["dishes"])
+
+
+def test_any_number_of_dishes_passes_when_everyone_can_eat_one(setup, tmp_path):
+    """No portion or count rule: one dish everyone can eat is a valid order."""
+    menu, request, _ = setup
+    from michelin.plan.edibility import edible_by
+
+    shared = next(
+        d
+        for d in menu.dishes
+        if d.category.value != "staple" and len(edible_by(d, request.diners)) == request.n_diners
+    )
+    one = {
+        "dishes": [{"dish_id": shared.id, "reason": "For everyone.", "for": []}],
+        "server_questions": [],
+    }
+    out, fake = run(menu, request, one, tmp_path=tmp_path)
+    assert out.plan is not None and len(fake.calls) == 1
+    names = {c.name for c in out.plan.checks}
+    assert "portions" not in names
 
 
 def test_identical_requests_are_cached(setup, tmp_path):

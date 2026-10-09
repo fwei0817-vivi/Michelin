@@ -27,7 +27,7 @@ export function ConflictNote({ conflict, menu, diners, settings, onRelax }: Prop
       <h2 id="conflict-heading">{conflict.code === "ai_unavailable" ? "No recommendation right now" : "No order fits yet"}</h2>
       <p className="conflict-context">
         {menu.restaurant_name}, {n} {n === 1 ? "diner" : "diners"} at {money(settings.budget, cur)} each with tax and tip, so about {money(cap, cur)} in
-        menu prices for the table. Everyone needs {settings.minDishes} {settings.minDishes === 1 ? "dish" : "dishes"} they can eat.
+        menu prices for the table. Everyone needs at least one dish they can eat.
       </p>
       <p className="conflict-message">{conflict.message}</p>
       {conflict.relaxations.length > 0 && (

@@ -229,9 +229,9 @@ async def run(url: str, shots: Path) -> None:
                 f"stepper on the plan: {steps}",
             )
             await pg.get_by_role("button", name="Your table").click()
-            target = int(await dialog(pg).locator("input").nth(1).input_value())
+            fields = await dialog(pg).get_by_text("Dishes to order").count()
             await close_dialog(pg)
-            check(h1 == target, f"dish count matches 'Dishes to order' ({h1} vs {target}) (bug 4)")
+            check(fields == 0, "no separate dish-count setting; the plan is the only count")
             await pg.screenshot(path=str(shots / "03_plan_example_group.png"), full_page=True)
 
         async def dish_edits():
@@ -352,7 +352,7 @@ async def run(url: str, shots: Path) -> None:
         async def no_fit():
             await pg.get_by_role("button", name="Your table").click()
             budget = dialog(pg).locator("input").first
-            await budget.fill("10")
+            await budget.fill("3")
             await budget.press("Tab")
             await dialog(pg).get_by_role("button", name="Update dishes").click()
             await settle(pg, 1000)
@@ -506,13 +506,13 @@ async def demo(browser, url: str, shots: Path, errors: list[str]) -> None:
     await close_dialog(pg)
     await pg.get_by_role("button", name="Your table").click()
     budget = dialog(pg).locator("input").first
-    await budget.fill("15")
+    await budget.fill("3")
     await budget.press("Tab")
     await dialog(pg).get_by_role("button", name="Update dishes").click()
     await settle(pg, 1000)
     text = await pg.locator("main").inner_text()
     check(
-        "No order fits yet" in text and "$15.00 each with tax and tip" in text,
+        "No order fits yet" in text and "$3.00 each with tax and tip" in text,
         "no-fit names the per-person budget",
     )
     check(

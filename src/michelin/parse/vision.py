@@ -28,7 +28,8 @@ For every dish with a readable price, return its English name as printed, its Ch
 if printed, the price as a number (no currency sign), and any printed description. Copy what \
 is printed; do not translate, guess ingredients, or add dishes that are not on the photo. \
 Skip section headings, drinks and lines without a price. If nothing is readable, return an \
-empty list."""
+empty list. Also return the restaurant's name as printed on the menu (usually at the top), \
+or an empty string if no name is printed."""
 
 SCHEMA = {
     "type": "object",
@@ -48,7 +49,7 @@ SCHEMA = {
             },
         },
     },
-    "required": ["dishes"],
+    "required": ["restaurant_name", "dishes"],
 }
 
 

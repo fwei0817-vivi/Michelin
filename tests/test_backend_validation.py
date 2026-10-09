@@ -10,9 +10,9 @@ from michelin import api
 from michelin.plan import llm_planner
 from michelin.plan.budget import totals
 from michelin.plan.edibility import assessment, can_eat
-from michelin.plan.optimizer import solve
+from michelin.plan.hints import cheapest_order
 from michelin.plan.validation import validate_order
-from michelin.schemas import AllergenFlag, DinerProfile, Dish, Menu, Plan, PlanItem, TableRequest
+from michelin.schemas import AllergenFlag, DinerProfile, Dish, Menu, PlanItem, TableRequest
 
 FIXTURE = json.loads((Path(__file__).parent / "fixtures/public_menus.json").read_text())
 
@@ -22,9 +22,7 @@ def people(n=4, **kw):
 
 
 def request(n=4, **kw):
-    return TableRequest(
-        menu_id="test", diners=people(n), budget_per_person=100, min_dishes_per_person=1, **kw
-    )
+    return TableRequest(menu_id="test", diners=people(n), budget_per_person=100, **kw)
 
 
 def public_menu(index=0):
@@ -138,9 +136,10 @@ def synthetic_menu():
 
 def test_whole_order_swaps_and_changed_inputs():
     menu, req = synthetic_menu(), request(3)
-    plan = solve(menu, req)
-    assert isinstance(plan, Plan)
-    assert validate_order(menu, req, plan.items)["valid"]
+    order, complete = cheapest_order(menu, req)
+    assert complete
+    cheapest = [PlanItem(dish_id=d.id, quantity=q) for d, q in order]
+    assert validate_order(menu, req, cheapest)["valid"]
     items = [PlanItem(dish_id=x) for x in ["a", "b", "pork"]] + [
         PlanItem(dish_id="rice", quantity=3)
     ]
@@ -162,9 +161,9 @@ def test_whole_order_swaps_and_changed_inputs():
 def test_provable_no_solution_vs_missing_information():
     menu = synthetic_menu()
     req = request(3).model_copy(update={"budget_per_person": 1})
-    assert solve(menu, req).code == "no_solution"
+    assert llm_planner.plan(menu, req).conflict.code == "no_solution"
     req = req.model_copy(update={"diners": people(3, allergies=["sesame"])})
-    assert solve(menu, req).code == "missing_information"
+    assert llm_planner.plan(menu, req).conflict.code == "missing_information"
 
 
 def test_mocked_planner_and_explanation_fail_closed(monkeypatch):

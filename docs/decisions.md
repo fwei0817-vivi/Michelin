@@ -270,3 +270,22 @@ for up to 3 retries. There is no optimizer fallback. If no model answers, or no 
 passes, the response is an explained conflict (`ai_unavailable` or `ai_no_valid_order`).
 The model's own "no fit" answer carries its suggested budget or coverage change, which is
 range-checked before it is shown.
+
+**2026-10-09: no portion math; the LLM decides how many dishes.** Portion units, dish-count
+targets, the "dishes each person can eat" setting and the old optimizer/relaxation code are
+removed. The prompt suggests roughly one dish per person plus rice; the validator does not
+check counts. Hard checks stay deterministic: allergies and diets, budget with tax and tip,
+dish ids on the menu, kept/removed dishes, quantity limits, and every diner can eat at least one
+chosen non-staple dish. `plan/hints.py` computes the cheapest valid order (branch and bound);
+the brief says whether an order fits and names a diner's only option, retries repeat that, and
+when nothing fits the conflict always offers "Raise the budget to $X per person", where X is
+the lowest budget with a valid order (or the model's own figure if it validates). Every dish
+count in the UI is `plan.items.length`; the model's one-line summary explains the count.
+
+**2026-10-09: wording moved to the planner's single LLM call.** The model now writes one server
+question per chosen dish (who and why) and the plan summary. Rule-detected risks are sent as
+facts; any risk the model's question does not cover gets the rule question appended, merged into
+one line per dish. Safety labels, budget arithmetic, conflict titles and the budget figure stay
+deterministic. Menu photos and the name matcher use OpenRouter whenever `OPENROUTER_API_KEY` is
+set (`MICHELIN_OPENROUTER_VISION_MODEL` overrides the photo model); the free Gemini key is the
+fallback.

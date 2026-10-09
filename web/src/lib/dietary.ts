@@ -5,7 +5,6 @@ import { ALLERGEN_LABEL, listNames } from "./format";
 export function dishQuestions(dish: Dish, diners: DinerProfile[]): string[] {
   const questions = [...dish.confirm_with_staff];
   if (dish.spice_level == null && diners.some(p => p.max_spice != null)) questions.push("Spice level unknown; confirm with staff.");
-  if (dish.portion == null) questions.push("Portion unknown; planning uses an estimate, not a people-fed guarantee.");
   for (const flag of dish.allergens) {
     if (flag.tier !== "unknown") continue;
     const affected = diners.filter(p => p.allergies.includes(flag.allergen));
@@ -23,4 +22,13 @@ export function heatNote(dish: Dish, diners: DinerProfile[]): string | null {
   if (!affected.length) return null;
   const names = listNames(affected.map(p => p.name));
   return dish.spice_level != null ? `Spicier than ${names} ${affected.length === 1 ? "prefers" : "prefer"}` : `Likely spicier than ${names} ${affected.length === 1 ? "prefers" : "prefer"}`;
+}
+
+// Ingredients that would break a vegetarian, no-pork or no-beef diet if the kitchen uses them.
+const ANIMAL = /pork|lard|bacon|ham\b|beef|chicken|duck|meat|fish|anchov|shrimp|prawn|oyster|crab|broth|stock|gelatin|egg/i;
+
+/** The dish may hide an animal ingredient (e.g. minced pork in yu-xiang eggplant, lard in a
+ * pancake): a "Vegan"/"Matches all" chip must then say it still needs asking. */
+export function mayHideMeat(dish: Dish): boolean {
+  return dish.main_ingredients.some(i => i.tier !== "menu" && ANIMAL.test(i.name));
 }

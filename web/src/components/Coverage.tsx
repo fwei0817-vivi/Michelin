@@ -4,21 +4,21 @@ import { dishQuestions } from "../lib/dietary";
 import type { DinerProfile, Menu, Plan } from "../types";
 
 /** Per-person coverage: how many non-staple dishes each diner can eat by their recorded needs. */
-export function Coverage({ menu, plan, diners, minDishes }: { menu: Menu; plan: Plan; diners: DinerProfile[]; minDishes: number }) {
+export function Coverage({ menu, plan, diners }: { menu: Menu; plan: Plan; diners: DinerProfile[] }) {
   const byId = Object.fromEntries(menu.dishes.map((d) => [d.id, d]));
   const dishes = plan.items.filter((i) => byId[i.dish_id] && byId[i.dish_id].category !== "staple");
   return (
     <section className="sheet who" aria-labelledby="who-heading">
       <h2 id="who-heading">Who can eat what</h2>
       <p className="who-caption">
-        Counted from recorded allergies and diets, rice and noodles not included. Everyone needs at least {minDishes}.
+        Counted from recorded allergies and diets, rice and noodles not included.
       </p>
       <ul className="who-list">
         {diners.map((p) => {
           const matching = dishes.filter((i) => i.edible_by.includes(p.id));
           // Only this diner's unknown allergens count here; the dish's own staff questions apply to everyone.
           const toCheck = new Set(matching.filter((i) => dishQuestions(byId[i.dish_id], [p]).length > 0).map((i) => i.dish_id));
-          const short = matching.length < minDishes;
+          const short = matching.length < 1;
           return (
             <li key={p.id}>
               <details>

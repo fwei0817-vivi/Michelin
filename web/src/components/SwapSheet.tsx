@@ -3,6 +3,7 @@ import { ArrowLeftRight, Check, CheckCircle2, CircleHelp, FileImage, Flame, Leaf
 import { evaluateMenu, parseMenu, getPreparedInputs, extractMenu } from "../api";
 import { CATEGORY_LABEL, currencySymbol, dishName, flagWording, money } from "../lib/format";
 import { photoFor } from "../lib/dishPhotos";
+import { mayHideMeat } from "../lib/dietary";
 import type { DinerProfile, Dish, Eligibility, Menu, MenuSummary, Plan, PreparedInput } from "../types";
 import { DishEditor } from "./DishEditor";
 import { Sheet } from "./Sheet";
@@ -361,9 +362,9 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                         </div>
                         <div className="dish-tags">
                           <span>{CATEGORY_LABEL[d.category] ?? d.category}</span>
-                          {d.is_vegetarian === true && <span><Leaf size={12} />{d.is_vegan ? "Vegan" : "Vegetarian"}</span>}
+                          {d.is_vegetarian === true && <span className={mayHideMeat(d) ? "tag-ask" : ""}><Leaf size={12} />{d.is_vegan ? "Vegan" : "Vegetarian"}{mayHideMeat(d) ? "? ask" : ""}</span>}
                           {d.spice_level != null && d.spice_level > 0 && <span><Flame size={12} />{SPICE[d.spice_level]}</span>}
-                          {e && diners.length > 0 && notFor.length === 0 && <span title="Matches every diner's recorded requirements"><Users size={12} />Matches all {diners.length}</span>}
+                          {e && diners.length > 0 && notFor.length === 0 && <span title="Matches every diner's recorded requirements"><Users size={12} />Matches all {diners.length}{mayHideMeat(d) ? " if confirmed" : ""}</span>}
                         </div>
                         {!e ? (
                           <p className="helper">Checking diner requirements…</p>

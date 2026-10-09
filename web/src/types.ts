@@ -81,6 +81,7 @@ export interface PlanItem {
   quantity: number;
   edible_by: string[];
   reason: string | null;
+  server_question?: string | null; // AI plans: one question for the server, rule-checked
 }
 
 export interface Check {
@@ -99,10 +100,11 @@ export interface Plan {
   variety_score: number;
   checks: Check[];
   confirm_with_staff: string[];
+  summary?: string | null;
 }
 
 export interface Relaxation {
-  kind: "budget" | "allergy" | "diet" | "coverage" | "portions" | string;
+  kind: "budget" | "allergy" | "diet" | "coverage" | string;
   description: string;
   diner_id: string | null;
   new_value: number | null;
@@ -122,11 +124,9 @@ export interface PlanRequest {
   budget_total?: number;
   tax_rate?: number;
   tip_rate?: number;
-  min_dishes_per_person?: number;
   locked_dish_ids?: string[];
   excluded_dish_ids?: string[];
   menu_override?: Menu;
-  dish_count_target?: number;
   style_preference?: string;
   explain?: boolean;
 }
@@ -144,8 +144,6 @@ export interface DiningSettings {
   budget: number;
   tax: number;
   tip: number;
-  minDishes: number;
-  dishCount: number;
   style: "balanced" | "lighter" | "favorites";
 }
 

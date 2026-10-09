@@ -2,9 +2,9 @@
 
 IEOR E4577 course project. Given a parsed restaurant menu, the diners' saved profiles and a
 total meal budget (legacy API per-person budgets remain supported), the app proposes an
-order using recorded restriction evidence, exact money arithmetic and explicit portion
-estimates. Unknown ingredients require confirmation; portions are not a guarantee that
-everyone is fed. If no validated order is found, it explains conflicts or missing evidence.
+order using recorded restriction evidence and exact money arithmetic. The AI decides how
+many dishes (roughly one per person plus rice); there is no portion math. Unknown ingredients
+require confirmation. If no validated order is found, it explains conflicts or missing evidence.
 
 See [the current meal workflow](docs/meal-session.md) for adding people, temporary meal
 changes, explicit saved preferences, swaps and the future structured chat boundary.
@@ -42,7 +42,8 @@ Tests: `uv run pytest` and `cd web && npm run lint`.
 The LLM chooses the dishes. It also reads menu photos and, when you opt in, matches dish
 names. Deterministic code checks every order it proposes: dish ids must be on the menu,
 removed and kept dishes are respected, allergies and diets are applied per diner, the
-budget includes tax and tip, portions fall within range, and everyone gets enough dishes.
+budget includes tax and tip, quantities stay within any limits, and every diner can eat at
+least one chosen dish (rice and noodles don't count). The number of dishes is not checked.
 Each violation goes back to the model, with up to 3 retries. There is no rules-planner
 fallback. If no model answers, or no proposed order passes the checks, the app says so.
 When the budget is too low, the model proposes the "Change one thing" fix.
@@ -69,6 +70,7 @@ MICHELIN_LLM_MATCH=1 uv run --extra llm uvicorn michelin.api:app   # also LLM na
 | --- | --- | --- |
 | `OPENROUTER_API_KEY` | unset | use OpenRouter (preferred when set) |
 | `MICHELIN_OPENROUTER_MODEL` | `google/gemini-2.5-flash` | OpenRouter model for every task |
+| `MICHELIN_OPENROUTER_VISION_MODEL` | unset | OpenRouter model for menu photos only (must accept images) |
 | `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) | unset | use the free Gemini API |
 | `MICHELIN_LLM_PROVIDER` | auto | force `openrouter` or `gemini` (the matcher also accepts `claude`, `claude-vertex`) |
 | `MICHELIN_GEMINI_MODEL` | `gemini-3.8-flash` | Gemini model for every task |
@@ -108,14 +110,19 @@ per-diner coverage, menu search, swap comparisons, and a printable order ticket.
 settings marks the previous plan stale until replanning succeeds.
 
 Recommendations come from the AI model (see above), and the rules enforce the budget
-(including tax and tip), portions, kept and excluded dishes, and diner coverage. The older
-branch-and-bound optimizer (`plan/optimizer.py`) is kept for tests and offline analysis.
-It is no longer used by `/api/plan`. The API accepts up to 40 reviewed dishes.
+(including tax and tip), kept and excluded dishes, and diner coverage. The old rules optimizer
+and portion estimates were removed (2026-10-09). `plan/hints.py` finds the cheapest valid
+order deterministically; it tells the model whether any order fits, and when none does it sets
+the "Raise the budget to $X per person" fix (X = the lowest budget at which an order exists).
+The model writes one server question per chosen dish, naming who it is for and why; rule-based
+risks are passed in as facts and any risk the model skips is added back from the rules. The API accepts up to 40 reviewed dishes.
 Set `MICHELIN_MOCK=1` only for fixture-based demos.
 
 Menu editing and imports are session-local. Paste one English dish per line with its price
 at the end, or upload an English PNG/JPEG/WebP menu image (up to 8 MB). Image extraction
-uses Gemini when `GEMINI_API_KEY` is set (see above); otherwise it requires the `tesseract` executable with English language data (included in the Dockerfile).
+uses OpenRouter when `OPENROUTER_API_KEY` is set (the photo goes as a base64 `image_url`; default
+`google/gemini-2.5-flash`, override with `MICHELIN_OPENROUTER_VISION_MODEL`; `/api/health` then
+reports `photo: "openrouter"`), else Gemini when `GEMINI_API_KEY` is set (see above); otherwise it requires the `tesseract` executable with English language data (included in the Dockerfile).
 If unavailable, text import and manual entry still work. Imported dishes are labeled from the
 reviewed hidden-ingredient knowledge base (`data/knowledge/`); dishes it does not recognize
 keep unknown dietary flags. Either way they require explicit review before use. By default no
@@ -124,7 +131,8 @@ external AI calls are made; LLM name matching is opt-in (below).
 To label a whole menu file for review: `uv run python -m michelin.parse.label_menu draft.json
 -o data/menus/<slug>.json`. The output is unverified. Add `--llm` (with `uv sync --extra llm` and
 `GEMINI_API_KEY`, see above) to let an LLM map names the knowledge base misses;
-set `MICHELIN_LLM_MATCH=1` to do the same for in-app imports. The default provider is
+set `MICHELIN_LLM_MATCH=1` to do the same for in-app imports. The matcher uses the same
+provider as the planner: OpenRouter when `OPENROUTER_API_KEY` is set, otherwise
 Gemini (`gemini-3.8-flash` on the free Developer API, or Vertex AI with
 `MICHELIN_GEMINI_BACKEND=vertex`); `MICHELIN_LLM_PROVIDER=claude-vertex` or `claude` switches it. Stored answers live in
 `data/knowledge/llm_matches.json`.
@@ -136,8 +144,7 @@ three restaurant menus are kept in `data/menus/review_answers.xlsx`; to rebuild 
 `label_menu` and then this import. Setting `verified: true` stays a manual step. The bad-case evaluation lives in
 `eval/` (see `eval/README.md`).
 
-Additional API fields on `POST /api/plan`: `menu_override`, `dish_count_target` (1–20),
-and `style_preference` (`balanced`, `lighter`, `favorites`).
+Additional API fields on `POST /api/plan`: `menu_override` and `style_preference` (`balanced`, `lighter`, `favorites`).
 `POST /api/menu/evaluate` takes `{menu, diners}` and returns per-dish eligibility and questions.
 `POST /api/menu/parse` takes `{text}` or `{image_base64}` and returns extracted text and dishes.
 
@@ -184,7 +191,7 @@ USD prices/budgets must be finite nonnegative/positive amounts with at most two 
 (and at most one billion dollars). Tax and tip round separately using ROUND_HALF_UP; tip is
 on the pre-tax subtotal. The exact all-in budget cannot be exceeded, even by one cent.
 Defaults are assumptions, not restaurant fee evidence. Confirm extra charges and serving
-sizes; portions are only estimates. Public-menu fixtures are offline tests, not new selectable
+sizes with staff. Public-menu fixtures are offline tests, not new selectable
 production menus. Mock orders can now return a conflict when independent validation fails.
 
 SQLite survives process restarts only while that database file is retained. Container

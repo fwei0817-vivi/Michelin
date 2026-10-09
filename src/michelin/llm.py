@@ -1,7 +1,8 @@
 """Which LLM answers: OpenRouter (paid key) first, then the free Gemini key, else none.
 
   OPENROUTER_API_KEY            OpenRouter, OpenAI-compatible, https://openrouter.ai/api/v1
-  MICHELIN_OPENROUTER_MODEL     default google/gemini-2.5-flash
+  MICHELIN_OPENROUTER_MODEL     default google/gemini-2.5-flash (plans, name matching)
+  MICHELIN_OPENROUTER_VISION_MODEL  menu photos; must accept images; default as above
   GEMINI_API_KEY                free Gemini Developer API (see michelin.gemini)
   MICHELIN_LLM_PROVIDER         force "openrouter" or "gemini" (the matcher also accepts
                                 "claude" / "claude-vertex", see parse/matcher.py)
@@ -63,6 +64,8 @@ def provider() -> str | None:
 def model(task: str, which: str | None = None) -> str:
     which = which or provider()
     if which == "openrouter":
+        if task == "vision" and os.environ.get("MICHELIN_OPENROUTER_VISION_MODEL"):
+            return os.environ["MICHELIN_OPENROUTER_VISION_MODEL"]
         return os.environ.get("MICHELIN_OPENROUTER_MODEL") or OPENROUTER_DEFAULT
     return gemini.model(task)
 

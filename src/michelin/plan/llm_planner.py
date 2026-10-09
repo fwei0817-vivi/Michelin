@@ -3,16 +3,18 @@
 There is no rules-optimizer fallback: recommendations come only from the model
 (OpenRouter first, then the free Gemini key; see michelin.llm).
 
-The model sees a compact brief: each shareable dish with its price, category, portion
-units, spice, allergen flags and hidden-ingredient knowledge, and which diners the server's
-rules already allow to eat it; the diners' allergies, diets, heat limits, likes and
-dislikes; the menu-price cap left after tax, tip and rice; the portion range; kept dishes.
-It answers in a JSON schema with dish ids, a reason per dish, who each dish is for,
-questions for the server, and, when nothing can fit, why and one change to make.
+The model sees a compact brief: each shareable dish with its price, category, spice,
+allergen flags, hidden-ingredient knowledge and rule-flagged risks, and which diners the
+server's rules already allow to eat it; the diners' allergies, diets, heat limits, likes
+and dislikes; the menu-price cap left after tax, tip and rice; kept dishes. The model
+decides how many dishes to order (guideline: about one per person, plus rice). It answers
+in a JSON schema with dish ids, a reason and a server question per dish, who each dish is
+for, a one-line summary, and, when nothing can fit, why.
 
 Every order goes through `validate_order` (ids on the menu, kept and removed dishes,
-budget with tax and tip, portions, coverage for every diner) plus a check that each "for"
-diner is actually allowed to eat the dish. Violations are sent back for at most
+allergies and diets, budget with tax and tip, every diner able to eat at least one dish)
+plus a check that each "for" diner is actually allowed to eat the dish. There is no
+portion or dish-count rule. Violations are sent back for at most
 MAX_RETRIES more tries. If it still fails, or no model answers, the result is a conflict
 that says why; it is never replaced by another planner.
 
@@ -33,9 +35,14 @@ from pathlib import Path
 
 from michelin import gemini, llm
 from michelin.explain import explain
+from michelin.plan import hints as rules_hints
 from michelin.plan.budget import cents, subtotal_cap, totals
-from michelin.plan.edibility import assessment, edible_by, open_questions
-from michelin.plan.portions import required_range, units
+from michelin.plan.edibility import (
+    assessment,
+    edible_by,
+    merge_questions,
+    risks,
+)
 from michelin.plan.score import variety_score
 from michelin.plan.validation import validate_order
 from michelin.schemas import Check, Conflict, Menu, Plan, PlanItem, Relaxation, TableRequest
@@ -55,26 +62,32 @@ _memory: dict[str, dict] = {}
 SYSTEM = """You plan a shared, family-style order at a Chinese restaurant for a table.
 
 Choose dishes only from the list you are given, by id. Hard rules:
-- Every diner must be able to eat at least the required number of chosen dishes. A dish \
-counts for a diner only if that diner is in the dish's "ok_for" list; never list anyone \
-else in "for". "ok_for" already applies allergies and diets; do not overrule it.
+- Every diner must be able to eat at least one chosen dish. A dish counts for a diner \
+only if that diner is in the dish's "ok_for" list; never list anyone else in "for". \
+"ok_for" already applies allergies and diets; do not overrule it.
 - Kept dishes must be in the order.
 - The sum of the chosen dishes' prices must not exceed "menu_price_cap" (tax, tip and \
 rice are already taken out of the budget).
-- The chosen dishes' portion units must add up to within "portion_units" [min, max].
-Then, softly: aim for "target_dishes" dishes, vary the main ingredients and cooking \
-methods, respect heat limits ("max_spice" 0 means no heat; do not recommend a hot dish to \
+You decide how many dishes to order. A good guideline is about one dish per person (rice \
+is added for everyone), more if dishes are small and the budget allows, fewer if they are \
+large or money is tight; make sure each diner has a fair share they can eat. Then, softly: \
+vary the main ingredients and cooking methods, respect heat limits ("max_spice" 0 means no heat; do not recommend a hot dish to \
 that diner in "for" or in the reason), avoid dislikes, include likes.
-For each dish give one short, specific reason (under 20 words) naming who it suits, and \
-list a few short questions the table should ask the server about hidden ingredients or \
-allergens in the chosen dishes. Do not invent ingredients that are not in the brief.
+For each dish give one short, specific reason (under 20 words) naming who it suits.
+For each chosen dish that has "risks", write "server_question": one concise, natural \
+question the table can read to the server. Cover every listed risk in that one question, \
+name the diners it is for and why (e.g. "Ben is vegetarian and Cai avoids pork: does the \
+garlic sauce use minced pork or lard?"). Use the dish's own words; do not invent \
+ingredients that are not in the brief, and state only the allergies and diets the brief \
+lists for that diner. Use "" for dishes without risks. Put only questions \
+about the whole meal (not one dish) in "server_questions"; usually it is empty.
+Finally, "summary": one friendly sentence (under 30 words) on how the order works for this \
+table, including why this many dishes (e.g. small plates, so a few extra). Do not write the number of dishes; the app shows the count.
 
-If no order can meet the hard rules (for example the cap is too low for enough dishes \
-that everyone can eat), return an empty "dishes" list and fill "no_fit": a one-sentence \
-reason and one change that would make an order possible. For a budget problem use change \
-"budget" and put in "dish_ids" the cheapest order that meets every rule except the cap; \
-the server prices it with tax, tip and rice. Otherwise use "coverage" with a smaller \
-number of dishes per diner in "new_value"."""
+If no order can meet the hard rules (for example the cap is too low for a dish everyone \
+can eat), return an empty "dishes" list and fill "no_fit": a one-sentence reason and, \
+with change "budget", the cheapest order that meets every rule except the cap in \
+"dish_ids"; the server prices it with tax, tip and rice."""
 
 
 @dataclass
@@ -118,7 +131,7 @@ def _staples(menu: Menu, request: TableRequest):
     return [min(everyone, key=lambda d: d.price)] if everyone else []
 
 
-def brief(menu: Menu, request: TableRequest) -> dict:
+def brief(menu: Menu, request: TableRequest, hint: rules_hints.Hints | None = None) -> dict:
     n = request.n_diners
     staples = _staples(menu, request)
     staple_cost = sum(cents(d.price) * n for d in staples) / 100
@@ -136,7 +149,6 @@ def brief(menu: Menu, request: TableRequest) -> dict:
             "name": d.name_en or d.name_zh,
             "price": d.price,
             "category": d.category.value,
-            "units": units(d),
             "ok_for": ok,
         }
         if d.name_zh:
@@ -155,10 +167,14 @@ def brief(menu: Menu, request: TableRequest) -> dict:
             row["may_contain"] = hidden[:6]
         if d.allergens:
             row["allergens"] = sorted({f"{f.allergen.value} ({f.tier.value})" for f in d.allergens})
-        if d.confirm_with_staff:
-            row["ask"] = d.confirm_with_staff[:2]
+        flagged = risks(d, request.diners)
+        if flagged:
+            # Facts from the rules; the model words the question, the rules check it.
+            row["risks"] = [
+                f"{r.about}" + (f" (matters for {', '.join(r.names)})" if r.names else "")
+                for r in flagged
+            ][:5]
         dishes.append(row)
-    lo, hi = required_range(n)
     diners = []
     for p in request.diners:
         row = {"id": p.id, "name": p.name}
@@ -168,7 +184,6 @@ def brief(menu: Menu, request: TableRequest) -> dict:
         if p.max_spice is not None:
             row["max_spice"] = p.max_spice
         diners.append(row)
-    target = request.dish_count_target or n + len(staples)
     return {
         "diners": diners,
         "dishes": dishes,
@@ -177,12 +192,45 @@ def brief(menu: Menu, request: TableRequest) -> dict:
         "tip_rate": request.tip_rate,
         "menu_price_cap": round(cap - staple_cost, 2),
         "rice_added": [f"{d.name_en or d.id} x{n}" for d in staples],
-        "portion_units": [lo, hi],
-        "min_dishes_per_diner": request.min_dishes_per_person,
-        "target_dishes": max(1, target - len(staples)),
         "kept": [i for i in request.locked_dish_ids if i not in {d.id for d in staples}],
         "style": request.style_preference,
+        **_hint_fields(menu, request, hint),
     }
+
+
+def _hint_fields(menu: Menu, request: TableRequest, hint) -> dict:
+    """Facts from the rules that make the model's job easier; never a chosen order."""
+    if hint is None:
+        return {}
+    out: dict = {}
+    if hint.feasible is not None:
+        out["an_order_fits"] = hint.feasible
+    if hint.feasible is False and hint.min_budget is not None:
+        out["lowest_budget_per_person_that_fits"] = hint.min_budget
+    names = {p.id: p.name for p in request.diners}
+    if hint.must_include:
+        out["only_option"] = {names[pid]: ids[0] for pid, ids in hint.must_include.items()}
+    return out
+
+
+def _hint_text(menu: Menu, request: TableRequest, hint) -> list[str]:
+    """Retry hints: what the rules know about this table, in words."""
+    if hint is None:
+        return []
+    names = {p.id: p.name for p in request.diners}
+    lines = []
+    for pid, ids in hint.must_include.items():
+        lines.append(f"{names[pid]} can eat only {ids[0]} here; it must be in the order.")
+    if hint.feasible:
+        lines.append(
+            "An order that meets every rule exists within the cap, so do not return no_fit."
+        )
+    elif hint.feasible is False and hint.min_budget is not None:
+        lines.append(
+            f"No order fits this budget; the lowest that fits is ${hint.min_budget:.2f} per "
+            'person. Return no dishes and no_fit with change "budget".'
+        )
+    return lines
 
 
 def _schema(ids: list[str], diner_ids: list[str]) -> dict:
@@ -197,16 +245,18 @@ def _schema(ids: list[str], diner_ids: list[str]) -> dict:
                         "dish_id": {"type": "string", "enum": ids},
                         "reason": {"type": "string"},
                         "for": {"type": "array", "items": {"type": "string", "enum": diner_ids}},
+                        "server_question": {"type": "string"},
                     },
-                    "required": ["dish_id", "reason", "for"],
+                    "required": ["dish_id", "reason", "for", "server_question"],
                 },
             },
             "server_questions": {"type": "array", "items": {"type": "string"}},
+            "summary": {"type": "string"},
             "no_fit": {
                 "type": "object",
                 "properties": {
                     "reason": {"type": "string"},
-                    "change": {"type": "string", "enum": ["budget", "coverage"]},
+                    "change": {"type": "string", "enum": ["budget"]},
                     "dish_ids": {"type": "array", "items": {"type": "string", "enum": ids}},
                     "new_value": {"type": "number"},
                 },
@@ -253,8 +303,7 @@ def check(menu: Menu, request: TableRequest, answer: dict, staples) -> tuple[lis
         if reason["code"] == "insufficient_coverage":
             pid = detail.split(":")[0]
             detail = (
-                f"{names.get(pid, pid)} ({pid}) can eat only {detail.split(': ')[1].split()[0]} "
-                f"chosen dishes; needs {request.min_dishes_per_person}."
+                f"{names.get(pid, pid)} ({pid}) cannot eat any chosen dish; add one they can eat."
             )
         elif reason["code"] == "over_budget":
             subtotal = sum(cents(known[i.dish_id].price) * i.quantity for i in items) / 100
@@ -299,6 +348,39 @@ def _cache_put(key: str, answer: dict, path: Path) -> None:
             log.warning("Could not store the AI plan cache at %s", path)
 
 
+_NUMBERS = [
+    "zero",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+    "ten",
+    "eleven",
+    "twelve",
+]
+_COUNT = re.compile(
+    r"\b(\d+|"
+    + "|".join(_NUMBERS)
+    + r")\s+(?:[a-z-]+\s+){0,2}(?:dish|dishes|plates|items|courses)\b(?!\s+(?:per|each|for each)\b)",
+    re.IGNORECASE,
+)
+
+
+def _summary(text: object, n: int) -> str | None:
+    """The model's one-line summary, dropped if it states a dish count other than the plan's."""
+    text = str(text or "").strip()[:240]
+    for m in _COUNT.finditer(text):
+        word = m.group(1).lower()
+        if (int(word) if word.isdigit() else _NUMBERS.index(word)) != n:
+            return None
+    return text or None
+
+
 def _to_plan(menu: Menu, request: TableRequest, answer: dict, items: list) -> Plan:
     known = {d.id: d for d in menu.dishes}
     selected = [(known[i.dish_id], i.quantity) for i in items]
@@ -328,29 +410,82 @@ def _to_plan(menu: Menu, request: TableRequest, answer: dict, items: list) -> Pl
     items = [
         i.model_copy(update={"reason": reasons.get(i.dish_id) or i.reason}) for i in base.items
     ]
-    questions = list(
-        dict.fromkeys(q for d, _ in selected for q in open_questions(d, request.diners))
-    )
+    asked = server_questions(answer, selected, request)
+    items = [i.model_copy(update={"server_question": asked.get(i.dish_id)}) for i in items]
     extra = [str(q).strip()[:200] for q in answer.get("server_questions") or [] if str(q).strip()]
     checks = [
         Check(name="ai", passed=True, detail="Dishes chosen by the AI, then checked by the rules."),
         Check(
             name="coverage",
             passed=True,
-            detail=f"Each diner has at least {request.min_dishes_per_person} non-staple dishes "
-            "under recorded requirements.",
+            detail="Everyone can eat at least one dish under their recorded requirements.",
         ),
         Check(name="budget", passed=True, detail="The total includes tax and tip and fits."),
-        Check(name="portions", passed=True, detail="Shared portions meet the estimated range."),
         Check(name="diets", passed=True, detail="Allergies and diets were checked per diner."),
     ]
     return base.model_copy(
         update={
             "items": items,
             "checks": checks,
-            "confirm_with_staff": list(dict.fromkeys(questions + extra[:5])),
+            "confirm_with_staff": [asked[d.id] for d, _ in selected if d.id in asked] + extra[:3],
+            "summary": _summary(answer.get("summary"), len(items)),
         }
     )
+
+
+def _misstates(text: str, diners) -> bool:
+    """True when the text gives a diner an allergy or diet they do not have
+    ("Kevin has a peanut allergy", "David is allergic to sesame", "Li is vegan")."""
+
+    def same(term: str, recorded: list[str]) -> bool:
+        term = term.strip().lower().rstrip("s")
+        return any(
+            term in r.lower().replace("_", " ") or r.lower().rstrip("s") in term for r in recorded
+        )
+
+    for p in diners:
+        name = re.escape(p.name)
+        claims = re.findall(
+            rf"\b{name}\s+(?:has|have)\s+(?:an?\s+)?([a-z -]+?)\s+allerg", text, re.IGNORECASE
+        )
+        claims += re.findall(
+            rf"\b{name}\s+(?:is|are)\s+allergic\s+to\s+([a-z]+(?:\s+nuts?)?)", text, re.IGNORECASE
+        )
+        if any(not same(c, p.allergies) for c in claims):
+            return True
+        for diet in re.findall(
+            rf"\b{name}\s+(?:is|are)\s+(vegetarian|vegan)\b", text, re.IGNORECASE
+        ):
+            ok = {"vegan"} if diet.lower() == "vegan" else {"vegan", "vegetarian"}
+            if not ok & set(p.diets):
+                return True
+    return False
+
+
+def server_questions(answer: dict, selected, request: TableRequest) -> dict[str, str]:
+    """One line per dish for the server: the model's question, plus the rule-based question
+    for any flagged risk it does not cover (a named diner and the risk's word must appear)."""
+    written = {
+        r["dish_id"]: str(r.get("server_question") or "").strip()[:300]
+        for r in answer.get("dishes") or []
+        if isinstance(r, dict)
+    }
+    out: dict[str, str] = {}
+    for d, _ in selected:
+        label = d.name_en or d.name_zh or d.id
+        flagged = risks(d, request.diners)
+        mine = written.get(d.id, "")
+        if mine.lower().startswith(label.lower()):
+            mine = mine[len(label) :].lstrip(" :-–—").strip()
+        if _misstates(mine, request.diners):
+            mine = ""  # never show a need the diner does not have; the rule questions stand
+        missing = [r.question for r in flagged if not (mine and r.covered_by(mine))]
+        if not mine and not missing:
+            continue
+        lines = ([f"{label}: {mine}"] if mine else []) + missing
+        merged = merge_questions(lines, [d])
+        out[d.id] = " ".join(merged)
+    return out
 
 
 def _budget_for(menu: Menu, request: TableRequest, dish_ids) -> float | None:
@@ -381,43 +516,60 @@ def _unresolved(menu: Menu, request: TableRequest) -> bool:
 
 
 def _no_fit(
-    menu: Menu, request: TableRequest, answer: dict, problems: list[str]
+    menu: Menu, request: TableRequest, answer: dict, problems: list[str], hint=None
 ) -> Conflict | None:
-    """The model's own "nothing fits" answer, with its suggested change if it is sane."""
+    """The model's own "nothing fits" answer, with its suggested change if it is sane, plus
+    the rules' minimal change so there is always one thing to change."""
     info = answer.get("no_fit") if isinstance(answer, dict) else None
     if not isinstance(info, dict) or answer.get("dishes"):
         return None
-    reason = str(info.get("reason") or "").strip()[:300] or "No order meets every rule."
+    return _conflict(menu, request, info, problems, hint)
+
+
+def _conflict(menu: Menu, request: TableRequest, info: dict, problems: list[str], hint):
+    # Money figures come only from the rules: the model's own arithmetic is dropped.
+    said = re.split(r"(?<=[.!?])\s+", str(info.get("reason") or "").strip()[:300])
+    reason = " ".join(x for x in said if x and not re.search(r"\$\s?\d", x))
     relaxations = []
     value = info.get("new_value")
     if info.get("change") == "budget":
         price = _budget_for(menu, request, info.get("dish_ids"))
         if price is None and isinstance(value, int | float):
             price = round(float(value) * 2 + 0.4999) / 2  # the model's own figure
+            floor = hint.min_budget if hint is not None else None
+            if hint is not None and (floor is None or price < floor):
+                price = None  # the rules show nothing fits at that figure
         if price is not None and request.budget_per_person < price <= 500:
-            relaxations.append(
-                Relaxation(
-                    kind="budget",
-                    new_value=price,
-                    description=f"Set the all-in budget to {price:.2f} per person.",
-                )
-            )
-    elif info.get("change") == "coverage" and isinstance(value, int | float):
-        n = int(value)
-        if 1 <= n < request.min_dishes_per_person:
-            relaxations.append(
-                Relaxation(
-                    kind="coverage",
-                    new_value=n,
-                    description=f"Allow at least {n} non-staple dishes per diner.",
-                )
-            )
-    message = (
-        f"{reason} No order meets the current budget, portions, dietary coverage, and kept dishes."
+            relaxations.append(_raise_to(price))
+    if hint is not None:
+        kinds = {r.kind for r in relaxations}
+        if (
+            "budget" not in kinds
+            and hint.min_budget is not None
+            and request.budget_per_person < hint.min_budget <= 500
+        ):
+            relaxations.append(_raise_to(hint.min_budget))
+    message = " ".join(
+        x
+        for x in [
+            reason,
+            "No order meets the budget, everyone's allergies and diets, and the kept dishes.",
+        ]
+        if x
     )
+    if relaxations and relaxations[0].kind == "budget":
+        message += f" The lowest budget that works is ${relaxations[0].new_value:.2f} per person."
     if problems:
         message += " Last attempt: " + "; ".join(problems[:3])
     return Conflict(code="no_solution", message=message, relaxations=relaxations)
+
+
+def _raise_to(price: float) -> Relaxation:
+    return Relaxation(
+        kind="budget",
+        new_value=price,
+        description=f"Raise the budget to ${price:.2f} per person (tax and tip included).",
+    )
 
 
 def _ask(turns: list, schema: dict, menu: Menu, request: TableRequest, client):
@@ -433,7 +585,12 @@ def plan(menu: Menu, request: TableRequest, client=None, cache_path: Path | None
             "Recommendations need an AI model, and none is configured on this server. "
             "Set OPENROUTER_API_KEY or GEMINI_API_KEY (see the README)."
         )
-    payload = brief(menu, request)
+    try:
+        hint = rules_hints.analyse(menu, request)
+    except Exception:  # hints are optional help, never a reason to fail
+        log.warning("Rules hints failed", exc_info=True)
+        hint = None
+    payload = brief(menu, request, hint)
     if not payload["dishes"]:
         return Outcome(
             None,
@@ -491,12 +648,36 @@ def plan(menu: Menu, request: TableRequest, client=None, cache_path: Path | None
             answer = json.loads(text or "")
         except ValueError:
             answer = {"dishes": []}
-        no_fit = _no_fit(menu, request, answer, history[-1] if history else [])
-        if no_fit is not None:
+        gave_up = isinstance(answer, dict) and not answer.get("dishes") and answer.get("no_fit")
+        if gave_up and not (hint and hint.feasible):
+            no_fit = _no_fit(menu, request, answer, history[-1] if history else [], hint)
             history.append([])
             return Outcome(None, no_fit, "The AI found no order that fits.", attempt + 1, history)
-        problems, items = check(menu, request, answer, staples)
+        if gave_up:
+            problems, items = (
+                ["You returned no_fit, but an order that meets every rule exists."],
+                [],
+            )
+        else:
+            problems, items = check(menu, request, answer, staples)
         history.append(problems)
+        if problems and hint is not None and hint.feasible is False:
+            # Nothing can fit: no point retrying; say what to change.
+            info = answer.get("no_fit") if isinstance(answer, dict) else None
+            reason = "No order that everyone can eat fits this budget."
+            return Outcome(
+                None,
+                _conflict(
+                    menu,
+                    request,
+                    info if isinstance(info, dict) else {"reason": reason},
+                    problems,
+                    hint,
+                ),
+                "No order fits; the rules worked out what to change.",
+                attempt + 1,
+                history,
+            )
         if not problems:
             _cache_put(key, {"model": used, "answer": answer}, cache_path)
             retried = f" after {attempt} correction{'s' * (attempt > 1)}" if attempt else ""
@@ -512,12 +693,16 @@ def plan(menu: Menu, request: TableRequest, client=None, cache_path: Path | None
             llm.Turn(
                 "user",
                 "That order breaks these rules:\n- "
-                + "\n- ".join(problems)
+                + "\n- ".join(problems + _hint_text(menu, request, hint))
                 + "\nReturn a corrected order in the same format. If no order can meet the "
                 "rules, return no dishes and fill no_fit with the reason and one change.",
             ),
         ]
     last = history[-1] if history else []
+    if hint is not None and hint.feasible is False:
+        info = answer.get("no_fit") if isinstance(answer, dict) else None
+        conflict = _conflict(menu, request, info if isinstance(info, dict) else {}, last, hint)
+        return Outcome(None, conflict, "No order fits.", 1 + MAX_RETRIES, history)
     return Outcome(
         None,
         Conflict(

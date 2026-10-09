@@ -15,9 +15,9 @@ import type { DinerProfile, DiningSettings, Menu, MenuSummary, PlanResponse, Rel
 
 type Context = { menu: Menu; menuId: string; diners: DinerProfile[]; settings: DiningSettings };
 type Result = { response: PlanResponse; context: Context; key: string };
-// settings.budget is per person, all-in (tax and tip included). The course count follows
-// the table size until the user edits it (see autoSize below).
-const initialSettings: DiningSettings = { budget: 25, tax: .08875, tip: .18, minDishes: 2, dishCount: 3, style: "balanced" };
+// settings.budget is per person, all-in (tax and tip included). The AI decides how many
+// dishes; every count on screen is plan.items.length.
+const initialSettings: DiningSettings = { budget: 25, tax: .08875, tip: .18, style: "balanced" };
 const LOCAL_PREFIX = "local-";
 const keyFor = (c: Context) => JSON.stringify(c);
 const errorText = (e: unknown) => e instanceof Error ? e.message : String(e);
@@ -47,8 +47,7 @@ export default function App() {
   const [waiter, setWaiter] = useState(false);
   const sequence = useRef(0);
   // Budget and course count follow the number of diners until the user sets them.
-  const auto = useRef({ dishCount: true });
-  const [photoReader, setPhotoReader] = useState<"gemini" | "ocr" | null>(null);
+  const [photoReader, setPhotoReader] = useState<"openrouter" | "gemini" | "ocr" | null>(null);
   const menuSequence = useRef(0);
   const menuCache = useRef(new Map<string, Menu>());
   const focusedStep = useRef<string | null>(null);
@@ -63,16 +62,7 @@ export default function App() {
     }
     focusedStep.current = step;
   }, [step, starting, loading]);
-  /** Default budget and course count for n diners, unless the user has set them. */
-  const autoSize = (s: DiningSettings, n: number): DiningSettings => ({
-    ...s,
-    ...(auto.current.dishCount && n ? { dishCount: Math.min(20, Math.max(1, n + 1)) } : {}),
-  });
-  /** Settings edited by the user: stop auto-sizing the fields they touched. */
-  const editSettings = (s: DiningSettings) => {
-    if (s.dishCount !== settings.dishCount) auto.current.dishCount = false;
-    invalidate(); setSettings(s);
-  };
+  const editSettings = (s: DiningSettings) => { invalidate(); setSettings(s); };
   const invalidate = () => { sequence.current++; setLoading(false); setError(null); setWaiter(false); setUndo(null); setNeedsReplan(true); };
 
   const generate = async (over: Partial<Context> & { locked?: string[]; excluded?: string[] } = {}) => {
@@ -81,21 +71,18 @@ export default function App() {
     const s = over.settings ?? settings;
     if (!m || !d.length) return;
     if (!m.verified) { setError("Review the restaurant menu before planning."); return; }
-    if (!(s.budget >= 1 && s.budget <= 500 && s.tax >= 0 && s.tax <= .3 && s.tip >= 0 && s.tip <= .4 && Number.isInteger(s.minDishes) && s.minDishes >= 1 && Number.isInteger(s.dishCount) && s.dishCount >= 1 && s.dishCount <= 20)) { setError("Check the budget, tax, tip, and whole-number course counts."); return; }
+    if (!(s.budget >= 1 && s.budget <= 500 && s.tax >= 0 && s.tax <= .3 && s.tip >= 0 && s.tip <= .4)) { setError("Check the budget, tax and tip."); return; }
     const context: Context = { menu: m, menuId: over.menuId ?? menuId, diners: d, settings: s };
     const seq = ++sequence.current;
     setLoading(true); setNeedsReplan(true); setError(null); setStep("plan");
     try {
       const response = await postPlan({ menu_id: context.menuId, menu_override: m, diners: d,
-        budget_per_person: s.budget, tax_rate: s.tax, tip_rate: s.tip, min_dishes_per_person: s.minDishes,
-        dish_count_target: s.dishCount, style_preference: s.style, locked_dish_ids: over.locked ?? locked,
+        budget_per_person: s.budget, tax_rate: s.tax, tip_rate: s.tip,
+        style_preference: s.style, locked_dish_ids: over.locked ?? locked,
         excluded_dish_ids: over.excluded ?? excluded, explain: true });
       if (seq === sequence.current) {
-        // An untouched "Dishes to order" follows the plan, so the numbers on screen agree.
-        const count = response.kind === "plan" ? response.plan?.items.length : undefined;
-        const ctx = auto.current.dishCount && count && count !== s.dishCount ? { ...context, settings: { ...s, dishCount: count } } : context;
-        if (ctx !== context) setSettings(ctx.settings);
-        setResult({ response, context: ctx, key: keyFor(ctx) }); setNeedsReplan(false);
+        // Every dish count on screen comes from this one plan (the AI decides how many).
+        setResult({ response, context, key: keyFor(context) }); setNeedsReplan(false);
       }
     } catch (e) { if (seq === sequence.current) setError(errorText(e)); }
     finally { if (seq === sequence.current) setLoading(false); }
@@ -128,8 +115,7 @@ export default function App() {
     try {
       const sample = menuCache.current.get(menuId) ?? await getMenu(menuId);
       menuCache.current.set(menuId, sample); setMenu(sample); const people = fromSaved(presets); setDiners(people); remember(people.filter(p => !saved.some(s => s.id === p.id)));
-      auto.current = { dishCount: true };
-      const sampleSettings = autoSize(initialSettings, people.length);
+      const sampleSettings = initialSettings;
       setSettings(sampleSettings); setLocked([]); setExcluded([]); setUndo(null);
       void generate({ menu: sample, diners: people, settings: sampleSettings, locked: [], excluded: [] });
     } catch (e) { setError(errorText(e)); }
@@ -147,7 +133,7 @@ export default function App() {
     try {
       const {diners: next} = await applyPeopleAction(diners, action, extra);
       if (seq !== sequence.current) return;
-      const nextSettings = autoSize(settings, next.length);
+      const nextSettings = settings;
       setDiners(next); setSettings(nextSettings); setEditing(null);
       if (!next.length) { setResult(null); setLocked([]); setExcluded([]); }
       else if (step === "plan" && menu?.verified) void generate({diners: next, settings: nextSettings});
@@ -171,7 +157,7 @@ export default function App() {
   const fromSaved = (people: DinerProfile[]) => people.map(p => saved.find(s => s.id === p.id) ?? p);
   const choosePreset = (id: string) => {
     const next: DinerProfile[] = fromSaved(id === "saved" ? presets : id === "two" ? presets.slice(0, 2) : []);
-    invalidate(); setDiners(next); setSettings(s => autoSize(s, next.length)); setLocked([]); setExcluded([]);
+    invalidate(); setDiners(next); setLocked([]); setExcluded([]);
     remember(next.filter(p => !saved.some(s => s.id === p.id)));
     if (!next.length) setResult(null);
   };
@@ -204,8 +190,8 @@ export default function App() {
   };
   const selectMenu = (id: string) => { if (id !== menuId) { setBrowser(b => b && { ...b, initialTab: "browse", photo: undefined, fromStart: false }); setMenuId(id); } };
   const applyRelaxation = (r: Relaxation) => {
-    if ((r.kind === "budget" || r.kind === "coverage") && r.new_value != null) {
-      const s = { ...settings, [r.kind === "budget" ? "budget" : "minDishes"]: r.kind === "budget" ? Math.min(500, r.new_value) : r.new_value };
+    if (r.kind === "budget" && r.new_value != null) {
+      const s = { ...settings, budget: Math.min(500, r.new_value) };
       invalidate(); setSettings(s); void generate({ settings: s });
     } else if (r.diner_id) { const d = diners.find(d => d.id === r.diner_id); if (d) setEditing(d); }
   };
@@ -219,7 +205,7 @@ export default function App() {
       {stale && <div className="notice" role="status"><RefreshCw size={17} className={loading ? "spin" : ""}/><span>{loading ? "Updating the dishes. Kept dishes stay in place…" : "Your table or budget changed. Update the dishes to match."}</span>{!loading && <button className="btn btn-quiet btn-small" onClick={() => void generate()} disabled={!menu?.verified}>Update dishes</button>}</div>}
       {menu && !menu.verified && <div className="notice"><BookOpen size={17}/><span>Menu changes need review before a new plan can be generated.</span><button className="btn btn-quiet btn-small" onClick={() => setBrowser({ mode: "browse", old: null })}>Review menu</button></div>}
       {undo && !loading && <div className="change-notice" role="status"><span>{error || result?.response.kind === "conflict" ? "That change could not produce a new plan." : undo.message}</span><button className="text-button" onClick={() => { const previous = undo; setLocked(previous.locked); setExcluded(previous.excluded); setUndo(null); void generate({ locked: previous.locked, excluded: previous.excluded }); }}>Undo</button><button className="dismiss-change" aria-label="Dismiss update" onClick={() => setUndo(null)}>×</button></div>}
-      {(starting || (loading && !result)) ? <div className="empty-state" role="status"><LoaderCircle size={30} className="spin mx-auto"/><h2>{starting ? "Setting the table…" : "Finding a table that works…"}</h2><p>{starting || mock ? "Considering the menu, budget, and everyone's requirements." : "The AI picks dishes, then the rules check every allergy, diet and the budget. This can take up to about 30 seconds."}</p></div> : step !== "plan" && menu ? <SetupFlow step={step} onStep={s => s === "plan" ? (result && !stale ? setStep("plan") : void generate()) : setStep(s)} canPlan={!!result && diners.length > 0} photoReader={photoReader} onPhoto={f => setBrowser({ mode: "browse", old: null, initialTab: "import", photo: f, fromStart: true })} onPaste={() => setBrowser({ mode: "browse", old: null, initialTab: "import", fromStart: true })} menu={menu} diners={diners} saved={saved} onPick={pickSaved} onRemove={removeDiner} settings={settings} onMenu={() => setBrowser({ mode: "browse", old: null })} onSample={() => void startSample()} onChange={editSettings} onEdit={setEditing} onAdd={() => setEditing("new")} onPreset={choosePreset} onPlan={() => result && !stale ? setStep("plan") : void generate()} loading={loading} current={!!result && !stale && diners.length > 0}/> : stale && !loading ? <div className="empty-state"><h2>Update your meal</h2><p>The previous recommendation is no longer current.</p><button className="btn btn-primary" onClick={() => void generate()}>Update dishes</button></div> : plan && snapshot && diners.length ? <>
+      {(starting || (loading && !result)) ? <div className="empty-state" role="status"><LoaderCircle size={30} className="spin mx-auto"/><h2>{starting ? "Setting the table…" : "Finding a table that works…"}</h2><p>{starting || mock ? "Considering the menu, budget, and everyone's requirements." : "The AI picks dishes, then the rules check every allergy, diet and the budget. This can take up to about 30 seconds."}</p></div> : step !== "plan" && menu ? <SetupFlow step={step} onStep={s => s === "plan" ? (result && !stale ? setStep("plan") : void generate()) : setStep(s)} canPlan={!!result && diners.length > 0} photoReader={photoReader} onPhoto={f => setBrowser({ mode: "browse", old: null, initialTab: "import", photo: f, fromStart: true })} onPaste={() => setBrowser({ mode: "browse", old: null, initialTab: "import", fromStart: true })} menu={menu} diners={diners} saved={saved} onPick={pickSaved} onRemove={removeDiner} settings={settings} onMenu={() => setBrowser({ mode: "browse", old: null })} onSample={() => void startSample()} onChange={editSettings} onEdit={setEditing} onAdd={() => setEditing("new")} onPreset={choosePreset} onPlan={() => result && !stale ? setStep("plan") : void generate()} loading={loading} current={!!result && !stale && diners.length > 0} onApprove={() => { if (menu) { updateMenu({ ...menu, verified: true }); setStep("table"); } }}/> : stale && !loading ? <div className="empty-state"><h2>Update your meal</h2><p>The previous recommendation is no longer current.</p><button className="btn btn-primary" onClick={() => void generate()}>Update dishes</button></div> : plan && snapshot && diners.length ? <>
         <Ticket key={result?.key + JSON.stringify(plan.items)} menu={snapshot.menu} plan={plan} diners={snapshot.diners.filter(d => diners.some(c => c.id === d.id))} settings={snapshot.settings} source={result?.response.source ?? "ai"} sourceNote={result?.response.source_note ?? null} locked={locked} stale={stale} loading={loading} onLock={id => { setUndo(null); setLocked(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]); }} onSwap={id => setBrowser({ mode: "pick", old: id })} onRemove={removeDish} onAdd={() => setBrowser({ mode: "pick", old: null })} onPlan={() => { setUndo(null); void generate(); }} onOrder={() => setWaiter(true)} canOrder={canOrder} onParty={() => setParty(true)}/>
       </> : result?.response.conflict ? <><ConflictNote conflict={result.response.conflict} menu={result.context.menu} diners={result.context.diners} settings={result.context.settings} onRelax={applyRelaxation}/><div className="conflict-actions">{result.response.conflict.code?.startsWith("ai_") && <button className="btn btn-primary" onClick={() => void generate()} disabled={loading}><RefreshCw size={16} className={loading ? "spin" : ""}/>Try again</button>}<button className="btn btn-quiet" onClick={() => setParty(true)}><Users size={16}/>Edit people and budget</button><button className="btn btn-quiet" onClick={() => { setLocked([]); setExcluded([]); void generate({ locked: [], excluded: [] }); }} disabled={loading}><RefreshCw size={16}/>Reset dish choices</button><button className="btn btn-quiet" onClick={() => setBrowser({ mode: "browse", old: null })}><BookOpen size={16}/>Browse menu</button></div></> : <div className="empty-state"><UtensilsCrossed size={30} className="mx-auto"/><h2>{diners.length ? "Your next meal starts here" : "Who's joining the table?"}</h2><p>{diners.length ? "Review your group and choose a menu to plan a shared meal." : "Add diners and their dietary requirements to get started."}</p><button className="btn btn-primary" onClick={() => setParty(true)}><Users size={16}/>Set up the table</button>{!!diners.length && menu && <button className="btn btn-quiet ml-3" onClick={() => void generate()}>Plan the table</button>}</div>}
       {(locked.length > 0 || excluded.length > 0) && <div className="choices-summary"><span>{locked.length} kept · {excluded.length} removed from recommendations</span><button className="btn btn-outline btn-small" disabled={loading} onClick={() => { setLocked([]); setExcluded([]); void generate({ locked: [], excluded: [] }); }}>Reset dish choices</button></div>}

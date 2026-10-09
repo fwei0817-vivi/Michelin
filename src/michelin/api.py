@@ -24,7 +24,6 @@ from michelin.model import ExtractionRequest, ExtractionResponse
 from michelin.plan import llm_planner
 from michelin.plan.budget import subtotal_cap, totals
 from michelin.plan.edibility import assessment, edible_by, open_questions
-from michelin.plan.portions import required_range, total_units
 from michelin.plan.score import variety_score
 from michelin.plan.validation import validate_order
 from michelin.profiles import ProfileStore
@@ -109,7 +108,8 @@ class PlanRequest(BaseModel):
     _budget_cents = field_validator("budget_per_person", "budget_total")(validate_money)
     tax_rate: float = Field(default=0.08875, ge=0, le=0.3)
     tip_rate: float = Field(default=0.18, ge=0, le=0.4)
-    min_dishes_per_person: int = Field(default=2, ge=1, le=40, strict=True)
+    # Accepted from older clients and ignored: the AI decides how many dishes (2026-10-09).
+    min_dishes_per_person: int | None = Field(default=None, ge=1, le=40)
     locked_dish_ids: list[str] = Field(default_factory=list)
     excluded_dish_ids: list[str] = Field(default_factory=list)
     menu_override: Menu | None = None
@@ -146,11 +146,11 @@ class PlanResponse(BaseModel):
 def health() -> dict:
     import shutil
 
+    from michelin import llm
     from michelin.parse import vision
 
-    # How a menu photo would be read: Gemini, local OCR, or not at all (paste text instead).
-    photo = "gemini" if vision.configured() else "ocr" if shutil.which("tesseract") else None
-    from michelin import llm
+    # How a menu photo is read: OpenRouter, the free Gemini key, local OCR, or not at all.
+    photo = llm.provider() if vision.configured() else "ocr" if shutil.which("tesseract") else None
 
     planner = "mock" if MOCK else llm.provider()  # "openrouter" | "gemini" | None
     return {"ok": True, "mock": MOCK, "photo": photo, "planner": planner}
@@ -295,10 +295,8 @@ def plan(req: PlanRequest, x_profile_scope: str | None = Header(default=None)) -
         budget_total=req.budget_total,
         tax_rate=req.tax_rate,
         tip_rate=req.tip_rate,
-        min_dishes_per_person=req.min_dishes_per_person,
         locked_dish_ids=req.locked_dish_ids,
         excluded_dish_ids=req.excluded_dish_ids,
-        dish_count_target=req.dish_count_target,
         style_preference=req.style_preference,
     )
     cap = subtotal_cap(request.all_in_budget, 1, req.tax_rate, req.tip_rate)
@@ -633,13 +631,9 @@ def _mock_solve(menu: Menu, request: TableRequest) -> Plan | Conflict:
     non_staple = [d for d in dishes if d.category.value != "staple"]
     t = totals(subtotal, n, request.tax_rate, request.tip_rate)
     cap = subtotal_cap(request.all_in_budget, 1, request.tax_rate, request.tip_rate)
-    lo, hi = required_range(n)
-    units = total_units(dishes)
 
     short = [
-        p.name
-        for p in request.diners
-        if sum(1 for d in non_staple if p.id in edible_by(d, [p])) < request.min_dishes_per_person
+        p.name for p in request.diners if not any(p.id in edible_by(d, [p]) for d in non_staple)
     ]
     checks = [
         Check(
@@ -654,7 +648,7 @@ def _mock_solve(menu: Menu, request: TableRequest) -> Plan | Conflict:
             name="coverage",
             passed=not short,
             detail=(
-                f"Everyone can eat at least {request.min_dishes_per_person} dishes."
+                "Everyone can eat at least one dish."
                 if not short
                 else f"Not enough for: {', '.join(short)}."
             ),
@@ -663,11 +657,6 @@ def _mock_solve(menu: Menu, request: TableRequest) -> Plan | Conflict:
             name="budget",
             passed=subtotal <= cap + 1e-6,
             detail=f"Menu subtotal ${subtotal:.2f} against a cap of ${cap:.2f}; total ${t.total:.2f}.",
-        ),
-        Check(
-            name="portions",
-            passed=lo <= units <= hi,
-            detail=f"{units:.1f} portion units for {n} people (target {lo:.1f} to {hi:.1f}).",
         ),
     ]
     questions: list[str] = []

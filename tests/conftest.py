@@ -54,28 +54,47 @@ def pytest_configure(config):
 
 
 def _oracle_answer(menu, request):
-    """A stand-in model for API tests: it answers with the rules optimizer's order, or a
-    no-fit with the optimizer's suggested change. The real validation still runs on it."""
-    from michelin.plan.optimizer import solve
-    from michelin.schemas import Conflict
+    """A stand-in model for API tests: the cheapest order everyone can eat, topped up with
+    the cheapest other dishes to about one per person while the budget allows; or a budget
+    no-fit. The real validation still runs on it."""
+    from michelin.plan import hints
+    from michelin.plan.budget import subtotal_cap
+    from michelin.plan.edibility import edible_by
 
-    result = solve(menu, request)
-    if isinstance(result, Conflict):
-        change = next(iter(result.relaxations), None)
+    order, _ = hints.cheapest_order(menu, request)
+    if not order or not hints._within(menu, request, order):
         return {
             "dishes": [],
             "server_questions": [],
             "no_fit": {
-                "reason": result.message,
-                "change": change.kind if change else "budget",
-                "new_value": change.new_value if change and change.new_value else 0,
+                "reason": "The budget is too low for a dish everyone can eat.",
+                "change": "budget",
+                "dish_ids": [d.id for d, _ in order or [] if d.category.value != "staple"],
             },
         }
+    cap = subtotal_cap(request.all_in_budget, 1, request.tax_rate, request.tip_rate)
+    chosen = [d for d, _ in order if d.category.value != "staple"]
+    spent = sum(d.price * q for d, q in order)
+    extras = sorted(
+        (
+            d
+            for d in menu.dishes
+            if d.category.value != "staple"
+            and d.price is not None
+            and d not in chosen
+            and d.id not in request.excluded_dish_ids
+            and edible_by(d, request.diners)
+        ),
+        key=lambda d: d.price,
+    )
+    for d in extras:
+        if len(chosen) >= request.n_diners or spent + d.price > cap - 0.01:
+            break
+        chosen.append(d)
+        spent += d.price
     return {
         "dishes": [
-            {"dish_id": i.dish_id, "reason": i.reason or "", "for": i.edible_by}
-            for i in result.items
-            if menu.dish(i.dish_id).category.value != "staple"
+            {"dish_id": d.id, "reason": "", "for": edible_by(d, request.diners)} for d in chosen
         ],
         "server_questions": [],
     }

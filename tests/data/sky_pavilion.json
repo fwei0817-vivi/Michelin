@@ -1,0 +1,721 @@
+{
+ "restaurant_id": "sky",
+ "restaurant_name": "Sky Pavilion",
+ "cuisine": "chinese_sichuan",
+ "source": "own_photo",
+ "currency": "USD",
+ "verified": true,
+ "dishes": [
+  {
+   "id": "scallion_pancake",
+   "name_zh": "葱油饼",
+   "name_en": "Scallion Pancake",
+   "price": 6.95,
+   "description_raw": "葱油饼 Scallion Pancake",
+   "category": "cold_appetizer",
+   "cooking_method": null,
+   "spice_level": null,
+   "portion": "small",
+   "main_ingredients": [
+    {
+     "name": "wheat dough",
+     "tier": "inferred",
+     "note": null
+    },
+    {
+     "name": "lard",
+     "tier": "unknown",
+     "note": null
+    },
+    {
+     "name": "dipping sauce with soy",
+     "tier": "inferred",
+     "note": null
+    }
+   ],
+   "allergens": [
+    {
+     "allergen": "soy",
+     "tier": "inferred",
+     "confidence": 0.7,
+     "reason": "dipping sauce with soy: likely in typical recipes"
+    },
+    {
+     "allergen": "wheat",
+     "tier": "inferred",
+     "confidence": 0.9,
+     "reason": "wheat dough: definite in typical recipes"
+    }
+   ],
+   "reviewed_allergens": [
+    "shellfish",
+    "fish",
+    "peanut",
+    "tree_nut",
+    "egg",
+    "dairy",
+    "soy",
+    "wheat",
+    "sesame"
+   ],
+   "is_vegetarian": true,
+   "is_vegan": true,
+   "contains_pork": false,
+   "contains_beef": false,
+   "confirm_with_staff": [
+    "Scallion Pancake: ask whether it uses lard."
+   ]
+  },
+  {
+   "id": "smashed_cucumber_salad",
+   "name_zh": "拍黄瓜",
+   "name_en": "Smashed Cucumber Salad",
+   "price": 7.95,
+   "description_raw": "拍黄瓜 Smashed Cucumber Salad garlic, chili oil",
+   "category": "other",
+   "cooking_method": null,
+   "spice_level": null,
+   "portion": null,
+   "main_ingredients": [],
+   "allergens": [
+    {
+     "allergen": "dairy",
+     "tier": "unknown",
+     "confidence": 0.0,
+     "reason": "dish not in the knowledge base; ingredients unverified"
+    },
+    {
+     "allergen": "egg",
+     "tier": "unknown",
+     "confidence": 0.0,
+     "reason": "dish not in the knowledge base; ingredients unverified"
+    },
+    {
+     "allergen": "fish",
+     "tier": "unknown",
+     "confidence": 0.0,
+     "reason": "dish not in the knowledge base; ingredients unverified"
+    },
+    {
+     "allergen": "peanut",
+     "tier": "unknown",
+     "confidence": 0.0,
+     "reason": "dish not in the knowledge base; ingredients unverified"
+    },
+    {
+     "allergen": "sesame",
+     "tier": "unknown",
+     "confidence": 0.0,
+     "reason": "dish not in the knowledge base; ingredients unverified"
+    },
+    {
+     "allergen": "shellfish",
+     "tier": "unknown",
+     "confidence": 0.0,
+     "reason": "dish not in the knowledge base; ingredients unverified"
+    },
+    {
+     "allergen": "soy",
+     "tier": "unknown",
+     "confidence": 0.0,
+     "reason": "dish not in the knowledge base; ingredients unverified"
+    },
+    {
+     "allergen": "tree_nut",
+     "tier": "unknown",
+     "confidence": 0.0,
+     "reason": "dish not in the knowledge base; ingredients unverified"
+    },
+    {
+     "allergen": "wheat",
+     "tier": "unknown",
+     "confidence": 0.0,
+     "reason": "dish not in the knowledge base; ingredients unverified"
+    }
+   ],
+   "reviewed_allergens": [],
+   "is_vegetarian": null,
+   "is_vegan": null,
+   "contains_pork": null,
+   "contains_beef": null,
+   "confirm_with_staff": [
+    "Confirm ingredients, allergens, and preparation for Smashed Cucumber Salad.",
+    "Smashed Cucumber Salad: not a dish we recognize. Ask staff about meat, seafood, egg, nuts and the sauce before serving anyone with a restriction."
+   ]
+  },
+  {
+   "id": "hot_and_sour_soup",
+   "name_zh": "酸辣汤",
+   "name_en": "Hot and Sour Soup",
+   "price": 6.5,
+   "description_raw": "酸辣汤 Hot and Sour Soup",
+   "category": "soup",
+   "cooking_method": null,
+   "spice_level": null,
+   "portion": "shared",
+   "main_ingredients": [
+    {
+     "name": "egg ribbons",
+     "tier": "inferred",
+     "note": null
+    },
+    {
+     "name": "shredded pork",
+     "tier": "inferred",
+     "note": null
+    },
+    {
+     "name": "chicken stock",
+     "tier": "inferred",
+     "note": null
+    },
+    {
+     "name": "tofu",
+     "tier": "inferred",
+     "note": null
+    },
+    {
+     "name": "soy sauce",
+     "tier": "inferred",
+     "note": null
+    }
+   ],
+   "allergens": [
+    {
+     "allergen": "egg",
+     "tier": "inferred",
+     "confidence": 0.7,
+     "reason": "egg ribbons: likely in typical recipes"
+    },
+    {
+     "allergen": "soy",
+     "tier": "inferred",
+     "confidence": 0.7,
+     "reason": "tofu: likely in typical recipes"
+    },
+    {
+     "allergen": "wheat",
+     "tier": "inferred",
+     "confidence": 0.9,
+     "reason": "soy sauce: definite in typical recipes"
+    }
+   ],
+   "reviewed_allergens": [
+    "shellfish",
+    "fish",
+    "peanut",
+    "tree_nut",
+    "egg",
+    "dairy",
+    "soy",
+    "wheat",
+    "sesame"
+   ],
+   "is_vegetarian": false,
+   "is_vegan": false,
+   "contains_pork": true,
+   "contains_beef": false,
+   "confirm_with_staff": []
+  },
+  {
+   "id": "eggplant_with_garlic_sauce",
+   "name_zh": "鱼香茄子",
+   "name_en": "Eggplant with Garlic Sauce",
+   "price": 15.5,
+   "description_raw": "鱼香茄子 Eggplant with Garlic Sauce Sichuan style",
+   "category": "stir_fry",
+   "cooking_method": null,
+   "spice_level": null,
+   "portion": "medium",
+   "main_ingredients": [
+    {
+     "name": "minced pork",
+     "tier": "unknown",
+     "note": null
+    },
+    {
+     "name": "soy sauce",
+     "tier": "inferred",
+     "note": null
+    }
+   ],
+   "allergens": [
+    {
+     "allergen": "soy",
+     "tier": "inferred",
+     "confidence": 0.7,
+     "reason": "soy sauce: likely in typical recipes"
+    },
+    {
+     "allergen": "wheat",
+     "tier": "inferred",
+     "confidence": 0.7,
+     "reason": "soy sauce: likely in typical recipes"
+    }
+   ],
+   "reviewed_allergens": [
+    "shellfish",
+    "fish",
+    "peanut",
+    "tree_nut",
+    "egg",
+    "dairy",
+    "soy",
+    "wheat",
+    "sesame"
+   ],
+   "is_vegetarian": true,
+   "is_vegan": true,
+   "contains_pork": false,
+   "contains_beef": false,
+   "confirm_with_staff": [
+    "Eggplant with Garlic Sauce: ask whether it uses minced pork."
+   ]
+  },
+  {
+   "id": "mapo_tofu",
+   "name_zh": "麻婆豆腐",
+   "name_en": "Mapo Tofu",
+   "price": 14.95,
+   "description_raw": "麻婆豆腐 Mapo Tofu silken tofu, numbing peppercorn",
+   "category": "braise_or_stew",
+   "cooking_method": null,
+   "spice_level": null,
+   "portion": "medium",
+   "main_ingredients": [
+    {
+     "name": "minced meat",
+     "tier": "inferred",
+     "note": null
+    },
+    {
+     "name": "minced pork",
+     "tier": "inferred",
+     "note": null
+    },
+    {
+     "name": "minced beef",
+     "tier": "unknown",
+     "note": null
+    },
+    {
+     "name": "tofu",
+     "tier": "inferred",
+     "note": null
+    },
+    {
+     "name": "doubanjiang",
+     "tier": "inferred",
+     "note": null
+    }
+   ],
+   "allergens": [
+    {
+     "allergen": "soy",
+     "tier": "menu",
+     "confidence": 0.9,
+     "reason": "soy (printed): printed on the menu"
+    },
+    {
+     "allergen": "wheat",
+     "tier": "inferred",
+     "confidence": 0.9,
+     "reason": "doubanjiang: definite in typical recipes"
+    }
+   ],
+   "reviewed_allergens": [
+    "shellfish",
+    "fish",
+    "peanut",
+    "tree_nut",
+    "egg",
+    "dairy",
+    "soy",
+    "wheat",
+    "sesame"
+   ],
+   "is_vegetarian": false,
+   "is_vegan": false,
+   "contains_pork": true,
+   "contains_beef": false,
+   "confirm_with_staff": [
+    "Mapo Tofu: ask whether it uses minced beef."
+   ]
+  },
+  {
+   "id": "kung_pao_chicken",
+   "name_zh": "宫保鸡丁",
+   "name_en": "Kung Pao Chicken",
+   "price": 16.95,
+   "description_raw": "宫保鸡丁 Kung Pao Chicken peanuts, dried chili",
+   "category": "stir_fry",
+   "cooking_method": null,
+   "spice_level": null,
+   "portion": "medium",
+   "main_ingredients": [
+    {
+     "name": "chicken",
+     "tier": "inferred",
+     "note": null
+    },
+    {
+     "name": "peanuts",
+     "tier": "inferred",
+     "note": null
+    },
+    {
+     "name": "soy sauce",
+     "tier": "inferred",
+     "note": null
+    }
+   ],
+   "allergens": [
+    {
+     "allergen": "peanut",
+     "tier": "menu",
+     "confidence": 0.9,
+     "reason": "peanut (printed): printed on the menu"
+    },
+    {
+     "allergen": "soy",
+     "tier": "inferred",
+     "confidence": 0.9,
+     "reason": "soy sauce: definite in typical recipes"
+    },
+    {
+     "allergen": "wheat",
+     "tier": "inferred",
+     "confidence": 0.9,
+     "reason": "soy sauce: definite in typical recipes"
+    }
+   ],
+   "reviewed_allergens": [
+    "shellfish",
+    "fish",
+    "peanut",
+    "tree_nut",
+    "egg",
+    "dairy",
+    "soy",
+    "wheat",
+    "sesame"
+   ],
+   "is_vegetarian": false,
+   "is_vegan": false,
+   "contains_pork": false,
+   "contains_beef": false,
+   "confirm_with_staff": []
+  },
+  {
+   "id": "dry_fried_green_beans",
+   "name_zh": "干煸四季豆",
+   "name_en": "Dry-Fried Green Beans",
+   "price": 13.95,
+   "description_raw": "干煸四季豆 Dry-Fried Green Beans",
+   "category": "stir_fry",
+   "cooking_method": null,
+   "spice_level": null,
+   "portion": "medium",
+   "main_ingredients": [
+    {
+     "name": "minced pork",
+     "tier": "inferred",
+     "note": null
+    },
+    {
+     "name": "dried shrimp",
+     "tier": "unknown",
+     "note": null
+    },
+    {
+     "name": "soy sauce",
+     "tier": "inferred",
+     "note": null
+    }
+   ],
+   "allergens": [
+    {
+     "allergen": "shellfish",
+     "tier": "unknown",
+     "confidence": 0.3,
+     "reason": "dried shrimp: possible in typical recipes"
+    },
+    {
+     "allergen": "soy",
+     "tier": "inferred",
+     "confidence": 0.7,
+     "reason": "soy sauce: likely in typical recipes"
+    },
+    {
+     "allergen": "wheat",
+     "tier": "inferred",
+     "confidence": 0.7,
+     "reason": "soy sauce: likely in typical recipes"
+    }
+   ],
+   "reviewed_allergens": [
+    "shellfish",
+    "fish",
+    "peanut",
+    "tree_nut",
+    "egg",
+    "dairy",
+    "soy",
+    "wheat",
+    "sesame"
+   ],
+   "is_vegetarian": false,
+   "is_vegan": false,
+   "contains_pork": true,
+   "contains_beef": false,
+   "confirm_with_staff": [
+    "Dry-Fried Green Beans: ask whether it uses dried shrimp."
+   ]
+  },
+  {
+   "id": "fish_fillet_in_hot_chili_oil",
+   "name_zh": "水煮鱼",
+   "name_en": "Fish Fillet in Hot Chili Oil",
+   "price": 24.95,
+   "description_raw": "水煮鱼 Fish Fillet in Hot Chili Oil",
+   "category": "braise_or_stew",
+   "cooking_method": null,
+   "spice_level": null,
+   "portion": "large",
+   "main_ingredients": [
+    {
+     "name": "fish fillet",
+     "tier": "inferred",
+     "note": null
+    },
+    {
+     "name": "doubanjiang",
+     "tier": "inferred",
+     "note": null
+    }
+   ],
+   "allergens": [
+    {
+     "allergen": "fish",
+     "tier": "menu",
+     "confidence": 0.9,
+     "reason": "fish (printed): printed on the menu"
+    },
+    {
+     "allergen": "soy",
+     "tier": "inferred",
+     "confidence": 0.7,
+     "reason": "doubanjiang: likely in typical recipes"
+    },
+    {
+     "allergen": "wheat",
+     "tier": "inferred",
+     "confidence": 0.7,
+     "reason": "doubanjiang: likely in typical recipes"
+    }
+   ],
+   "reviewed_allergens": [
+    "shellfish",
+    "fish",
+    "peanut",
+    "tree_nut",
+    "egg",
+    "dairy",
+    "soy",
+    "wheat",
+    "sesame"
+   ],
+   "is_vegetarian": false,
+   "is_vegan": false,
+   "contains_pork": false,
+   "contains_beef": false,
+   "confirm_with_staff": []
+  },
+  {
+   "id": "salt_and_pepper_shrimp",
+   "name_zh": "椒盐虾",
+   "name_en": "Salt and Pepper Shrimp",
+   "price": 21.95,
+   "description_raw": "椒盐虾 Salt and Pepper Shrimp",
+   "category": "other",
+   "cooking_method": null,
+   "spice_level": null,
+   "portion": null,
+   "main_ingredients": [],
+   "allergens": [
+    {
+     "allergen": "dairy",
+     "tier": "unknown",
+     "confidence": 0.0,
+     "reason": "dish not in the knowledge base; ingredients unverified"
+    },
+    {
+     "allergen": "egg",
+     "tier": "unknown",
+     "confidence": 0.0,
+     "reason": "dish not in the knowledge base; ingredients unverified"
+    },
+    {
+     "allergen": "fish",
+     "tier": "unknown",
+     "confidence": 0.0,
+     "reason": "dish not in the knowledge base; ingredients unverified"
+    },
+    {
+     "allergen": "peanut",
+     "tier": "unknown",
+     "confidence": 0.0,
+     "reason": "dish not in the knowledge base; ingredients unverified"
+    },
+    {
+     "allergen": "sesame",
+     "tier": "unknown",
+     "confidence": 0.0,
+     "reason": "dish not in the knowledge base; ingredients unverified"
+    },
+    {
+     "allergen": "shellfish",
+     "tier": "menu",
+     "confidence": 0.9,
+     "reason": "shellfish (printed): printed on the menu"
+    },
+    {
+     "allergen": "soy",
+     "tier": "unknown",
+     "confidence": 0.0,
+     "reason": "dish not in the knowledge base; ingredients unverified"
+    },
+    {
+     "allergen": "tree_nut",
+     "tier": "unknown",
+     "confidence": 0.0,
+     "reason": "dish not in the knowledge base; ingredients unverified"
+    },
+    {
+     "allergen": "wheat",
+     "tier": "unknown",
+     "confidence": 0.0,
+     "reason": "dish not in the knowledge base; ingredients unverified"
+    }
+   ],
+   "reviewed_allergens": [],
+   "is_vegetarian": false,
+   "is_vegan": false,
+   "contains_pork": null,
+   "contains_beef": null,
+   "confirm_with_staff": [
+    "Confirm ingredients, allergens, and preparation for Salt and Pepper Shrimp.",
+    "Salt and Pepper Shrimp: not a dish we recognize. Ask staff about meat, seafood, egg, nuts and the sauce before serving anyone with a restriction."
+   ]
+  },
+  {
+   "id": "dan_dan_noodles",
+   "name_zh": "担担面",
+   "name_en": "Dan Dan Noodles",
+   "price": 11.95,
+   "description_raw": "担担面 Dan Dan Noodles",
+   "category": "staple",
+   "cooking_method": null,
+   "spice_level": null,
+   "portion": "individual",
+   "main_ingredients": [
+    {
+     "name": "wheat noodles",
+     "tier": "inferred",
+     "note": null
+    },
+    {
+     "name": "minced pork",
+     "tier": "inferred",
+     "note": null
+    },
+    {
+     "name": "sesame paste",
+     "tier": "inferred",
+     "note": null
+    },
+    {
+     "name": "crushed peanuts",
+     "tier": "inferred",
+     "note": null
+    },
+    {
+     "name": "soy sauce",
+     "tier": "inferred",
+     "note": null
+    }
+   ],
+   "allergens": [
+    {
+     "allergen": "peanut",
+     "tier": "inferred",
+     "confidence": 0.7,
+     "reason": "crushed peanuts: likely in typical recipes"
+    },
+    {
+     "allergen": "sesame",
+     "tier": "inferred",
+     "confidence": 0.7,
+     "reason": "sesame paste: likely in typical recipes"
+    },
+    {
+     "allergen": "soy",
+     "tier": "inferred",
+     "confidence": 0.9,
+     "reason": "soy sauce: definite in typical recipes"
+    },
+    {
+     "allergen": "wheat",
+     "tier": "menu",
+     "confidence": 0.9,
+     "reason": "wheat (printed): printed on the menu"
+    }
+   ],
+   "reviewed_allergens": [
+    "shellfish",
+    "fish",
+    "peanut",
+    "tree_nut",
+    "egg",
+    "dairy",
+    "soy",
+    "wheat",
+    "sesame"
+   ],
+   "is_vegetarian": false,
+   "is_vegan": false,
+   "contains_pork": true,
+   "contains_beef": false,
+   "confirm_with_staff": []
+  },
+  {
+   "id": "steamed_rice",
+   "name_zh": "白饭",
+   "name_en": "Steamed Rice",
+   "price": 2.0,
+   "description_raw": "白饭 Steamed Rice",
+   "category": "staple",
+   "cooking_method": null,
+   "spice_level": null,
+   "portion": "individual",
+   "main_ingredients": [],
+   "allergens": [],
+   "reviewed_allergens": [
+    "shellfish",
+    "fish",
+    "peanut",
+    "tree_nut",
+    "egg",
+    "dairy",
+    "soy",
+    "wheat",
+    "sesame"
+   ],
+   "is_vegetarian": true,
+   "is_vegan": true,
+   "contains_pork": false,
+   "contains_beef": false,
+   "confirm_with_staff": []
+  }
+ ]
+}

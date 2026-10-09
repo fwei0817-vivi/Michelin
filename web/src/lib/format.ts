@@ -100,13 +100,12 @@ export const CATEGORY_LABEL: Record<string, string> = {
 };
 /** Short pass / fail labels for Plan.checks. Allergy and diet wording stays at "recorded": a pass
  *  means no recorded conflict, never that a dish is free of something. */
-export function checkLabel(name: string, passed: boolean, minDishes: number): string {
+export function checkLabel(name: string, passed: boolean): string {
   const labels: Record<string, [string, string]> = {
     allergies: ["No recorded allergy conflicts", "Allergy conflict"],
     diets: ["Recorded diets met", "Diet conflict"],
-    coverage: [`Everyone has ${minDishes}+ options`, `Not everyone has ${minDishes}+ options`],
+    coverage: ["Everyone can eat something", "Someone has nothing to eat"],
     budget: ["Within budget", "Over budget"],
-    portions: ["Estimated portions on target", "Portions off target"],
     ai: ["Menu ids and safety rules verified", "AI choice failed the checks"],
   };
   return labels[name]?.[passed ? 0 : 1] ?? name;

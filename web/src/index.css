@@ -185,7 +185,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
 
 /* Dish cards: three across, every footer on the same baseline; details open above the footer. */
 .courses-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 14px; }
-.course-tabs { display: flex; flex-shrink: 0; gap: 4px; max-width: 100%; overflow-x: auto; scrollbar-width: thin; }
+.course-tabs { display: flex; flex-shrink: 1; min-width: 0; gap: 4px; max-width: 100%; overflow-x: auto; scrollbar-width: thin; }
 .course-tabs button { min-height: 36px; padding: 7px 12px; border-radius: 8px; font-size: 13px; color: var(--color-fg-2); white-space: nowrap; }
 .course-tabs button:hover { background: var(--color-surface); color: var(--color-fg); }
 .course-tabs button.active { background: var(--color-brand); color: var(--color-panel-fg); }
@@ -502,3 +502,7 @@ details[open] > summary .who-count svg { transform: rotate(180deg); }
 .saved-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 12px; border: 1px solid var(--color-line-strong); border-radius: 999px; font-size: 14px; background: var(--color-surface); }
 .saved-chip:hover:not(:disabled) { border-color: var(--color-brand); color: var(--color-brand); }
 .saved-chip:disabled { opacity: 0.5; }
+
+/* A diet chip that still depends on the kitchen's answer */
+.dish-tags .tag-ask, .tag-ask { color: #8a5a00; background: #fff4dc; border-color: #f0d9a8; }
+.plan-summary { margin-top: 6px; max-width: 60ch; color: var(--color-fg-2); font-size: 15px; }

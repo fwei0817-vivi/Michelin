@@ -32,7 +32,7 @@ export const postPlan = (body: PlanRequest) =>
 export const evaluateMenu = (menu: Menu, diners: DinerProfile[]) => request<Eligibility>("/api/menu/evaluate", {
   method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ menu, diners }),
 });
-export const getHealth = () => request<{ok: boolean; mock: boolean; photo?: "gemini" | "ocr" | null}>("/api/health");
+export const getHealth = () => request<{ok: boolean; mock: boolean; photo?: "openrouter" | "gemini" | "ocr" | null}>("/api/health");
 export const parseMenu = (body: {text?: string; image_base64?: string}) => request<{ dishes: Menu["dishes"]; text: string; mode?: string; notice?: string; restaurant_name?: string | null }>("/api/menu/parse", {
   method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
 });

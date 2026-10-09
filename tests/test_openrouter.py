@@ -71,6 +71,22 @@ def test_photo_goes_as_a_data_url_and_fills_the_import(monkeypatch):
     image = http.calls[0]["json"]["messages"][0]["content"][1]["image_url"]["url"]
     assert image.startswith("data:image/png;base64,")
     assert vision.configured()
+    assert r.json()["restaurant_name"] == "Sky"
+    assert TestClient(api.app).get("/api/health").json()["photo"] == "openrouter"
+
+
+def test_photos_can_use_their_own_openrouter_model(monkeypatch):
+    monkeypatch.setenv("OPENROUTER_API_KEY", "o")
+    monkeypatch.setenv("MICHELIN_OPENROUTER_VISION_MODEL", "openai/gpt-4o-mini")
+    assert llm.model("vision") == "openai/gpt-4o-mini"
+    assert llm.model("plan") == "google/gemini-2.5-flash"
+    http = FakeHTTP(ok(json.dumps({"restaurant_name": "", "dishes": []})))
+    vision.read_menu_photo(PNG, "image/png", client=http)
+    assert http.calls[0]["json"]["model"] == "openai/gpt-4o-mini"
+    # Without an OpenRouter key the free Gemini key reads photos.
+    monkeypatch.delenv("OPENROUTER_API_KEY")
+    monkeypatch.setenv("GEMINI_API_KEY", "g")
+    assert TestClient(api.app).get("/api/health").json()["photo"] == "gemini"
 
 
 def test_errors_are_clear(monkeypatch):

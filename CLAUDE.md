@@ -111,8 +111,8 @@ docker build -t michelin . && docker run -p 8000:8000 --env-file .env michelin
 - A decision that changes product behaviour goes into `docs/decisions.md` with a one-line why.
 - Python ≥ 3.11, `src` layout, pydantic v2; data crosses module boundaries as schema objects,
   not dicts. Code and comments in English; UI strings and displayed dish names are English. Original menu names may remain in source data.
-- Each owner documents the "how" in their own module docstrings. For example the optimizer
-  model is described in `plan/optimizer.py`, the extraction rules in `parse/`. Keep this file
+- Each owner documents the "how" in their own module docstrings. For example the planner
+  brief and retries are described in `plan/llm_planner.py`, the extraction rules in `parse/`. Keep this file
   to skeleton and contracts.
 
 ## Owner notes (one line each; the rest lives in your code)
@@ -120,8 +120,8 @@ docker build -t michelin . && docker run -p 8000:8000 --env-file .env michelin
 - **Frontend**: `web/` is React + Vite + Tailwind v4, no server code of its own. `src/api.ts` is
   the only place that talks to the backend and `src/types.ts` mirrors `schemas.py`. The built
   `dist/` is served by FastAPI; to host it elsewhere set `window.MICHELIN_API` to the API origin.
-- **Backend**: `solve()` uses bounded search with concrete budget/coverage suggestions. `budget.py`,
-  `portions.py`, `edibility.py`, and `score.py` supply the shared checks.
+- **Backend**: the LLM picks dishes (`plan/llm_planner.py`); `validation.py`, `budget.py`,
+  `edibility.py` and `score.py` supply the shared checks; `hints.py` finds the cheapest valid order.
 - **LLM**: `parse/` and `explain.py` are yours, including the choice of provider and
   dependencies. The team only depends on the output shapes: a `Menu` JSON that a human has
   marked `verified: true`, and `explain()` returning the plan with every `reason` filled.

@@ -32,8 +32,6 @@ export function TableSetup({ diners, saved, onPick, onRemove, settings, currency
   const set = (key: keyof DiningSettings, value: number | string) => onChange({ ...settings, [key]: value });
   const valid =
     settings.budget >= 1 && settings.budget <= 500 &&
-    Number.isInteger(settings.minDishes) && settings.minDishes >= 1 && settings.minDishes <= 10 &&
-    Number.isInteger(settings.dishCount) && settings.dishCount >= 1 && settings.dishCount <= 20 &&
     settings.tax >= 0 && settings.tax <= 0.3 && settings.tip >= 0 && settings.tip <= 0.4;
   return (
     <div className="setup-content">
@@ -72,6 +70,11 @@ export function TableSetup({ diners, saved, onPick, onRemove, settings, currency
           <Plus size={16} />
           Add a new person
         </button>
+        {diners.length >= 6 && (
+          <p className="helper" role="status">
+            Six people is the most per table. Remove someone to add another.
+          </p>
+        )}
         {(() => {
           const others = saved.filter((s) => !diners.some((d) => d.id === s.id));
           if (!others.length) return null;
@@ -86,14 +89,13 @@ export function TableSetup({ diners, saved, onPick, onRemove, settings, currency
                   </button>
                 ))}
               </div>
-              {diners.length >= 6 && <p className="helper">Six people is the most per table. Remove someone to add another.</p>}
             </div>
           );
         })()}
       </section>
 
       <section className="setup-section" aria-labelledby="budget-heading">
-        <h3 id="budget-heading">Budget and dishes</h3>
+        <h3 id="budget-heading">Budget and style</h3>
         <div className="field-row">
           <label className="field-label">
             Budget per person
@@ -102,16 +104,6 @@ export function TableSetup({ diners, saved, onPick, onRemove, settings, currency
               <NumberField className="field" min={1} max={500} step={0.01} value={settings.budget} onChange={(n) => set("budget", n)} />
             </span>
             <small>Includes tax and tip; other fees unknown</small>
-          </label>
-          <label className="field-label">
-            Dishes to order
-            <NumberField className="field" min={1} max={20} step={1} inputMode="numeric" value={settings.dishCount} onChange={(n) => set("dishCount", n)} />
-            <small>A target, rice included</small>
-          </label>
-          <label className="field-label">
-            Dishes each person can eat
-            <NumberField className="field" min={1} max={10} step={1} inputMode="numeric" value={settings.minDishes} onChange={(n) => set("minDishes", n)} />
-            <small>At least; rice and noodles don't count</small>
           </label>
         </div>
         <div className="field-label style-label" id="style-label">
@@ -144,7 +136,7 @@ export function TableSetup({ diners, saved, onPick, onRemove, settings, currency
 
       {!valid && (
         <p className="field-error" role="status">
-          Use a budget from 1–500, 1–20 whole dishes, a minimum of 1–10 dishes, tax up to 30% and tip up to 40%.
+          Use a budget from 1–500, tax up to 30% and tip up to 40%.
         </p>
       )}
       {!diners.length && <p className="helper">Add at least one person to plan your meal.</p>}

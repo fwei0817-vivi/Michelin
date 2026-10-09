@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowLeftRight, Check, ChevronDown, CircleHelp, Flame, Leaf, ListChecks, LockKeyhole, Plus, RefreshCw, Sparkles, Trash2, UnlockKeyhole, UserX, Users, X } from "lucide-react";
 import { CATEGORY_LABEL, checkLabel, currencySymbol, dishName, flagWording, listNames, money } from "../lib/format";
-import { dishQuestions, heatNote } from "../lib/dietary";
+import { dishQuestions, heatNote, mayHideMeat } from "../lib/dietary";
 import { photoFor } from "../lib/dishPhotos";
 import { Coverage } from "./Coverage";
 import type { DinerProfile, DiningSettings, Dish, Menu, Plan, PlanItem } from "../types";
@@ -51,10 +51,8 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
           <p className="plan-sub">
             {menu.restaurant_name}, {diners.length} {diners.length === 1 ? "diner" : "diners"}
           </p>
-          <h1>{items.length} dishes to share</h1>
-          {items.length !== settings.dishCount && (
-            <p className="helper">You asked for {settings.dishCount}; {items.length} is the closest order that fits everyone and the budget.</p>
-          )}
+          <h1>{items.length} {items.length === 1 ? "dish" : "dishes"} to share</h1>
+          {source === "ai" && plan.summary && <p className="plan-summary">{plan.summary}</p>}
         </div>
         {!stale && (
           <button className="btn btn-outline" onClick={onPlan} disabled={loading}>
@@ -142,19 +140,19 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
             )}
           </section>
 
-          <Coverage menu={menu} plan={plan} diners={diners} minDishes={settings.minDishes} />
+          <Coverage menu={menu} plan={plan} diners={diners} />
 
           <details className="plan-how">
             <summary>How this plan was checked</summary>
             <ul>
               {plan.checks.map((c) => (
                 <li key={c.name}>
-                  <strong>{checkLabel(c.name, c.passed, settings.minDishes)}.</strong> {c.detail}
+                  <strong>{checkLabel(c.name, c.passed)}.</strong> {c.detail}
                 </li>
               ))}
             </ul>
             <p>
-              {items.length} dishes against a target of {settings.dishCount}. Variety score {Math.round(plan.variety_score * 100)} of 100, from categories, ingredients and cooking methods.
+              {items.length} {items.length === 1 ? "dish" : "dishes"}. Variety score {Math.round(plan.variety_score * 100)} of 100, from categories, ingredients and cooking methods.
             </p>
           </details>
         </div>
@@ -182,7 +180,7 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
             {plan.checks.map((c) => (
               <li key={c.name} className={c.passed ? "" : "failed"}>
                 {c.passed ? <Check size={14} /> : <X size={14} />}
-                {checkLabel(c.name, c.passed, settings.minDishes)}
+                {checkLabel(c.name, c.passed)}
               </li>
             ))}
           </ul>
@@ -244,7 +242,9 @@ function DishCard({ item, dish, diners, cur, kept, ai, expanded, disabled, onTog
   const name = dishName(dish);
   const notFor = diners.filter((p) => !item.edible_by.includes(p.id));
   const heat = heatNote(dish, diners.filter((p) => item.edible_by.includes(p.id)));
-  const questions = dishQuestions(dish, diners);
+  // AI plans carry one rule-checked question per dish; other plans use the templates.
+  const questions = ai && item.server_question !== undefined ? (item.server_question ? [item.server_question] : []) : dishQuestions(dish, diners);
+  const unsure = mayHideMeat(dish);
   const photo = photoFor(dish);
   const panelId = `dish-panel-${dish.id}`;
   return (
@@ -273,9 +273,9 @@ function DishCard({ item, dish, diners, cur, kept, ai, expanded, disabled, onTog
           </span>
         )}
         {dish.is_vegetarian === true && (
-          <span>
+          <span className={unsure ? "tag-ask" : ""} title={unsure ? "May hide meat or lard; ask the kitchen" : undefined}>
             <Leaf size={12} />
-            {dish.is_vegan ? "Vegan" : "Vegetarian"}
+            {dish.is_vegan ? "Vegan" : "Vegetarian"}{unsure ? "? ask" : ""}
           </span>
         )}
         {dish.spice_level != null && dish.spice_level > 0 && (
@@ -286,9 +286,9 @@ function DishCard({ item, dish, diners, cur, kept, ai, expanded, disabled, onTog
         )}
         {dish.cooking_method && <span>{dish.cooking_method.replaceAll("_", " ")}</span>}
         {notFor.length === 0 && (
-          <span title="Matches every diner's recorded requirements">
+          <span title="Matches every diner's recorded requirements" className={unsure ? "tag-ask" : ""}>
             <Users size={12} />
-            Matches all {diners.length}
+            Matches all {diners.length}{unsure ? " if confirmed" : ""}
           </span>
         )}
       </div>

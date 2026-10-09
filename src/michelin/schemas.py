@@ -149,10 +149,6 @@ class TableRequest(BaseModel):
     budget_per_person: float = Field(gt=0, allow_inf_nan=False)  # all-in: includes tax and tip
     tax_rate: float = Field(default=0.08875, ge=0, le=0.3, allow_inf_nan=False)  # NYC sales tax
     tip_rate: float = Field(default=0.18, ge=0, le=0.4, allow_inf_nan=False)
-    min_dishes_per_person: int = Field(
-        default=2, ge=1, le=40, strict=True
-    )  # non-staple dishes each diner must be able to eat
-    dish_count_target: int | None = Field(default=None, ge=1, le=20)
     style_preference: str = "balanced"
     include_staple: bool = True  # add one staple (rice) per person
     locked_dish_ids: list[str] = Field(default_factory=list)  # user pinned these, must stay
@@ -192,6 +188,7 @@ class PlanItem(BaseModel):
     quantity: int = Field(default=1, ge=1, le=100, strict=True)
     edible_by: list[str] = Field(default_factory=list)  # diner ids, under hard constraints
     reason: str | None = None  # one-liner from explain.py
+    server_question: str | None = None  # one question for the server about this dish
 
 
 class Check(BaseModel):
@@ -212,6 +209,7 @@ class Plan(BaseModel):
     variety_score: float = Field(ge=0.0, le=1.0)
     checks: list[Check] = Field(default_factory=list)
     confirm_with_staff: list[str] = Field(default_factory=list)
+    summary: str | None = None  # AI plans: one sentence on how the order suits the table
 
 
 class Relaxation(BaseModel):

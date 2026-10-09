@@ -5,7 +5,6 @@ from fastapi.testclient import TestClient
 
 from michelin.api import app
 from michelin.plan.edibility import assessment, open_questions
-from michelin.plan.portions import units
 from michelin.schemas import DinerProfile, Dish, TableRequest
 
 client = TestClient(app)
@@ -65,8 +64,7 @@ def test_contradictions(dish, restriction, status):
 def test_unknown_values_remain_unknown_and_estimate_is_disclosed():
     dish = Dish(id="d", name_en="Synthetic")
     assert dish.spice_level is None and dish.portion is None
-    assert units(dish) == 1
-    assert any("portion unknown" in x for x in open_questions(dish, []))
+    assert not any("portion" in x for x in open_questions(dish, []))  # no portion rules
     assert any("spice level unknown" in x for x in open_questions(dish, []))
 
 
