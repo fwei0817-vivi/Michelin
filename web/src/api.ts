@@ -30,7 +30,7 @@ export const postPlan = (body: PlanRequest) =>
   });
 
 /** Let the AI replace one dish; every other dish in `plan` stays as it is. */
-export const postSwap = (body: PlanRequest & { plan: Plan; dish_id: string; new_dish_id?: string | null }) =>
+export const postSwap = (body: PlanRequest & { plan: Plan; dish_id: string | null; new_dish_id?: string | null }) =>
   request<SwapResponse>("/api/plan/swap", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

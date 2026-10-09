@@ -37,8 +37,10 @@ they can eat. Prefer, in order: a dish every diner can eat (all ids in "ok_for")
 close to the replaced dish, and a dish that does not repeat the main ingredient, category
 or cooking method of the dishes that stay. Respect heat limits ("max_spice" 0 means no heat),
 dislikes and likes. Return "dish_id", "reason": a short clause (under 15 words) on who can
-eat it and why it fits, e.g. "Kevin can eat it and it adds a vegetable", and "server_question": one concise question
-for the server covering the dish's "risks" (name the diners it matters for), or "" if none.
+eat it and why it fits, e.g. "Kevin can eat it and it adds a vegetable", and
+"server_question": ONE plain sentence a diner would say to the server about the dish's
+"risks", naming the dish, the concern and who it is for, e.g. "Is there any pork or lard in
+the scallion pancake, since David is vegetarian?" (no lists or semicolons), or "" if none.
 State only the allergies and diets the brief lists for each diner."""
 
 
@@ -150,8 +152,11 @@ def _schema(ids: list[str]) -> dict:
     }
 
 
-def check(menu: Menu, request: TableRequest, plan: Plan, old_id: str, answer) -> tuple[list, list]:
-    """(problems, items): the whole new order through the same hard checks as a plan."""
+def check(
+    menu: Menu, request: TableRequest, plan: Plan, old_id: str | None, answer
+) -> tuple[list, list]:
+    """(problems, items): the whole new order through the same hard checks as a plan.
+    old_id None adds the dish (before the rice) instead of replacing one."""
     known = {d.id: d for d in menu.dishes}
     new_id = answer.get("dish_id") if isinstance(answer, dict) else None
     if new_id not in known:
@@ -168,6 +173,12 @@ def check(menu: Menu, request: TableRequest, plan: Plan, old_id: str, answer) ->
         else PlanItem(dish_id=i.dish_id, quantity=i.quantity)
         for i in plan.items
     ]
+    if old_id is None:
+        at = next(
+            (n for n, i in enumerate(items) if known[i.dish_id].category.value == "staple"),
+            len(items),
+        )
+        items.insert(at, PlanItem(dish_id=new_id, quantity=1))
     names = {p.id: p.name for p in request.diners}
     problems = []
     for reason in validate_order(menu, request, items)["reasons"]:
@@ -178,25 +189,34 @@ def check(menu: Menu, request: TableRequest, plan: Plan, old_id: str, answer) ->
         elif reason["code"] == "over_budget":
             subtotal = sum(cents(known[i.dish_id].price) * i.quantity for i in items) / 100
             cap = subtotal_cap(request.all_in_budget, 1, request.tax_rate, request.tip_rate)
-            detail = f"With {new_id} menu prices add up to ${subtotal:.2f}; the cap is ${cap:.2f}."
+            detail = (
+                f"With {_name(known[new_id])} the menu prices come to ${subtotal:.2f}, over the "
+                f"${cap:.2f} your budget allows before tax and tip."
+            )
         elif reason["code"] == "no_eligible_diner":
-            detail = f"{new_id}: nobody at the table can eat it under their allergies and diets."
+            detail = f"{_name(known[new_id])}: nobody at the table can eat it under their allergies and diets."
         problems.append(detail)
     return list(dict.fromkeys(problems)), items
 
 
-def _price_note(menu: Menu, old_id: str, new_id: str) -> str:
+def _price_note(menu: Menu, old_id: str | None, new_id: str) -> str:
+    if old_id is None:
+        return f"${menu.dish(new_id).price:.2f} more"
     diff = (cents(menu.dish(new_id).price) - cents(menu.dish(old_id).price)) / 100
     if abs(diff) < 0.005:
         return "same price"
     return f"${abs(diff):.2f} {'cheaper' if diff < 0 else 'more'}"
 
 
-def _line(menu: Menu, request: TableRequest, old_id: str, new_id: str, why: str | None) -> str:
+def _line(
+    menu: Menu, request: TableRequest, old_id: str | None, new_id: str, why: str | None
+) -> str:
     """'Swapped to X, Kevin can eat it, $3.00 cheaper.' The price part is always computed."""
     new = menu.dish(new_id)
     ok = set(edible_by(new, request.diners))
-    everyone = re.compile(r"\b(everyone|everybody|all (?:diners|diets|of you)|whole table)\b", re.IGNORECASE)
+    everyone = re.compile(
+        r"\b(everyone|everybody|all (?:diners|diets|of you)|whole table)\b", re.IGNORECASE
+    )
     if why and len(ok) < len(request.diners) and everyone.search(why):
         why = None  # the model claimed a dish suits everyone when the rules say it does not
     if not why:
@@ -206,25 +226,31 @@ def _line(menu: Menu, request: TableRequest, old_id: str, new_id: str, why: str 
     first = why.split(" ", 1)[0]
     if first not in {p.name for p in request.diners}:  # keep names capitalised
         why = why[:1].lower() + why[1:]
-    return f"Swapped to {_name(new)}, {why}, {_price_note(menu, old_id, new_id)}."
+    done = "Added" if old_id is None else "Swapped to"
+    return f"{done} {_name(new)}, {why}, {_price_note(menu, old_id, new_id)}."
 
 
-def manual(menu: Menu, request: TableRequest, plan: Plan, old_id: str, new_id: str) -> SwapOutcome:
-    """The user's own pick: no model call, same hard checks, only that dish changes."""
-    request = _swap_request(request, old_id)
+def manual(
+    menu: Menu, request: TableRequest, plan: Plan, old_id: str | None, new_id: str
+) -> SwapOutcome:
+    """The user's own pick: no model call, same hard checks, only that dish changes.
+    old_id None adds the dish; nothing else in the order moves."""
+    if old_id is not None:
+        request = _swap_request(request, old_id)
     problems, items = check(menu, request, plan, old_id, {"dish_id": new_id})
     if problems:
         name = _name(menu.dish(new_id)) if new_id in {d.id for d in menu.dishes} else new_id
-        return SwapOutcome(
-            None, f"{name} can't replace {_name(menu.dish(old_id))}: " + " ".join(problems)
-        )
+        what = "be added" if old_id is None else f"replace {_name(menu.dish(old_id))}"
+        return SwapOutcome(None, f"{name} can't {what}: " + " ".join(problems))
     line = _line(menu, request, old_id, new_id, None)
     answer = {"dish_id": new_id, "reason": line, "server_question": ""}
     new_plan = _to_plan(menu, request, plan, old_id, answer, items)
     return SwapOutcome(new_plan, line, new_id, line, 0)
 
 
-def _to_plan(menu: Menu, request: TableRequest, plan: Plan, old_id: str, answer, items) -> Plan:
+def _to_plan(
+    menu: Menu, request: TableRequest, plan: Plan, old_id: str | None, answer, items
+) -> Plan:
     """The new plan: other dishes keep their reasons and questions; totals are recomputed."""
     new_id = answer["dish_id"]
     rows = []
@@ -245,6 +271,14 @@ def _to_plan(menu: Menu, request: TableRequest, plan: Plan, old_id: str, answer,
                     "server_question": i.server_question or "",
                 }
             )
+    if old_id is None:
+        rows.append(
+            {
+                "dish_id": new_id,
+                "reason": str(answer.get("reason") or "")[:200],
+                "server_question": "",
+            }
+        )
     out = llm_planner._to_plan(menu, request, {"dishes": rows, "summary": plan.summary}, items)
     kept_reasons = {i.dish_id: i.reason for i in plan.items if i.dish_id != old_id}
     return out.model_copy(

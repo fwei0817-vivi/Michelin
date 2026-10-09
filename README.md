@@ -152,7 +152,12 @@ whole new order goes through the same hard checks as a plan (menu, not already o
 removed, allergies and diets, budget with tax and tip, everyone still has a dish). A failing AI
 answer is retried once with the reason; a failing pick is refused with the reason. The UI shows
 "Swapped to X, …, $3.00 cheaper" (the price part is computed) and Undo restores the previous
-plan without a model call.
+plan without a model call. "Something else in mind?" adds just that dish the same way (send
+`new_dish_id` without `dish_id`); a dish that breaks a rule is refused with the reason.
+
+Server questions are one plain sentence per dish ("Is there any pork or lard in the scallion
+pancake, for David (vegetarian) and Tom (no pork)?"). Dish-level menu notes only become
+questions when they matter to someone at the table (a soy note is skipped if nobody avoids soy).
 
 Additional API fields on `POST /api/plan`: `menu_override` and `style_preference` (`balanced`, `lighter`, `favorites`).
 `POST /api/menu/evaluate` takes `{menu, diners}` and returns per-dish eligibility and questions.

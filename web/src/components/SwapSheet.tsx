@@ -165,7 +165,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
             <ArrowLeftRight size={19} />
             <div>
               <strong>{oldDish ? `Replacing ${dishName(oldDish)}` : "Adding to your order"}</strong>
-              <p>{oldDish ? "Only this dish changes. The rules check your pick against the budget, allergies and diets, and say why if it doesn't fit." : "Your choice is kept. Dishes you have not kept may change to stay within budget and everyone's needs."} The price difference shown is for this dish only.</p>
+              <p>{oldDish ? "Only this dish changes. The rules check your pick against the budget, allergies and diets, and say why if it doesn't fit." : plan ? "Only this dish is added; nothing else changes. The rules check it against the budget, allergies and diets, and say why if it doesn't fit." : "Your choice is kept. Dishes you have not kept may change to stay within budget and everyone's needs."} The price difference shown is for this dish only.</p>
               {oldDish && onAiSwap && plan && (
                 <button className="btn btn-outline btn-small ai-swap-inline" onClick={() => onAiSwap(oldDish.id)}>
                   <Sparkles size={14} />

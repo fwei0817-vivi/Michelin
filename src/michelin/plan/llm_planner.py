@@ -38,9 +38,9 @@ from michelin.explain import explain
 from michelin.plan import hints as rules_hints
 from michelin.plan.budget import cents, subtotal_cap, totals
 from michelin.plan.edibility import (
+    ask_server,
     assessment,
     edible_by,
-    merge_questions,
     risks,
 )
 from michelin.plan.score import variety_score
@@ -74,12 +74,16 @@ large or money is tight; make sure each diner has a fair share they can eat. The
 vary the main ingredients and cooking methods, respect heat limits ("max_spice" 0 means no heat; do not recommend a hot dish to \
 that diner in "for" or in the reason), avoid dislikes, include likes.
 For each dish give one short, specific reason (under 20 words) naming who it suits.
-For each chosen dish that has "risks", write "server_question": one concise, natural \
-question the table can read to the server. Cover every listed risk in that one question, \
-name the diners it is for and why (e.g. "Ben is vegetarian and Cai avoids pork: does the \
-garlic sauce use minced pork or lard?"). Use the dish's own words; do not invent \
-ingredients that are not in the brief, and state only the allergies and diets the brief \
-lists for that diner. Use "" for dishes without risks. Put only questions \
+For each chosen dish that has "risks", write "server_question": ONE plain sentence (under \
+25 words) that a diner would actually say to the server: name the dish, ask about every \
+listed risk, and say who it is for. Examples: "Is there any pork or lard in the scallion \
+pancake? David and Tom don't eat pork." is two sentences, so instead write "Is there any \
+pork or lard in the scallion pancake, since David and Tom don't eat pork?" or "Does the bok \
+choy use meat stock or oyster sauce? It's for David (vegetarian) and Amy (shellfish)." -> \
+"Does the bok choy use meat stock or oyster sauce, for David (vegetarian) and Amy (shellfish)?". \
+No lists, no semicolons, no "ask whether". Do not invent ingredients that are not in the \
+brief, and state only the allergies and diets the brief lists for each diner. Use "" for \
+dishes without risks. Put only questions \
 about the whole meal (not one dish) in "server_questions"; usually it is empty.
 Finally, "summary": one friendly sentence (under 30 words) on how the order works for this \
 table, including why this many dishes (e.g. small plates, so a few extra). Do not write the number of dishes; the app shows the count.
@@ -317,7 +321,10 @@ def check(menu: Menu, request: TableRequest, answer: dict, staples) -> tuple[lis
 
 
 def _key(payload: dict, model_id: str) -> str:
-    raw = json.dumps({"model": model_id, "brief": payload}, sort_keys=True, ensure_ascii=False)
+    # The prompt is part of the key, so a prompt change never serves an old answer.
+    raw = json.dumps(
+        {"model": model_id, "brief": payload, "system": SYSTEM}, sort_keys=True, ensure_ascii=False
+    )
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
@@ -474,18 +481,33 @@ def server_questions(answer: dict, selected, request: TableRequest) -> dict[str,
     for d, _ in selected:
         label = d.name_en or d.name_zh or d.id
         flagged = risks(d, request.diners)
-        mine = written.get(d.id, "")
-        if mine.lower().startswith(label.lower()):
-            mine = mine[len(label) :].lstrip(" :-–—").strip()
+        mine = _plain(written.get(d.id, ""), label)
         if _misstates(mine, request.diners):
             mine = ""  # never show a need the diner does not have; the rule questions stand
-        missing = [r.question for r in flagged if not (mine and r.covered_by(mine))]
+        missing = [r for r in flagged if not (mine and r.covered_by(mine))]
         if not mine and not missing:
             continue
-        lines = ([f"{label}: {mine}"] if mine else []) + missing
-        merged = merge_questions(lines, [d])
-        out[d.id] = " ".join(merged)
+        # A skipped risk gets the rules' own plain question, after the model's.
+        out[d.id] = " ".join(
+            x for x in [mine, ask_server(d, missing, bool(mine)) if missing else ""] if x
+        )
     return out
+
+
+def _plain(text: str, label: str) -> str:
+    """Light cleanup of a model question: one line, no "Dish:" prefix, no semicolon lists,
+    the dish named, ending in a question mark."""
+    text = " ".join(str(text or "").split())[:240]
+    if text.lower().startswith(label.lower()) and text[len(label) : len(label) + 1] in ":-–—":
+        text = text[len(label) :].lstrip(" :-–—").strip()
+    text = text.replace(";", ",").strip()
+    if not text:
+        return ""
+    text = text[0].upper() + text[1:]
+    words = [w for w in re.findall(r"[a-z]+", label.lower()) if len(w) > 3]
+    if words and not any(w in text.lower() for w in words):
+        text = f"{label}: {text}"  # the server must know which dish
+    return text if text.endswith(("?", ".")) else text + "?"
 
 
 def _budget_for(menu: Menu, request: TableRequest, dish_ids) -> float | None:

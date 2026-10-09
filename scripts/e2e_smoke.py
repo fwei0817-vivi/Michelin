@@ -279,10 +279,31 @@ async def run(url: str, shots: Path) -> None:
             check(
                 third in await pg.locator(".dish-card h2").all_inner_texts(), "undo brings it back"
             )
+            before = await pg.locator(".dish-card h2").all_inner_texts()
             await pg.get_by_role("button", name=re.compile("Something else in mind")).click()
             await settle(pg)
             await dialog(pg).locator("button:enabled", has_text="Add to order").first.click()
             await settle(pg, 800)
+            after = await pg.locator(".dish-card h2").all_inner_texts()
+            if await pg.locator(".swap-failed").count():
+                check(
+                    "can't be added" in await pg.locator(".swap-failed").inner_text()
+                    and after == before,
+                    "an add that breaks a rule says why and changes nothing",
+                )
+                await pg.locator(".swap-failed .dismiss-change").click()
+            else:
+                added = [t for t in after if t not in before]
+                check(
+                    len(added) == 1 and [t for t in after if t not in added] == before,
+                    f"adding {added} changes nothing else",
+                )
+                await pg.locator(".change-notice").get_by_role("button", name="Undo").click()
+                await settle(pg, 800)
+                check(
+                    await pg.locator(".dish-card h2").all_inner_texts() == before,
+                    "undo removes the added dish",
+                )
             check(await heading(pg) != "No order fits yet", "add a dish keeps a plan")
             h1, bill, cards = await plan_counts(pg)
             check(h1 == bill == cards, f"counts agree after edits: {h1}/{bill}/{cards}")

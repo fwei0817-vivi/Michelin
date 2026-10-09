@@ -295,3 +295,10 @@ for a replacement; picking from the menu makes no model call. Both keep every ot
 as it is and run the whole order through the plan checks; a pick that breaks the budget or
 someone's diet is refused with the reason instead of rebalancing the table. Undo restores the
 previous plan. Why: users asked to change one dish without the rest of the table moving.
+
+**2026-10-09: adds are single-dish too; plainer server questions; honest progress.** Adding a
+dish no longer re-plans the table: it is checked like a swap and refused with the reason if it
+breaks a rule. Server questions are one plain sentence; rule fallbacks use the same style and
+menu notes nobody at the table cares about are dropped. The planner cache key now includes the
+prompt. While the AI works the UI lists the real stages on a timer with elapsed seconds, never
+a percentage, because the server does not stream progress.

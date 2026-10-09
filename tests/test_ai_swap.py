@@ -162,7 +162,7 @@ def test_over_budget_and_lost_coverage_are_rejected(table):
     tight = swapped.model_copy(update={"budget_per_person": plan.per_person})
     problems, _ = ai_swap.check(menu, tight, plan, old, {"dish_id": dear})
     if menu.dish(dear).price > menu.dish(old).price:
-        assert any("the cap is" in p for p in problems)
+        assert any("your budget allows" in p for p in problems)
     # Coverage: a one-dish order for someone who can then eat nothing.
     vegetarian = DinerProfile(id="v", name="Vee", diets=["vegetarian"])
     solo = swapped.model_copy(update={"diners": [vegetarian], "budget_per_person": 500})
@@ -232,7 +232,7 @@ def test_manual_pick_that_breaks_a_rule_says_why(table, monkeypatch):
     assert menu.dish(dear).price > menu.dish(old).price
     tight = request.model_copy(update={"budget_per_person": plan.per_person})
     out = ai_swap.manual(menu, tight, plan, old, dear)
-    assert out.plan is None and "the cap is" in out.message
+    assert out.plan is None and "your budget allows" in out.message
     assert out.message.startswith(f"{menu.dish(dear).name_en} can't replace")
     taken = next(i.dish_id for i in plan.items if i.dish_id != old)
     out = ai_swap.manual(menu, request, plan, old, taken)
@@ -267,3 +267,45 @@ def test_manual_pick_endpoint(table, monkeypatch):
     assert [i["dish_id"] for i in data["plan"]["items"]] == [
         new if i.dish_id == old else i.dish_id for i in plan.items
     ]
+
+
+def test_adding_a_dish_changes_nothing_else(table, monkeypatch):
+    menu, request, plan = table
+    monkeypatch.setattr(ai_swap, "_ask", _no_model)
+    _, new, _ = _target_and_candidate(menu, request, plan)
+    out = ai_swap.manual(menu, request, plan, None, new)
+    assert out.plan is not None
+    ids = [i.dish_id for i in out.plan.items]
+    assert [i for i in ids if i != new] == [i.dish_id for i in plan.items]
+    assert menu.dish(ids[-1]).category.value == "staple"  # added before the rice
+    assert out.message.startswith(f"Added {menu.dish(new).name_en}, ")
+    assert out.message.endswith(f"${menu.dish(new).price:.2f} more.")
+    report = validate_order(menu, request, out.plan.items)
+    assert report["valid"] and out.plan.total == report["totals"]["total"]
+    # Over budget: refused with the reason, not rebalanced.
+    tight = request.model_copy(update={"budget_per_person": plan.per_person})
+    out = ai_swap.manual(menu, tight, plan, None, new)
+    assert (
+        out.plan is None and "can't be added" in out.message and "your budget allows" in out.message
+    )
+    taken = plan.items[0].dish_id
+    out = ai_swap.manual(menu, request, plan, None, taken)
+    assert out.plan is None and "already in the order" in out.message
+
+
+def test_add_endpoint(table, monkeypatch):
+    menu, request, plan = table
+    monkeypatch.setattr(ai_swap, "_ask", _no_model)
+    _, new, _ = _target_and_candidate(menu, request, plan)
+    body = {
+        "menu_id": "cafe_china",
+        "diners": [d.model_dump(mode="json") for d in request.diners],
+        "budget_per_person": 40,
+        "plan": plan.model_dump(mode="json"),
+        "new_dish_id": new,
+    }
+    client = TestClient(api.app)
+    data = client.post("/api/plan/swap", json=body).json()
+    assert data["kind"] == "plan" and len(data["plan"]["items"]) == len(plan.items) + 1
+    assert data["message"].startswith("Added ")
+    assert client.post("/api/plan/swap", json={**body, "new_dish_id": None}).status_code == 422

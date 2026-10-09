@@ -304,8 +304,14 @@ def _prepare(req: PlanRequest, x_profile_scope: str | None) -> tuple[Menu, Table
 
 class SwapRequest(PlanRequest):
     plan: Plan  # the current, checked plan; every dish but dish_id stays as is
-    dish_id: str  # the dish to replace
+    dish_id: str | None = None  # the dish to replace; None adds new_dish_id instead
     new_dish_id: str | None = None  # the user's own pick: no model call, same checks
+
+    @model_validator(mode="after")
+    def _something_to_do(self) -> SwapRequest:
+        if self.dish_id is None and self.new_dish_id is None:
+            raise ValueError("Name the dish to replace (dish_id) or the dish to add (new_dish_id)")
+        return self
 
 
 class SwapResponse(BaseModel):
@@ -322,9 +328,9 @@ def swap_dish(req: SwapRequest, x_profile_scope: str | None = Header(default=Non
     Either way only that dish changes and the whole order goes through the plan checks."""
     menu, request, _ = _prepare(req, x_profile_scope)
     ids = [i.dish_id for i in req.plan.items]
-    if req.dish_id not in ids:
+    if req.dish_id is not None and req.dish_id not in ids:
         raise HTTPException(404, f"{req.dish_id!r} is not in the plan")
-    if menu.dish(req.dish_id).category.value == "staple":
+    if req.dish_id is not None and menu.dish(req.dish_id).category.value == "staple":
         raise HTTPException(422, "Rice and other staples are added automatically.")
     if not validate_order(menu, request, req.plan.items)["valid"]:
         # The plan sent in must itself pass, so 'every other dish stays' keeps it valid.
@@ -335,7 +341,8 @@ def swap_dish(req: SwapRequest, x_profile_scope: str | None = Header(default=Non
         out = ai_swap.swap(menu, request, req.plan, req.dish_id)
     if out.plan is None:
         return SwapResponse(kind="failed", message=out.message)
-    report = validate_order(menu, ai_swap._swap_request(request, req.dish_id), out.plan.items)
+    after = request if req.dish_id is None else ai_swap._swap_request(request, req.dish_id)
+    report = validate_order(menu, after, out.plan.items)
     if not report["valid"] or any(
         getattr(out.plan, k) != v for k, v in report["totals"].items()
     ):  # belt and braces: never return an order the rules reject

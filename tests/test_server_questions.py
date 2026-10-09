@@ -64,7 +64,7 @@ def test_brief_gives_the_model_the_rule_flagged_risks():
     payload = llm_planner.brief(MENU, REQUEST)
     rows = {d["id"]: d for d in payload["dishes"]}
     assert "pork (matters for Ben, Cai)" in rows["eggplant_with_garlic_sauce"]["risks"]
-    assert "lard" in rows["scallion_pancake"]["risks"]
+    assert rows["scallion_pancake"]["risks"] == ["lard (matters for Ben, Cai)"]
     assert all("ask" not in r for r in rows.values())
 
 
@@ -78,8 +78,8 @@ def test_model_questions_replace_the_templates_one_per_dish(tmp_path):
     assert out.plan is not None and len(calls) == 1  # no extra model call
     asked = out.plan.confirm_with_staff
     assert asked == [
-        "Scallion Pancake: " + good["scallion_pancake"],
-        "Eggplant with Garlic Sauce: " + good["eggplant_with_garlic_sauce"],
+        "Scallion Pancake: " + good["scallion_pancake"],  # the model forgot the dish name
+        good["eggplant_with_garlic_sauce"],  # names "garlic sauce": no prefix needed
     ]
     by_id = {i.dish_id: i.server_question for i in out.plan.items}
     assert by_id["eggplant_with_garlic_sauce"] == asked[1]
@@ -93,11 +93,40 @@ def test_a_missed_risk_gets_the_rule_question_appended(tmp_path):
     out, _ = plan_with(answer(partial), tmp_path)
     by_id = {i.dish_id: i.server_question for i in out.plan.items}
     egg = by_id["eggplant_with_garlic_sauce"]
-    assert egg.count("Eggplant with Garlic Sauce") == 1  # still one line for the dish
-    assert "Ben is vegetarian: does it have minced pork?" in egg
-    assert "Cai" in egg and "confirm pork ingredient/preparation" in egg.lower()
-    # No question at all from the model: the rule questions, merged into one line.
-    assert by_id["scallion_pancake"] == "Scallion Pancake: ask whether it uses lard."
+    assert egg == (
+        "Eggplant with Garlic Sauce: Ben is vegetarian: does it have minced pork? "
+        "Also, is there any minced pork in it (for Ben and Cai)?"
+    )
+    # No question at all from the model: the rules' own plain question.
+    assert (
+        by_id["scallion_pancake"] == "Is there any lard in the Scallion Pancake (for Ben and Cai)?"
+    )
+
+
+def test_rule_questions_skip_what_nobody_at_the_table_avoids():
+    """Before: "Sautéed Bok Choy: ...; ask whether it uses soy; ask whether it uses wheat."
+    even though nobody at the table avoids soy or wheat."""
+    from michelin.plan.edibility import ask_server, risks
+
+    pancake = MENU.dish("scallion_pancake")
+    alice_only = [DINERS[0]]  # peanut allergy only: lard does not matter to her
+    assert [r.about for r in risks(pancake, alice_only)] == []
+    flagged = risks(pancake, DINERS)
+    assert ask_server(pancake, flagged) == (
+        "Is there any lard in the Scallion Pancake (for Ben and Cai)?"
+    )
+
+
+def test_model_questions_are_cleaned_to_one_plain_line():
+    from michelin.plan.llm_planner import _plain
+
+    assert _plain("Scallion Pancake: is it fried in lard; any pork", "Scallion Pancake") == (
+        "Scallion Pancake: Is it fried in lard, any pork?"
+    )
+    assert _plain("  Is there lard in the  scallion pancake?\n", "Scallion Pancake") == (
+        "Is there lard in the scallion pancake?"
+    )
+    assert _plain("", "Scallion Pancake") == ""
 
 
 def test_summary_never_contradicts_the_dish_count():

@@ -273,6 +273,37 @@ def _words(term: str) -> list[str]:
     return list(dict.fromkeys(words)) or [term.lower()]
 
 
+def _matters(words: list[str], person: DinerProfile) -> bool:
+    """Whether an ingredient question (its cover words) touches this diner's allergies/diets."""
+    terms = [getattr(x, "value", x) for x in [*person.allergies, *person.diets]]
+    return any(set(words) & set(_words(t)) for t in terms)
+
+
+def _join(items: list[str], last: str) -> str:
+    return items[0] if len(items) == 1 else f"{', '.join(items[:-1])} {last} {items[-1]}"
+
+
+def ask_server(dish: Dish, flagged: list[Risk], follow_up: bool = False) -> str:
+    """One plain sentence a diner could say to the server, covering these risks:
+    "Is there any pork or lard in the Scallion Pancake (for David and Tom)?" As a follow-up
+    to a question that already names the dish: "Also, is there any pork in it (for Cai)?" """
+    label = dish.name_en or dish.name_zh or dish.id
+    things = list(dict.fromkeys(r.about.replace("_", " ") for r in flagged))
+    things = [t for t in things if t != "spice level"]
+    things = [t for t in things if not any(t != o and t in o.split(" ") for o in things)]
+    spice = any(r.about == "spice level" for r in flagged)
+    names = list(dict.fromkeys(n for r in flagged for n in r.names))
+    where = "it" if follow_up else f"the {label}"
+    if things:
+        text = f"Is there any {_join(things, 'or')} in {where}"
+        text += ", and how spicy is it" if spice else ""
+    else:
+        text = f"How spicy is {where}"
+    if follow_up:
+        text = "Also, " + text[0].lower() + text[1:]
+    return text + (f" (for {_join(names, 'and')})" if names else "") + "?"
+
+
 def risks(dish: Dish, diners: list[DinerProfile]) -> list[Risk]:
     """The rule-flagged risks behind open_questions, one per dish and concern."""
     label = dish.name_en or dish.name_zh or dish.id
@@ -281,7 +312,10 @@ def risks(dish: Dish, diners: list[DinerProfile]) -> list[Risk]:
         m = re.search(r"uses (.+?)\.?$", q)
         about = m.group(1) if m else "ingredients"
         words = _words(about) if m else ["ingredient", "allergen", "contain", "made", "use"]
-        out.append(Risk(about, [], words, q))
+        names = [p.name or p.id for p in diners if m and _matters(words, p)]
+        if m and diners and not names:
+            continue  # e.g. "uses soy" when nobody at the table avoids soy
+        out.append(Risk(about, names, words, q))
     hot = [p.name or p.id for p in diners if p.max_spice is not None]
     if dish.spice_level is None and hot:
         out.append(
