@@ -1,6 +1,7 @@
 """AI planner with a fake Gemini client: the rules accept or reject every answer."""
 
 import json
+import re
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -132,9 +133,12 @@ def test_dish_claimed_for_an_allergic_diner_is_rejected(setup, tmp_path):
         "server_questions": [],
     }
     out, fake = run(menu, request, *[bad] * 4, tmp_path=tmp_path)
-    assert out.plan is None and len(fake.calls) == 4  # first try + 3 retries
-    assert out.conflict.code == "ai_no_valid_order"
-    assert f"not safe for {allergic.name}" in out.conflict.message
+    assert len(fake.calls) == 4  # first try + 3 retries
+    # QA r5 D-6: an order exists, so the rules' own cheapest valid order is shown, labelled.
+    assert out.fallback and out.plan is not None and out.conflict is None
+    assert f"not safe for {allergic.name}" in out.note
+    assert unsafe.id not in {i.dish_id for i in out.plan.items}
+    assert out.plan.summary == llm_planner.FALLBACK_SUMMARY
     assert any(f"not safe for {allergic.name}" in v for v in out.violations[0])
 
 
@@ -150,7 +154,7 @@ def test_no_model_answer_is_an_explained_error_not_another_planner(setup, tmp_pa
     out, _ = run(menu, request, TimeoutError("slow"), tmp_path=tmp_path)
     assert out.conflict.code == "ai_unavailable" and "did not answer" in out.conflict.message
     out, _ = run(menu, request, *["not json"] * 4, tmp_path=tmp_path)
-    assert out.conflict.code == "ai_no_valid_order"
+    assert out.fallback and out.plan is not None
 
 
 def test_model_no_fit_becomes_a_verified_change_one_thing(setup, tmp_path):
@@ -165,44 +169,35 @@ def test_model_no_fit_becomes_a_verified_change_one_thing(setup, tmp_path):
     out, fake = run(menu, tight, no_fit, tmp_path=tmp_path)
     assert out.plan is None and len(fake.calls) == 1
     assert out.conflict.code in ("no_solution", "missing_information")
-    assert "Too little money" in out.conflict.message
-    floor = hints.min_budget(menu, tight)
-    # QA r3: the AI's dishes cost far more than the rules minimum, so the smallest budget
-    # that works comes first and the AI's amount is offered as the fuller meal.
+    hint = hints.analyse(menu, tight)
+    # QA r5 D-6: the offer has room above the rules minimum, so the AI can hit it.
     low, change = out.conflict.relaxations
-    assert (low.kind, low.new_value) == ("budget", floor) and change.new_value > 1.25 * floor
-    assert "fuller meal" in change.description and "fuller" not in low.description
-    assert change.kind == "budget" and change.new_value * 2 == int(change.new_value * 2)
-    # The suggested order really passes at the suggested budget, and not 50 cents below.
+    assert (low.kind, low.new_value) == ("budget", hint.suggest)
+    assert hint.suggest >= hint.min_per_person + 1.5 and hint.suggest >= hint.min_budget
+    assert change.new_value > 1.25 * low.new_value and "fuller meal" in change.description
+    # The AI's suggested order really passes at its (roomier) amount.
     raised = tight.model_copy(update={"budget_per_person": change.new_value})
-    lower = tight.model_copy(update={"budget_per_person": change.new_value - 0.5})
     items = [PlanItem(dish_id=i, quantity=1) for i in order] + [
         PlanItem(dish_id=d.id, quantity=6) for d in llm_planner._staples(menu, tight)
     ]
     assert validate_order(menu, raised, items)["valid"]
-    assert not validate_order(menu, lower, items)["valid"]
-    assert (
-        f"The lowest budget that works is ${floor:.2f} per person; "
-        f"${change.new_value:.2f} buys a fuller meal." in out.conflict.message
-    )
-    # An order that breaks another rule (an unsafe dish for everyone) gives no budget fix,
-    # and a model figure below the current budget is ignored; the rules' minimal budget is
-    # offered instead, so there is always one thing to change.
-    said = "Too little money. You would need $28.45 each."
+    # The model's wording is never shown: only rules figures, always with $.
+    assert "Too little money" not in out.conflict.message
+    assert f"${hint.min_subtotal:.2f} in menu prices" in out.conflict.message
+    assert f"${hint.suggest:.2f} per person fits it with a little room" in out.conflict.message
+    assert not re.search(r"(?<![$\d.])\d+\.\d\d", out.conflict.message)  # no bare amounts
+    said = "Too little money. You would need 28.45 each; rice is safe for everyone."
     bad = {
         "dishes": [],
         "no_fit": {"reason": said, "change": "budget", "dish_ids": ["lobster"], "new_value": 1},
     }
     out, _ = run(menu, tight, bad, tmp_path=tmp_path)
-    floor = hints.min_budget(menu, tight)
-    assert [(r.kind, r.new_value) for r in out.conflict.relaxations] == [("budget", floor)]
-    # Only the rules' figure is shown; the model's own arithmetic is dropped.
-    assert "$28.45" not in out.conflict.message and "Too little money." in out.conflict.message
-    assert f"lowest budget that works is ${floor:.2f} per person" in out.conflict.message
+    assert [(r.kind, r.new_value) for r in out.conflict.relaxations] == [("budget", hint.suggest)]
+    assert "28.45" not in out.conflict.message and "safe" not in out.conflict.message
 
 
-def test_no_fit_always_offers_the_minimal_budget(setup, tmp_path):
-    """Whatever the model says, a budget no-fit offers 'Raise to $X', X minimal."""
+def test_no_fit_always_offers_a_budget_that_fits(setup, tmp_path):
+    """Whatever the model says, a budget no-fit offers 'Raise to $X' and X fits."""
     menu, request, good = setup
     tight = request.model_copy(update={"budget_per_person": 3})
     out, fake = run(menu, tight, good, tmp_path=tmp_path)  # over budget: no retries needed
@@ -211,8 +206,7 @@ def test_no_fit_always_offers_the_minimal_budget(setup, tmp_path):
     assert "Raise the budget to $" in change.description
     price = change.new_value
     assert hints.fits(menu, tight.model_copy(update={"budget_per_person": price}))
-    assert not hints.fits(menu, tight.model_copy(update={"budget_per_person": price - 0.5}))
-    # The same with a model that returns nothing usable at all.
+    assert price == int(price)  # whole dollars
     out, _ = run(menu, tight, {"dishes": [], "server_questions": []}, tmp_path=tmp_path)
     assert [r.new_value for r in out.conflict.relaxations if r.kind == "budget"] == [price]
 
@@ -303,8 +297,8 @@ def test_api_returns_ai_plans_and_explains_failures(setup, monkeypatch):
     fake = FakeModels(*[{"dishes": [], "server_questions": []}] * 4)
     monkeypatch.setattr(gemini, "client", lambda: SimpleNamespace(models=fake))
     body = _post().json()
-    assert body["kind"] == "conflict" and body["conflict"]["code"] == "ai_no_valid_order"
-    assert len(fake.calls) == 4
+    assert body["kind"] == "plan" and body["source"] == "rules", body
+    assert "rules built" in body["source_note"] and len(fake.calls) == 4
 
 
 def test_without_any_model_there_is_no_recommendation(monkeypatch):
@@ -331,17 +325,97 @@ def test_brief_marks_likely_hot_names(setup):
 def test_raise_suggestion_prefers_the_smallest_sensible_budget(setup, monkeypatch):
     menu, request, _ = setup
     tight = request.model_copy(update={"budget_per_person": 2})
-    hint = SimpleNamespace(min_budget=10.0)
+    hint = SimpleNamespace(min_budget=10.0, suggest=12.0, min_subtotal=20.0, min_per_person=9.9)
     info = {"reason": "", "change": "budget", "dish_ids": ["x"]}
-    # Close to the minimum: one figure, not called "lowest".
-    monkeypatch.setattr(llm_planner, "_budget_for", lambda *a: 12.0)
+    # Close to the suggestion: one figure.
+    monkeypatch.setattr(llm_planner, "_budget_for", lambda *a: 13.0)
     out = llm_planner._conflict(menu, tight, info, [], hint)
     assert [r.new_value for r in out.relaxations] == [12.0]
-    assert "A budget that works: $12.00 per person." in out.message and "lowest" not in out.message
-    # Far above it: the minimum first, the AI amount as the fuller option.
+    # Far above it: the suggestion first, the AI amount (with room) as the fuller option.
     monkeypatch.setattr(llm_planner, "_budget_for", lambda *a: 25.0)
     out = llm_planner._conflict(menu, tight, info, [], hint)
-    assert [r.new_value for r in out.relaxations] == [10.0, 25.0]
-    assert (
-        "lowest budget that works is $10.00 per person; $25.00 buys a fuller meal." in out.message
+    assert [r.new_value for r in out.relaxations] == [12.0, 26.0]
+    assert "$12.00 per person fits it with a little room; $26.00 buys a fuller meal." in out.message
+
+
+def _thin(menu, request):
+    """The rules' cheapest order plus one dish few diners can eat: some diner has 1 dish."""
+    order, _ = hints.cheapest_order(menu, request)
+    rows = [
+        {"dish_id": d.id, "reason": "r", "for": [], "server_question": ""}
+        for d, _ in order
+        if d.category.value != "staple"
+    ]
+    narrow = min(
+        (
+            d
+            for d in menu.dishes
+            if d.category.value != "staple"
+            and d.price is not None
+            and 0 < len(edible_by(d, request.diners)) < request.n_diners
+            and d.id not in {r["dish_id"] for r in rows}
+        ),
+        key=lambda d: d.price,
     )
+    rows.append({"dish_id": narrow.id, "reason": "r", "for": [], "server_question": ""})
+    return {"dishes": rows, "server_questions": []}
+
+
+def _items(menu, request, answer):
+    return llm_planner.check(menu, request, answer, llm_planner._staples(menu, request))[1]
+
+
+@pytest.mark.coverage
+def test_thin_coverage_is_retried_once_then_fixed_in_code(setup, tmp_path):
+    """QA r5 #8: a valid in-budget change gives the least-served diner more; the AI is asked
+    once, and if it does not even things out the rules make the change."""
+    menu, request, _ = setup
+    thin = _thin(menu, request)
+    before = llm_planner.spread(menu, request, _items(menu, request, thin))
+    fix = llm_planner.coverage_fix(menu, request, _items(menu, request, thin))
+    assert before[0] < llm_planner.THIN and fix is not None
+    assert llm_planner.spread(menu, request, fix.items) > before
+    assert validate_order(menu, request, fix.items)["valid"]
+    out, fake = run(menu, request, thin, thin, tmp_path=tmp_path)
+    assert len(fake.calls) == 2 and "Favour the least-served" in str(fake.calls[1]["contents"])
+    assert llm_planner.spread(menu, request, out.plan.items) == llm_planner.spread(
+        menu, request, fix.items
+    )
+    assert "rules swapped one dish" in out.note
+    # An AI answer at least as even is taken as is.
+    better = llm_planner._apply_fix(thin, fix, menu, request)
+    llm_planner._memory.clear()
+    out, fake = run(menu, request, thin, better, tmp_path=tmp_path / "b")
+    assert len(fake.calls) == 2 and "AI evened out" in out.note
+
+
+@pytest.mark.coverage
+def test_raise_budget_from_3_then_apply_always_gives_a_plan(setup, tmp_path):
+    """QA r5 D-6 repro: $3 -> 'Raise the budget to $X' -> apply. X leaves room above the
+    cheapest valid order; if the AI still misses it four times, the rules' own cheapest valid
+    order is shown, labelled, instead of only 'Try again'."""
+    menu, request, good = setup
+    tight = request.model_copy(update={"budget_per_person": 3})
+    out, _ = run(menu, tight, good, tmp_path=tmp_path)
+    [raise_to] = [r for r in out.conflict.relaxations if r.kind == "budget"]
+    hint = hints.analyse(menu, tight)
+    assert raise_to.new_value >= hint.min_per_person + 1.5
+    assert "$" in out.conflict.message and "3.00" in out.conflict.message
+    raised = tight.model_copy(update={"budget_per_person": raise_to.new_value})
+    assert hints.fits(menu, raised)
+    # The AI keeps proposing an order over the cap.
+    pricey = sorted(
+        (d for d in menu.dishes if d.category.value != "staple" and d.price),
+        key=lambda d: -d.price,
+    )[:3]
+    over = {
+        "dishes": [
+            {"dish_id": d.id, "reason": "", "for": [], "server_question": ""} for d in pricey
+        ],
+        "server_questions": [],
+    }
+    llm_planner._memory.clear()
+    out, fake = run(menu, raised, *[over] * 4, tmp_path=tmp_path / "r")
+    assert len(fake.calls) == 4 and out.fallback and out.plan is not None
+    assert validate_order(menu, raised, out.plan.items)["valid"]
+    assert out.plan.summary == llm_planner.FALLBACK_SUMMARY

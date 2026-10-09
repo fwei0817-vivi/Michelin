@@ -513,6 +513,7 @@ details[open] > summary .who-count svg { transform: rotate(180deg); }
 /* A diet chip that still depends on the kitchen's answer */
 .dish-tags .tag-ask, .tag-ask { color: #8a5a00; background: #fff4dc; border-color: #f0d9a8; }
 .plan-summary { margin-top: 6px; max-width: 60ch; color: var(--color-fg-2); font-size: 15px; }
+.plan-summary-rules { color: var(--color-fg); font-weight: 500; }
 
 /* Progress while the AI works: real stages, elapsed seconds, no percentages. */
 .progress { max-width: 460px; margin: 18px auto 0; text-align: left; }

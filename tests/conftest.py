@@ -66,6 +66,7 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "real_llm_path: use the real planner model call (tests pass their own fake)"
     )
+    config.addinivalue_line("markers", "coverage: keep the planner's coverage retry on")
 
 
 def _oracle_answer(menu, request):
@@ -123,6 +124,10 @@ def oracle_planner(request, monkeypatch, tmp_path):
     monkeypatch.setattr(llm_planner, "CACHE_PATH", tmp_path / "llm_plans.json")
     llm_planner._memory.clear()
     if request.node.get_closest_marker("real_llm_path"):
+        # Fakes with a fixed list of answers: the coverage retry (one extra call) is tested
+        # on its own (marker "coverage").
+        if not request.node.get_closest_marker("coverage"):
+            monkeypatch.setattr(llm_planner, "COVERAGE_NUDGE", False)
         yield
         return
 

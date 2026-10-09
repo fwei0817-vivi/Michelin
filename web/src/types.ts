@@ -144,7 +144,7 @@ export interface PlanResponse {
   plan?: Plan | null;
   conflict?: Conflict | null;
   subtotal_cap: number;
-  source?: "ai" | "mock";
+  source?: "ai" | "rules" | "mock";
   source_note?: string | null;
 }
 

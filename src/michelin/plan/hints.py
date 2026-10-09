@@ -27,6 +27,18 @@ class Hints:
     feasible: bool | None  # a valid order exists at the current budget (None: search timed out)
     min_budget: float | None  # smallest per-person all-in budget (next 50 cents) that fits
     must_include: dict[str, list[str]]  # diner id -> their only option(s) on this menu
+    suggest: float | None = None  # a budget to offer: the minimum plus ~$1.50-2.50 a person
+    min_subtotal: float | None = None  # menu prices of the cheapest valid order
+    min_per_person: float | None = None  # that order per person, with tax and tip
+
+
+SLACK = 1.5  # headroom per person in a suggested budget, so a model's order has room
+
+
+def suggested_budget(per_person: float, floor: float | None) -> float:
+    """The cheapest order's per-person cost plus at least SLACK, rounded up to a dollar."""
+    price = float(math.ceil(per_person + SLACK - 1e-9))
+    return max(price, floor or 0.0)
 
 
 def cheapest_order(menu: Menu, request: TableRequest, deadline_s: float = 1.5):
@@ -133,6 +145,13 @@ def analyse(menu: Menu, request: TableRequest) -> Hints:
     else:
         feasible = False if complete else None
     floor = _price_up(menu, request, order) if order and not feasible else None
+    subtotal = per_person = suggest = None
+    if order:
+        subtotal = sum(cents(d.price) * q for d, q in order) / 100
+        t = totals(subtotal, request.n_diners, request.tax_rate, request.tip_rate)
+        per_person = t.total / request.n_diners
+        if floor is not None:
+            suggest = suggested_budget(per_person, floor)
     excluded = set(request.excluded_dish_ids)
     must: dict[str, list[str]] = {}
     for p in request.diners:
@@ -146,4 +165,4 @@ def analyse(menu: Menu, request: TableRequest) -> Hints:
         ]
         if len(options) == 1:
             must[p.id] = options
-    return Hints(feasible, floor, must)
+    return Hints(feasible, floor, must, suggest, subtotal, per_person)

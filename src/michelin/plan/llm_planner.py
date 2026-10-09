@@ -103,6 +103,7 @@ class Outcome:
     attempts: int = 0
     violations: list[list[str]] = field(default_factory=list)
     cached: bool = False
+    fallback: bool = False  # the rules built this order after the AI's tries failed
 
 
 def enabled() -> bool:
@@ -389,6 +390,13 @@ def _summary(text: object, n: int) -> str | None:
     return text or None
 
 
+def _noted(dish, notes: str | None) -> bool:
+    """The diner's own notes mention this dish (a word of its name, e.g. "tofu")."""
+    low = (notes or "").lower()
+    words = re.findall(r"[a-z]{4,}", (dish.name_en or "").lower())
+    return any(w.rstrip("s") in low for w in words)
+
+
 def _fair_reason(text: str | None, dish, request: TableRequest) -> str | None:
     """The AI's one-line reason, unless it singles out a diner the rules flag for this dish
     ("Great for everyone, especially Cai" on a dish that may hide Cai's allergen). Then the
@@ -402,7 +410,7 @@ def _fair_reason(text: str | None, dish, request: TableRequest) -> str | None:
         if assessment(dish, person)["status"] != "validated_under_known_data":
             return None
         taste = rf"{re.escape(name)},? (?:who )?(?:loves|likes|enjoys|prefers|avoids|craves)\b"
-        if not (person.notes or "").strip() and re.search(taste, text, re.IGNORECASE):
+        if re.search(taste, text, re.IGNORECASE) and not _noted(dish, person.notes):
             return None  # a taste nobody recorded ("Pat, who loves peanuts")
     return text
 
@@ -602,6 +610,131 @@ def _plain(text: str, label: str) -> str:
     return text if text.endswith(("?", ".")) else text + "?"
 
 
+THIN = 2  # a diner with fewer non-rice dishes than this is under-served
+COVERAGE_NUDGE = True  # tests of other behaviour switch this off (conftest)
+
+
+def counts(menu: Menu, request: TableRequest, items) -> dict[str, int]:
+    """Non-rice dishes in the order each diner can eat."""
+    known = {d.id: d for d in menu.dishes}
+    dishes = [known[i.dish_id] for i in items if known[i.dish_id].category.value != "staple"]
+    ok = [set(edible_by(d, request.diners)) for d in dishes]
+    return {p.id: sum(p.id in o for o in ok) for p in request.diners}
+
+
+def spread(menu: Menu, request: TableRequest, items) -> tuple[int, ...]:
+    """Dish counts per diner, least-served first: compared to prefer the order whose
+    least-served diner has more (then the next least-served, and so on)."""
+    return tuple(sorted(counts(menu, request, items).values()))
+
+
+@dataclass
+class CoverageFix:
+    items: list  # the changed order (rice included)
+    add: str  # dish id brought in
+    drop: str | None  # dish id taken out (None: added on top)
+    helps: list[str]  # names of the least-served diners it helps
+
+
+def coverage_fix(menu: Menu, request: TableRequest, items) -> CoverageFix | None:
+    """A valid, in-budget change of one dish (or one added dish) that gives an under-served
+    diner another dish without leaving anyone worse off overall: the least-served diners'
+    counts strictly improve. None when coverage is already fine or nothing fits."""
+    have = counts(menu, request, items)
+    low = min(have.values(), default=THIN)
+    if low >= THIN:
+        return None
+    least = {pid for pid, n in have.items() if n == low}
+    names = {p.id: p.name or p.id for p in request.diners}
+    known = {d.id: d for d in menu.dishes}
+    chosen = [i.dish_id for i in items if known[i.dish_id].category.value != "staple"]
+    excluded, locked = set(request.excluded_dish_ids), set(request.locked_dish_ids)
+    now = spread(menu, request, items)
+    best, best_key = None, None
+    for d in menu.dishes:
+        if d.id in chosen or d.id in excluded or d.price is None or d.category.value == "staple":
+            continue
+        ok = set(edible_by(d, request.diners))
+        if not ok & least:
+            continue
+        options = [(None, [*items, PlanItem(dish_id=d.id, quantity=1)])]
+        options += [
+            (x, [PlanItem(dish_id=d.id, quantity=1) if i.dish_id == x else i for i in items])
+            for x in chosen
+            if x not in locked
+        ]
+        for drop, option in options:
+            after = spread(menu, request, option)
+            if after <= now or not validate_order(menu, request, option)["valid"]:
+                continue
+            subtotal = sum(cents(known[i.dish_id].price) * i.quantity for i in option)
+            key = (after, drop is not None, -subtotal)  # most even, then a swap, then cheaper
+            if best_key is None or key > best_key:
+                helps = [names[p] for p in sorted(ok & least)]
+                best, best_key = CoverageFix(option, d.id, drop, helps), key
+    return best
+
+
+def _fix_text(menu: Menu, request: TableRequest, fix: CoverageFix) -> str:
+    have = counts(menu, request, fix.items)
+    who = ", ".join(fix.helps)
+    name = menu.dish(fix.add).name_en or fix.add
+    change = (
+        f"replace {fix.drop} with {fix.add} ({name})" if fix.drop else f"add {fix.add} ({name})"
+    )
+    return (
+        f"{who} can eat too few of the chosen dishes. A valid change within the budget: "
+        f"{change}, after which the counts per diner are "
+        + ", ".join(f"{p.name or p.id} {have[p.id]}" for p in request.diners)
+        + ". Favour the least-served diners: return the full corrected order in the same "
+        "format (this change, or a better one that passes every rule)."
+    )
+
+
+def _apply_fix(answer: dict, fix: CoverageFix, menu: Menu, request: TableRequest) -> dict:
+    """The model's answer with the rules' coverage change made in code."""
+    rows = [
+        r for r in answer.get("dishes", []) if isinstance(r, dict) and r.get("dish_id") != fix.drop
+    ]
+    ok = edible_by(menu.dish(fix.add), request.diners)
+    rows.append({"dish_id": fix.add, "reason": "", "for": ok, "server_question": ""})
+    return {**answer, "dishes": rows, "summary": ""}
+
+
+def fallback(menu: Menu, request: TableRequest) -> tuple[dict, list] | None:
+    """The rules' own order: the cheapest valid one, then one coverage step if it fits."""
+    order, _ = rules_hints.cheapest_order(menu, request)
+    if not order:
+        return None
+    rows = [
+        {
+            "dish_id": d.id,
+            "reason": "",
+            "for": edible_by(d, request.diners),
+            "server_question": "",
+        }
+        for d, _ in order
+        if d.category.value != "staple"
+    ]
+    answer = {"dishes": rows, "server_questions": [], "summary": ""}
+    problems, items = check(menu, request, answer, _staples(menu, request))
+    if problems:
+        return None
+    fix = coverage_fix(menu, request, items)
+    if fix is not None:
+        answer = _apply_fix(answer, fix, menu, request)
+        problems, fixed = check(menu, request, answer, _staples(menu, request))
+        if not problems:
+            items = fixed
+    return answer, items
+
+
+FALLBACK_SUMMARY = (
+    "The AI's orders kept failing the checks, so this is the rules' own pick: the cheapest "
+    "order that gives everyone a dish they can eat. Refresh to ask the AI again."
+)
+
+
 def _budget_for(menu: Menu, request: TableRequest, dish_ids) -> float | None:
     """Per-person all-in budget (next 50 cents) at which the model's suggested order passes
     every check. None when there is no suggested order or it fails anything but the budget."""
@@ -641,52 +774,41 @@ def _no_fit(
 
 
 def _conflict(menu: Menu, request: TableRequest, info: dict, problems: list[str], hint):
-    # Money figures come only from the rules: the model's own arithmetic is dropped.
-    said = re.split(r"(?<=[.!?])\s+", str(info.get("reason") or "").strip()[:300])
-    reason = " ".join(x for x in said if x and not re.search(r"\$\s?\d", x))
-    relaxations = []
-    value = info.get("new_value")
+    """What to change when nothing fits. Every figure and claim comes from the rules: the
+    model's own wording is dropped (it garbled amounts and called dishes safe for diners the
+    rules flag). The suggested budget leaves a little room above the cheapest valid order,
+    so the model can actually find an order there."""
+    relaxations: list[Relaxation] = []
+    suggest = hint.suggest if hint is not None else None
+    if suggest is not None and request.budget_per_person < suggest <= 500:
+        relaxations.append(_raise_to(suggest))
+    ai_price = None
     if info.get("change") == "budget":
-        price = _budget_for(menu, request, info.get("dish_ids"))
-        if price is None and isinstance(value, int | float):
-            price = round(float(value) * 2 + 0.4999) / 2  # the model's own figure
-            floor = hint.min_budget if hint is not None else None
-            if hint is not None and (floor is None or price < floor):
-                price = None  # the rules show nothing fits at that figure
-        if price is not None and request.budget_per_person < price <= 500:
-            floor = hint.min_budget if hint is not None else None
-            if floor is not None and request.budget_per_person < floor and price > 1.25 * floor:
-                # The AI-dish amount is far above the smallest budget that works: offer the
-                # smallest first, and the AI's amount as the fuller option.
-                relaxations += [_raise_to(floor), _raise_to(price, fuller=True)]
-            else:
-                relaxations.append(_raise_to(price))
-    if hint is not None:
-        kinds = {r.kind for r in relaxations}
-        if (
-            "budget" not in kinds
-            and hint.min_budget is not None
-            and request.budget_per_person < hint.min_budget <= 500
-        ):
-            relaxations.append(_raise_to(hint.min_budget))
-    message = " ".join(
-        x
-        for x in [
-            reason,
-            "No order meets the budget, everyone's allergies and diets, and the kept dishes.",
-        ]
-        if x
+        ai_price = _budget_for(menu, request, info.get("dish_ids"))
+        if ai_price is not None:
+            ai_price = rules_hints.suggested_budget(ai_price - 0.5, ai_price)
+    if ai_price is not None and request.budget_per_person < ai_price <= 500:
+        if not relaxations:
+            relaxations.append(_raise_to(ai_price))
+        elif ai_price > 1.25 * relaxations[0].new_value:
+            relaxations.append(_raise_to(ai_price, fuller=True))
+    cur = "$"
+    cap = subtotal_cap(request.all_in_budget, 1, request.tax_rate, request.tip_rate)
+    message = (
+        f"At {cur}{request.budget_per_person:.2f} per person (about {cur}{cap:.2f} in menu "
+        "prices for the table), no order gives everyone a dish they can eat within their "
+        "allergies, diets and the kept dishes."
     )
-    if relaxations and relaxations[0].kind == "budget":
+    if hint is not None and hint.min_subtotal is not None and hint.min_per_person is not None:
+        message += (
+            f" The cheapest order that does costs {cur}{hint.min_subtotal:.2f} in menu prices, "
+            f"about {cur}{hint.min_per_person:.2f} per person with tax and tip."
+        )
+    if relaxations:
         price = relaxations[0].new_value
+        message += f" {cur}{price:.2f} per person fits it with a little room"
         fuller = next((r.new_value for r in relaxations[1:] if r.kind == "budget"), None)
-        if hint is not None and hint.min_budget is not None and price == hint.min_budget:
-            message += f" The lowest budget that works is ${price:.2f} per person"
-            message += f"; ${fuller:.2f} buys a fuller meal." if fuller else "."
-        else:  # priced from the AI's suggested dishes: it works, but is not the minimum
-            message += f" A budget that works: ${price:.2f} per person."
-    if problems:
-        message += " Last attempt: " + "; ".join(problems[:3])
+        message += f"; {cur}{fuller:.2f} buys a fuller meal." if fuller else "."
     return Conflict(code="no_solution", message=message, relaxations=relaxations)
 
 
@@ -806,13 +928,45 @@ def plan(menu: Menu, request: TableRequest, client=None, cache_path: Path | None
                 history,
             )
         if not problems:
+            calls = attempt + 1
+            fix = coverage_fix(menu, request, items) if COVERAGE_NUDGE else None
+            note = ""
+            if fix is not None:
+                # QA r5 #8: a valid in-budget change serves a least-served diner better.
+                # Ask once with that hint; if the answer is not at least as even, make the
+                # change in code.
+                retry_turns = [
+                    *turns,
+                    llm.Turn("model", text or ""),
+                    llm.Turn("user", _fix_text(menu, request, fix)),
+                ]
+                calls += 1
+                better = None
+                try:
+                    text2, used2 = _ask(retry_turns, schema, menu, request, client)
+                    answer2 = json.loads(text2 or "")
+                    problems2, items2 = check(menu, request, answer2, staples)
+                    history.append(problems2)
+                    if not problems2 and spread(menu, request, items2) >= spread(
+                        menu, request, fix.items
+                    ):
+                        better = (answer2, items2, used2)
+                except Exception as exc:  # noqa: BLE001 - the code's fix still applies
+                    log.warning("Coverage retry failed: %s", type(exc).__name__)
+                if better is not None:
+                    answer, items, used = better
+                    note = " The AI evened out who can eat what when asked."
+                else:
+                    answer = _apply_fix(answer, fix, menu, request)
+                    problems, items = check(menu, request, answer, staples)
+                    note = " The rules swapped one dish so the least-served diner has more."
             _cache_put(key, {"model": used, "answer": answer}, cache_path)
             retried = f" after {attempt} correction{'s' * (attempt > 1)}" if attempt else ""
             return Outcome(
                 _to_plan(menu, request, answer, items),
                 None,
-                f"AI plan by {llm.label(used)}, checked by the rules{retried}.",
-                attempt + 1,
+                f"AI plan by {llm.label(used)}, checked by the rules{retried}.{note}",
+                calls,
                 history,
             )
         turns += [
@@ -830,6 +984,29 @@ def plan(menu: Menu, request: TableRequest, client=None, cache_path: Path | None
         info = answer.get("no_fit") if isinstance(answer, dict) else None
         conflict = _conflict(menu, request, info if isinstance(info, dict) else {}, last, hint)
         return Outcome(None, conflict, "No order fits.", 1 + MAX_RETRIES, history)
+    if hint is not None and hint.feasible:
+        built = fallback(menu, request)
+        if built is not None:
+            answer, items = built
+            plan_ = _to_plan(menu, request, answer, items)
+            checks = [
+                Check(
+                    name="ai",
+                    passed=True,
+                    detail="The AI's orders failed the checks, so the rules built this one.",
+                ),
+                *plan_.checks[1:],
+            ]
+            return Outcome(
+                plan_.model_copy(update={"summary": FALLBACK_SUMMARY, "checks": checks}),
+                None,
+                f"The AI's {1 + MAX_RETRIES} orders failed the checks ("
+                + "; ".join(last[:2])
+                + "), so the rules built the cheapest valid order.",
+                1 + MAX_RETRIES,
+                history,
+                fallback=True,
+            )
     return Outcome(
         None,
         Conflict(

@@ -13,7 +13,7 @@ const opensSettings = (r: Relaxation) => r.kind === "diet" || r.kind === "allerg
 
 /** Plain wording with formatted numbers for the relaxations we know; the backend text otherwise. */
 function optionLabel(r: Relaxation, cur: string): string {
-  if (r.kind === "budget" && r.new_value != null) return `Raise the budget to ${money(r.new_value, cur)} per person`;
+  if (r.kind === "budget" && r.new_value != null) return `Raise the budget to ${money(r.new_value, cur)} per person${/fuller/.test(r.description) ? " for a fuller meal" : ""}`;
   if (r.kind === "coverage" && r.new_value != null) return `Ask for ${r.new_value} ${r.new_value === 1 ? "dish" : "dishes"} per person instead`;
   return r.description;
 }

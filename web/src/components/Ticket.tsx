@@ -11,7 +11,7 @@ interface Props {
   plan: Plan;
   diners: DinerProfile[];
   settings: DiningSettings;
-  source: "ai" | "mock";
+  source: "ai" | "rules" | "mock";
   sourceNote: string | null;
   locked: string[];
   stale: boolean;
@@ -54,7 +54,7 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
             {menu.restaurant_name}, {diners.length} {diners.length === 1 ? "diner" : "diners"}
           </p>
           <h1>{items.length} {items.length === 1 ? "dish" : "dishes"} to share</h1>
-          {source === "ai" && plan.summary && <p className="plan-summary">{plan.summary}</p>}
+          {source !== "mock" && plan.summary && <p className={`plan-summary${source === "rules" ? " plan-summary-rules" : ""}`}>{plan.summary}</p>}
         </div>
         {!stale && (
           <button className="btn btn-outline" onClick={onPlan} disabled={loading}>
@@ -104,7 +104,7 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
                   diners={diners}
                   cur={cur}
                   kept={locked.includes(item.dish_id)}
-                  ai={source === "ai"}
+                  ai={source !== "mock"}
                   expanded={open.includes(item.dish_id)}
                   disabled={disabled}
                   onToggle={toggleOpen}
@@ -165,7 +165,7 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
           <h2>Your order, {items.length} dishes</h2>
           <p className={`plan-source plan-source-${source}`} title={sourceNote ?? undefined}>
             {source === "ai" ? <Sparkles size={13} /> : <ListChecks size={13} />}
-            {source === "ai" ? "Chosen by AI, checked by the rules" : "Demo fixture plan"}
+            {source === "ai" ? "Chosen by AI, checked by the rules" : source === "rules" ? "Built by the rules after the AI's orders failed the checks" : "Demo fixture plan"}
           </p>
           <p className="bill-total">
             <strong>{money(plan.per_person, cur)}</strong>

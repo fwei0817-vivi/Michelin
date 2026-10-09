@@ -255,21 +255,37 @@ def _join_names(names: list[str]) -> str:
     return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
 
 
+def _score(menu: Menu, request: TableRequest, plan: Plan, old_id: str, new_id: str) -> tuple:
+    """How evenly the order serves the table after swapping in new_id: the dish counts per
+    diner least-served first (QA r5 #8), then whether the new dish helps a diner who has the
+    fewest dishes now, then how many diners can eat it."""
+    after = [i for i in plan.items if i.dish_id != old_id]
+    after.append(PlanItem(dish_id=new_id, quantity=1))
+    now = llm_planner.counts(menu, request, plan.items)
+    ok = edible_by(menu.dish(new_id), request.diners)
+    neediest = min((now[p] for p in ok), default=99)
+    return (llm_planner.spread(menu, request, after), -neediest, len(ok))
+
+
 def _better(
     menu: Menu, request: TableRequest, plan: Plan, old_id: str, new_id: str, payload: dict
 ) -> list[dict]:
-    """Candidates that more diners can eat than new_id and that pass the same checks (budget
-    included), most-covered first, then closest in price. Empty when the model's pick already
-    covers the most. No price window: a cheaper dish more of the table can eat is better."""
-    got = len(edible_by(menu.dish(new_id), request.diners))
+    """Candidates that pass the same checks (budget included) and serve the table more
+    evenly than new_id: the least-served diner gets more, or more diners can eat it. Best
+    first, then closest in price. No price window: a cheaper dish that serves the
+    least-served diner is better. Empty when the model's pick is already the best."""
+    got = _score(menu, request, plan, old_id, new_id)
     ref = menu.dish(old_id).price or 0
     out = []
     for c in payload["candidates"]:
-        if len(c["ok_for"]) <= got:
+        score = _score(menu, request, plan, old_id, c["id"])
+        if score <= got:
             continue
         if not check(menu, request, plan, old_id, {"dish_id": c["id"]})[0]:
-            out.append(c)
-    return sorted(out, key=lambda c: (-len(c["ok_for"]), abs((c["price"] or 0) - ref)))[:4]
+            out.append((score, c))
+    out.sort(key=lambda x: abs((x[1]["price"] or 0) - ref))
+    out.sort(key=lambda x: x[0], reverse=True)  # stable: best score first, then nearest price
+    return [c for _, c in out[:4]]
 
 
 def manual(
@@ -401,14 +417,19 @@ def swap(menu: Menu, request: TableRequest, plan: Plan, old_id: str, client=None
                     "user",
                     f"{answer['dish_id']} suits only "
                     f"{len(edible_by(menu.dish(answer['dish_id']), request.diners))} of "
-                    f"{request.n_diners} diners. These similar-priced dishes suit more: "
+                    f"{request.n_diners} diners and does not help the least-served diners "
+                    "(see dishes_they_can_eat_after_swap). These dishes fit the budget and "
+                    "suit more or serve the least-served: "
                     + ", ".join(f"{c['id']} (ok_for {', '.join(c['ok_for'])})" for c in better)
                     + ". Pick the best of them in the same format.",
                 ),
             ]
             continue
         if first is not None:
-            covers = lambda a: len(edible_by(menu.dish(a["dish_id"]), request.diners))
+
+            def covers(a):
+                return _score(menu, request, plan, old_id, a["dish_id"])
+
             if problems or covers(first[0]) > covers(answer):
                 problems, (answer, items) = [], first  # the nudge did not help; first pick stands
         if not problems:

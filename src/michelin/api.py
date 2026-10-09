@@ -147,7 +147,7 @@ class PlanResponse(BaseModel):
     plan: Plan | None = None
     conflict: Conflict | None = None
     subtotal_cap: float
-    source: str = "ai"  # "ai" (the LLM chose, the rules checked) | "mock" (fixture demo)
+    source: str = "ai"  # "ai" (LLM chose, rules checked) | "rules" (fallback) | "mock" (demo)
     source_note: str | None = None
 
 
@@ -385,6 +385,8 @@ def plan(req: PlanRequest, x_profile_scope: str | None = Header(default=None)) -
     else:
         outcome = llm_planner.plan(menu, request)
         source_note = outcome.note
+        if outcome.fallback:
+            source = "rules"  # the AI's orders failed; the rules built this one
         result = outcome.plan if outcome.plan is not None else outcome.conflict
     if isinstance(result, Conflict):
         return PlanResponse(

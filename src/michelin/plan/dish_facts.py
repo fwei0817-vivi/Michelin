@@ -40,7 +40,7 @@ from michelin.schemas import (
 log = logging.getLogger("michelin")
 ROOT = Path(__file__).resolve().parents[3]
 CACHE_PATH = Path(os.environ.get("MICHELIN_FACTS_CACHE", ROOT / "data/facts/dish_facts.json"))
-VERSION = "4"
+VERSION = "5"
 ALLERGENS = [a.value for a in Allergen]
 MAX_DISHES = 40
 
@@ -56,7 +56,7 @@ For every dish return:
   stock in vegetable dishes, oyster sauce in stir-fries, egg in noodles, fish sauce).
 - "allergens": every one of peanut, tree_nut, shellfish, fish, egg, dairy, soy, wheat,
   sesame that the dish likely or possibly contains, with "certainty" and a short "why"
-  (e.g. "soy sauce", "fried in peanut oil", "egg noodles"). Leave out allergens it does not
+  (e.g. "soy sauce", "peanut sauce", "egg noodles"). Leave out allergens it does not
   contain. Soy sauce means soy and wheat. Oyster sauce means shellfish. When unsure, list it
   as "possible".
 - "pork", "beef": "yes" (in the dish as named or almost always), "possible" (some kitchens
@@ -65,21 +65,24 @@ For every dish return:
   fish or oyster sauce, egg or dairy that some kitchens use; name it in ingredients as
   "possible"), or "no".
 - "spice": 0 none, 1 mild, 2 medium, 3 hot.
-- "category": the menu section it belongs to ("staple" is plain rice, noodles or buns
-  served per person); keep the given category unless it is "other".
+- "category": the menu section it belongs to; keep the given category unless it is
+  "other". "staple" means plain steamed rice served per person ONLY; noodles, pancakes,
+  dumplings and fried rice are shared dishes, never "staple".
 Allergen rule: if any common recipe variant of the dish contains an allergen (as an
-ingredient, a sauce, a garnish or the frying oil), mark it at least "possible".
+ingredient, a sauce or paste, or a garnish), mark it at least "possible". Refined frying
+oil and a shared fryer are not ingredients: do not flag peanut or shellfish for them alone.
 Be conservative. A wrong "no" can send someone to hospital; a wrong "possible" only adds a
 question for the server. If a well-known version of the dish sometimes has it, say
 "possible". Every possible ingredient that is an allergen makes that allergen possible too
 (oyster sauce -> shellfish, fish sauce -> fish, egg noodles -> egg). Examples: dan dan
 noodles and cold noodles: peanut possible; Chungking/Chongqing spicy chicken, three pepper
-chicken, kung pao, chili-oil wontons and other Sichuan chili dishes: peanut possible (or
-likely); smashed cucumber: peanut and sesame possible; Sichuan dry-fried string beans: minced pork
+chicken, kung pao, chili-oil wontons: peanut possible (or likely); a dish that is merely
+spicy or "Szechuan style" is not a peanut risk by itself; smashed cucumber: peanut and sesame possible; Sichuan dry-fried string beans: minced pork
 likely; garlic eggplant and plain sauteed string beans: minced pork possible; dumplings and
 wontons: pork likely unless named otherwise; shrimp dumplings: pork fat possible; vegetable
-stir-fries: chicken stock and oyster sauce possible; Sichuan cold dishes: peanut and sesame
-possible; anything deep-fried: shared fryer with shrimp possible.
+stir-fries: chicken stock and oyster sauce possible; mouth-watering chicken, bang bang
+chicken and strange-flavour dishes: peanut and sesame possible; scallion pancakes: lard
+possible, no peanut or shellfish; fried rice: egg likely, shellfish only if named.
 Answer for every dish id given, in the same order. Do not invent dishes."""
 
 
@@ -98,7 +101,11 @@ def norm(name: str | None) -> str:
         r"\((?:\d+\s*(?:pcs?|pieces?)?|\w*\s*pcs?)\)|\b\d+\s*(?:pcs?|pieces?)\b", " ", text
     )
     text = re.sub(r"[^a-z0-9]+", " ", text).strip()
-    return text
+    # "Scallion Pancakes" and "Scallion Pancake" are one dish.
+    return " ".join(
+        w[:-1] if len(w) > 3 and w.endswith("s") and not w.endswith("ss") else w
+        for w in text.split()
+    )
 
 
 def _key(dish: Dish) -> str:
@@ -148,16 +155,22 @@ def merge(old: dict | None, new: dict | None) -> dict | None:
 # A conservative floor in code, on top of the AI: names that commonly hide an allergen or
 # meat. Matches only ADD "possible" risks (union); they never remove anything.
 _FLOOR: list[tuple[str, dict]] = [
+    # Peanut: only dish families that really use it (QA r5: not every spicy or 辣 name).
     (
         (
-            r"chil+i|spicy|sichuan|szechuan|chungking|chongqing|kung ?pao|gong ?bao|dan ?dan|"
-            r"hot oil|red oil|smashed cucumber|cucumber salad|satay|cold noodle|ma ?la|three pepper|hunan|"
-            r"辣|宫保|担担|红油|花生|口水"
+            r"kung ?pao|gong ?bao|宫保|dan ?dan|担担|satay|peanut|花生|怪味|"
+            r"(?:chungking|chongqing)\b[^,;]*\bchicken|重庆[^,;]*鸡|辣子鸡|three pepper|"
+            r"smashed cucumber|拍黄瓜|spicy wontons?|wontons? in (?:hot |red |chil+i )*oil|"
+            r"红油抄手|口水鸡|棒棒鸡|bang ?bang chicken|mouth[- ]watering chicken"
         ),
-        {"allergens": ["peanut", "sesame"]},
+        {"allergens": ["peanut"]},
+    ),
+    # Sesame: sesame paste or oil is part of the dish.
+    (
+        r"dan ?dan|担担|smashed cucumber|拍黄瓜|口水鸡|棒棒鸡|怪味|bang ?bang|sesame|芝麻|麻酱",
+        {"allergens": ["sesame"]},
     ),
     (r"cashew|walnut|almond|pecan|pistachio|腰果|核桃", {"allergens": ["tree_nut"]}),
-    (r"satay|peanut", {"allergens": ["peanut"]}),
     (
         (
             r"dumpling|wonton|won ton|\bbao\b|\bbuns?\b|potsticker|xiao ?long|shu ?mai|siu ?mai|"
@@ -167,13 +180,7 @@ _FLOOR: list[tuple[str, dict]] = [
         ),
         {"pork": "possible"},
     ),
-    (
-        (
-            r"fried rice|lo ?mein|chow ?mein|seafood|\bxo\b|oyster|"
-            r"tempura|salt (?:and|&) pepper|椒盐"
-        ),
-        {"allergens": ["shellfish"]},
-    ),
+    (r"seafood|\bxo\b|oyster|海鲜", {"allergens": ["shellfish"]}),
     (r"fish[ -]?fragrant|yu[ -]?xiang|鱼香", {"allergens": ["fish"], "pork": "possible"}),
     (
         r"noodle|lo ?mein|chow ?mein|fried rice|dumpling|wonton|pancake|batter|tempura|面|饺",
@@ -332,6 +339,23 @@ def _clean(row: dict) -> dict | None:
     return facts
 
 
+_PLAIN_RICE = re.compile(
+    r"^\s*(?:steamed |white |brown |jasmine |plain )*rice(?: \(.*\))?\s*$|米饭|白饭", re.IGNORECASE
+)
+
+
+def _category(dish: Dish, ai: str | None) -> DishCategory:
+    """The printed category wins; the AI only fills in "other". It may call a dish a
+    per-person "staple" only if it is plain rice (QA r5: not Scallion Pancake or Dan Dan)."""
+    if dish.category != DishCategory.OTHER or not ai:
+        return dish.category
+    if ai == DishCategory.STAPLE.value:
+        name = f"{dish.name_en or ''}".strip() or ""
+        if not (_PLAIN_RICE.search(name) or _PLAIN_RICE.search(dish.name_zh or "")):
+            return DishCategory.OTHER
+    return DishCategory(ai)
+
+
 def apply(dish: Dish, facts: dict | None) -> Dish:
     """A bare dish plus the AI's facts (unioned with the code's floor), in the fields the
     rules read. Without AI facts the floor alone is not enough to clear anything: diets and
@@ -398,9 +422,7 @@ def apply(dish: Dish, facts: dict | None) -> Dish:
             "spice_level": facts.get("spice"),
             "confirm_with_staff": list(dict.fromkeys(questions))[:6],
             # The printed category wins; the AI only fills in "other" (e.g. imported rice).
-            "category": DishCategory(facts["category"])
-            if dish.category == DishCategory.OTHER and facts.get("category")
-            else dish.category,
+            "category": _category(dish, facts.get("category")),
         }
     )
 

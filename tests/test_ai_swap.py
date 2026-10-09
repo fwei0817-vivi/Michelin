@@ -377,29 +377,56 @@ def test_summary_stays_visible_after_a_swap(table):
     assert "per person with tax and tip" in out.plan.summary
 
 
-def test_better_has_no_price_window_and_brief_counts_dishes_per_diner(table, monkeypatch):
-    """QA round 4 #3: a cheaper dish more diners can eat must count as better (the old
-    +/-30% window hid Smashed Cucumber at $7.95 when replacing a $14.95 dish)."""
-    menu, request, plan = table
-    old = next(i.dish_id for i in plan.items if menu.dish(i.dish_id).category.value != "staple")
-    req = ai_swap._swap_request(request, old)
-    brief = ai_swap.brief(menu, req, plan, old)
-    assert all("dishes_they_can_eat_after_swap" in d for d in brief["diners"])
-    ids = [p.id for p in request.diners]
-    ref = menu.dish(old).price
-    weak = min(menu.dishes, key=lambda d: len(ai_swap.edible_by(d, request.diners))).id
-    got = len(ai_swap.edible_by(menu.dish(weak), request.diners))
-    assert got + 2 <= len(ids)
-    payload = {
-        "candidates": [
-            {"id": "far_cheap", "price": round(ref * 0.4, 2), "ok_for": ids[: got + 2]},
-            {"id": "near", "price": ref, "ok_for": ids[: got + 1]},
-            {"id": "same", "price": ref, "ok_for": ids[:got]},
+def test_better_prefers_the_least_served_and_has_no_price_window(table):
+    """QA r4 #3 / r5 #8: among valid in-budget candidates, the one that serves the
+    least-served diner best wins, at any price."""
+    menu, request, _ = table
+    # A thin plan with room in the budget: the rules' cheapest order at $80 a person.
+    from michelin.plan import hints
+
+    request = request.model_copy(update={"budget_per_person": 80})
+    order, _ = hints.cheapest_order(menu, request)
+    rows = [
+        {"dish_id": d.id, "reason": "", "for": []} for d, _ in order if d.category.value != "staple"
+    ]
+    narrow = min(
+        (
+            d
+            for d in menu.dishes
+            if d.category.value != "staple"
+            and d.price is not None
+            and 0 < len(edible_by(d, request.diners)) < request.n_diners
+        ),
+        key=lambda d: d.price,
+    )
+    rows.append({"dish_id": narrow.id, "reason": "", "for": []})
+    answer = {"dishes": rows, "server_questions": []}
+    _, items = llm_planner.check(menu, request, answer, llm_planner._staples(menu, request))
+    plan = llm_planner._to_plan(menu, request, answer, items)
+    found = False
+    for old in [i.dish_id for i in plan.items if menu.dish(i.dish_id).category.value != "staple"]:
+        req = ai_swap._swap_request(request, old)
+        brief = ai_swap.brief(menu, req, plan, old)
+        assert all("dishes_they_can_eat_after_swap" in d for d in brief["diners"])
+        valid = [
+            c
+            for c in brief["candidates"]
+            if not ai_swap.check(menu, req, plan, old, {"dish_id": c["id"]})[0]
         ]
-    }
-    monkeypatch.setattr(ai_swap, "check", lambda *a, **k: ([], []))
-    better = ai_swap._better(menu, req, plan, old, weak, payload)
-    assert [c["id"] for c in better] == ["far_cheap", "near"]
+        if len(valid) < 2:
+            continue
+
+        def score(c, req=req, old=old):
+            return ai_swap._score(menu, req, plan, old, c["id"])
+
+        weak, best = min(valid, key=score), max(valid, key=score)
+        better = ai_swap._better(menu, req, plan, old, weak["id"], brief)
+        if score(best) > score(weak):
+            found = True
+            assert better and score(better[0]) == score(best)
+        assert ai_swap._better(menu, req, plan, old, best["id"], brief) == []
+    if not found:
+        pytest.skip("no swap with a better-covering candidate")
 
 
 def test_swap_reason_never_singles_out_a_flagged_diner(table):
