@@ -12,7 +12,7 @@ import { TableSetup } from "./components/TableSetup";
 import { Ticket } from "./components/Ticket";
 import { TopBar } from "./components/TopBar";
 import { WaiterView } from "./components/WaiterView";
-import type { DinerProfile, DiningSettings, Menu, MenuSummary, PlanResponse, Relaxation } from "./types";
+import type { DinerProfile, DiningSettings, FeedbackChip, Menu, MenuSummary, PlanResponse, Relaxation } from "./types";
 
 type Context = { menu: Menu; menuId: string; diners: DinerProfile[]; settings: DiningSettings };
 type Result = { response: PlanResponse; context: Context; key: string };
@@ -235,6 +235,28 @@ export default function App() {
     } catch (e) { if (seq === sequence.current) setSwapFailed({ id, message: `${errorText(e)} Pick a replacement from the menu instead.`, manual: !!pick }); }
     finally { if (seq === sequence.current) setSwapping(null); }
   };
+  /** "What should change?": the AI revises the current order; Undo restores it as it was. */
+  const refinePlan = async (chips: FeedbackChip[], text: string) => {
+    const current = result;
+    const p = current?.response.plan;
+    if (!current || !p || stale) return;
+    const { menu: m, menuId: mid, diners: d, settings: s } = current.context;
+    const seq = ++sequence.current;
+    setLoading(true); setError(null);
+    try {
+      const response = await postPlan({ menu_id: mid, menu_override: m, diners: d,
+        budget_per_person: s.budget, tax_rate: s.tax, tip_rate: s.tip, style_preference: s.style,
+        locked_dish_ids: locked, excluded_dish_ids: excluded, explain: true,
+        feedback: { chips, text, current: p.items.map(i => ({ dish_id: i.dish_id, quantity: i.quantity })) } });
+      if (seq !== sequence.current) return;
+      if (response.kind === "plan" && response.plan) {
+        setUndo({ locked: [...locked], excluded: [...excluded], result: current,
+          message: response.change_note ?? "The order was updated." });
+        setResult({ ...current, response });
+      } else setError(response.conflict?.message ?? "That change could not produce a new order; the current one stays.");
+    } catch (e) { if (seq === sequence.current) setError(`${errorText(e)} The current order stays.`); }
+    finally { if (seq === sequence.current) setLoading(false); }
+  };
   const removeDish = (id: string) => {
     setUndo({ locked: [...locked], excluded: [...excluded], message: "Dish removed from suggestions. The table has been rebalanced." });
     const ex = [...new Set([...excluded, id])], lk = locked.filter(x => x !== id);
@@ -279,7 +301,7 @@ export default function App() {
       {swapFailed && !swapping && <div className="change-notice swap-failed" role="alert"><span>{swapFailed.message}</span><button className="text-button" onClick={() => { const id = swapFailed.id; setSwapFailed(null); setBrowser({ mode: "pick", old: id }); }}>{swapFailed.manual ? "Pick another dish" : "Pick from the menu"}</button><button className="dismiss-change" aria-label="Dismiss" onClick={() => setSwapFailed(null)}>×</button></div>}
       {swapping && <div className="change-notice" role="status"><Progress key={swapSteps.join()} steps={swapSteps} every={2200} inline/><span className="progress-note">Everything else stays.</span></div>}
       {(starting || (loading && !result)) ? <div className="empty-state" role="status">{starting || mock ? <><LoaderCircle size={30} className="spin mx-auto"/><h2>{starting ? "Setting the table…" : "Finding a table that works…"}</h2><p>Considering the menu, budget, and everyone's requirements.</p></> : <><h2>Finding a table that works…</h2><Progress key="plan" steps={planSteps}/></>}</div> : step !== "plan" && menu ? <SetupFlow step={step} onStep={s => s === "plan" ? (result && !stale ? setStep("plan") : void generate()) : setStep(s)} canPlan={!!result && diners.length > 0} photoReader={photoReader} onPhoto={files => setBrowser({ mode: "browse", old: null, initialTab: "import", photos: files, fromStart: true })} onPaste={() => setBrowser({ mode: "browse", old: null, initialTab: "import", fromStart: true })} menu={menu} diners={diners} saved={saved} onPick={pickSaved} onRemove={removeDiner} settings={settings} onMenu={() => setBrowser({ mode: "browse", old: null })} onSample={() => void startSample()} onChange={editSettings} onEdit={setEditing} onAdd={() => setEditing("new")} onPreset={choosePreset} onPlan={() => result && !stale ? setStep("plan") : void generate()} loading={loading} current={!!result && !stale && diners.length > 0} onApprove={() => { if (menu) { updateMenu({ ...menu, verified: true }); setStep("table"); } }}/> : stale && !loading ? <div className="empty-state"><h2>Update your meal</h2><p>The previous recommendation is no longer current.</p><button className="btn btn-primary" onClick={() => void generate()}>Update dishes</button></div> : plan && snapshot && diners.length ? <>
-        <Ticket key={result?.key + JSON.stringify(plan.items)} menu={snapshot.menu} plan={plan} diners={snapshot.diners.filter(d => diners.some(c => c.id === d.id))} settings={snapshot.settings} source={result?.response.source ?? "ai"} sourceNote={result?.response.source_note ?? null} locked={locked} stale={stale} loading={loading} onLock={id => { setUndo(null); setLocked(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]); }} onSwap={id => setBrowser({ mode: "pick", old: id })} onAiSwap={id => void swapDish(id)} swapping={swapping} onRemove={removeDish} onAdd={() => setBrowser({ mode: "pick", old: null })} onPlan={() => { setUndo(null); void generate(); }} onOrder={() => setWaiter(true)} canOrder={canOrder} onParty={() => setParty(true)}/>
+        <Ticket key={result?.key + JSON.stringify(plan.items)} menu={snapshot.menu} plan={plan} diners={snapshot.diners.filter(d => diners.some(c => c.id === d.id))} settings={snapshot.settings} source={result?.response.source ?? "ai"} sourceNote={result?.response.source_note ?? null} locked={locked} stale={stale} loading={loading} onLock={id => { setUndo(null); setLocked(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]); }} onSwap={id => setBrowser({ mode: "pick", old: id })} onAiSwap={id => void swapDish(id)} swapping={swapping} onRemove={removeDish} onAdd={() => setBrowser({ mode: "pick", old: null })} onRefine={(chips, text) => void refinePlan(chips, text)} onOrder={() => setWaiter(true)} canOrder={canOrder} onParty={() => setParty(true)}/>
       </> : result?.response.conflict ? <><ConflictNote conflict={result.response.conflict} menu={result.context.menu} diners={result.context.diners} settings={result.context.settings} onRelax={applyRelaxation}/><div className="conflict-actions">{result.response.conflict.code?.startsWith("ai_") && <button className="btn btn-primary" onClick={() => void generate()} disabled={loading}><RefreshCw size={16} className={loading ? "spin" : ""}/>Try again</button>}<button className="btn btn-quiet" onClick={() => setParty(true)}><Users size={16}/>Edit people and budget</button><button className="btn btn-quiet" onClick={() => { setLocked([]); setExcluded([]); void generate({ locked: [], excluded: [] }); }} disabled={loading}><RefreshCw size={16}/>Reset dish choices</button><button className="btn btn-quiet" onClick={() => setBrowser({ mode: "browse", old: null })}><BookOpen size={16}/>Browse menu</button></div></> : <div className="empty-state"><UtensilsCrossed size={30} className="mx-auto"/><h2>{diners.length ? "Your next meal starts here" : "Who's joining the table?"}</h2><p>{diners.length ? "Review your group and choose a menu to plan a shared meal." : "Add diners and their dietary requirements to get started."}</p><button className="btn btn-primary" onClick={() => setParty(true)}><Users size={16}/>Set up the table</button>{!!diners.length && menu && <button className="btn btn-quiet ml-3" onClick={() => void generate()}>Plan the table</button>}</div>}
       {(locked.length > 0 || excluded.length > 0) && <div className="choices-summary"><span>{choicesLine(locked, excluded, menu)}</span><button className="btn btn-outline btn-small" disabled={loading} onClick={() => { setLocked([]); setExcluded([]); void generate({ locked: [], excluded: [] }); }}>Reset dish choices</button></div>}
     </main>

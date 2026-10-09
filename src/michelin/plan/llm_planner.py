@@ -36,6 +36,7 @@ from pathlib import Path
 from michelin import gemini, llm
 from michelin.explain import explain
 from michelin.plan import hints as rules_hints
+from michelin.plan import refine
 from michelin.plan.budget import cents, subtotal_cap, totals
 from michelin.plan.edibility import (
     ask_server,
@@ -123,6 +124,9 @@ class Outcome:
     violations: list[list[str]] = field(default_factory=list)
     cached: bool = False
     fallback: bool = False  # the rules built this order after the AI's tries failed
+    answer: dict | None = None  # the model's accepted answer (for the change note)
+    change_note: str | None = None  # refinement: what changed, checked against the diff
+    changes: list[str] = field(default_factory=list)  # refinement: the code-computed diff
 
 
 def enabled() -> bool:
@@ -879,8 +883,32 @@ def _ask(turns: list, schema: dict, menu: Menu, request: TableRequest, client):
     return llm.generate_json("plan", system=SYSTEM, turns=turns, schema=schema, client=client)
 
 
-def plan(menu: Menu, request: TableRequest, client=None, cache_path: Path | None = None) -> Outcome:
-    """A model-chosen order that passed every check, or a conflict that says why not."""
+def plan(
+    menu: Menu,
+    request: TableRequest,
+    client=None,
+    cache_path: Path | None = None,
+    feedback: refine.Feedback | None = None,
+) -> Outcome:
+    """A model-chosen order that passed every check, or a conflict that says why not. With
+    feedback, the AI revises the current order (no cached answer is reused) and the outcome
+    carries a change note whose claims match the code-computed changes."""
+    outcome = _plan(menu, request, client, cache_path, feedback)
+    if feedback is None or outcome.plan is None:
+        return outcome
+    before = [(c.dish_id, c.quantity) for c in feedback.current]
+    after = [(i.dish_id, i.quantity) for i in outcome.plan.items]
+    d = refine.diff(menu, before, after)
+    ai_note = None if outcome.fallback else (outcome.answer or {}).get("change_note")
+    note, from_ai = refine.final_note(ai_note, d)
+    if not from_ai and ai_note:
+        log.info("Change note replaced: %r does not match the changes", str(ai_note)[:120])
+    outcome.change_note = note
+    outcome.changes = refine.changes_list(d)
+    return outcome
+
+
+def _plan(menu, request, client=None, cache_path=None, feedback=None) -> Outcome:
     cache_path = cache_path or CACHE_PATH
     if not enabled() and client is None:
         return _unavailable(
@@ -893,6 +921,11 @@ def plan(menu: Menu, request: TableRequest, client=None, cache_path: Path | None
         log.warning("Rules hints failed", exc_info=True)
         hint = None
     payload = brief(menu, request, hint)
+    if feedback is not None:  # part of the payload, so part of the cache key
+        payload["current_order"] = [
+            {"id": c.dish_id, "quantity": c.quantity} for c in feedback.current
+        ]
+        payload["feedback"] = feedback.asks()
     if not payload["dishes"]:
         return Outcome(
             None,
@@ -916,7 +949,7 @@ def plan(menu: Menu, request: TableRequest, client=None, cache_path: Path | None
     staples = _staples(menu, request)
     model_id = llm.model("plan")
     key = _key(payload, model_id)
-    stored = _cache_get(key, cache_path)
+    stored = None if feedback is not None else _cache_get(key, cache_path)
     if stored:
         problems, items = check(menu, request, stored["answer"], staples)
         if not problems:
@@ -928,7 +961,10 @@ def plan(menu: Menu, request: TableRequest, client=None, cache_path: Path | None
             )
     ids = [d["id"] for d in payload["dishes"]]
     schema = _schema(ids, [p.id for p in request.diners])
-    turns = [llm.Turn("user", "Brief:\n" + json.dumps(payload, ensure_ascii=False))]
+    if feedback is not None:
+        schema["properties"]["change_note"] = {"type": "string"}
+    intro = refine.REVISE + "\n\n" if feedback is not None else ""
+    turns = [llm.Turn("user", intro + "Brief:\n" + json.dumps(payload, ensure_ascii=False))]
     history: list[list[str]] = []
     answer: dict = {}
     for attempt in range(1 + MAX_RETRIES):
@@ -1030,6 +1066,7 @@ def plan(menu: Menu, request: TableRequest, client=None, cache_path: Path | None
                 f"AI plan by {llm.label(used)}, checked by the rules{retried}.{note}",
                 calls,
                 history,
+                answer=answer,
             )
         turns += [
             llm.Turn("model", text or ""),

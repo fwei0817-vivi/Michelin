@@ -4,7 +4,42 @@ import { CATEGORY_LABEL, MARK_LABEL, checkLabel, currencySymbol, dishName, flagW
 import { dishQuestions, heatNote, mayHideMeat } from "../lib/dietary";
 import { photoFor } from "../lib/dishPhotos";
 import { Coverage } from "./Coverage";
-import type { DinerProfile, DiningSettings, Dish, Menu, Plan, PlanItem } from "../types";
+import type { DinerProfile, DiningSettings, Dish, FeedbackChip, Menu, Plan, PlanItem } from "../types";
+
+const FEEDBACK_CHIPS: [FeedbackChip, string][] = [
+  ["less_spicy", "Less spicy"],
+  ["more_seafood", "More seafood"],
+  ["more_veggies", "More veggies"],
+  ["cheaper", "Cheaper"],
+  ["more_filling", "More filling"],
+  ["something_different", "Something different"],
+];
+
+/** "What should change?": quick chips plus free text, sent with the current order. */
+function RefineBox({ loading, onSubmit, onCancel }: { loading: boolean; onSubmit: (chips: FeedbackChip[], text: string) => void; onCancel: () => void }) {
+  const [chips, setChips] = useState<FeedbackChip[]>([]);
+  const [text, setText] = useState("");
+  const ready = chips.length > 0 || text.trim().length > 0;
+  return (
+    <form className="refine-box" aria-label="What should change?" onSubmit={(e) => { e.preventDefault(); if (ready) onSubmit(chips, text.trim()); }}>
+      <label htmlFor="refine-text"><strong>What should change?</strong></label>
+      <div className="check-grid">
+        {FEEDBACK_CHIPS.map(([id, label]) => (
+          <label key={id} className={`check-chip ${chips.includes(id) ? "on" : ""}`}>
+            <input type="checkbox" checked={chips.includes(id)} onChange={() => setChips(chips.includes(id) ? chips.filter((c) => c !== id) : [...chips, id])} />
+            {label}
+          </label>
+        ))}
+      </div>
+      <input id="refine-text" className="field" maxLength={200} value={text} onChange={(e) => setText(e.target.value)} placeholder="Anything else, e.g. one more noodle dish" />
+      <div className="refine-actions">
+        <button type="submit" className="btn btn-primary btn-small" disabled={!ready || loading}>Update the order</button>
+        <button type="button" className="btn btn-outline btn-small" onClick={onCancel}>Cancel</button>
+      </div>
+      <small className="text-xs text-fg-3">Kept dishes stay. Every change is checked against allergies, diets and the budget.</small>
+    </form>
+  );
+}
 
 interface Props {
   menu: Menu;
@@ -22,7 +57,7 @@ interface Props {
   swapping: string | null;
   onRemove: (id: string) => void;
   onAdd: () => void;
-  onPlan: () => void;
+  onRefine: (chips: FeedbackChip[], text: string) => void;
   onOrder: () => void;
   canOrder: boolean;
   onParty: () => void;
@@ -30,9 +65,10 @@ interface Props {
 
 const SPICE = ["", "Mild", "Medium", "Hot"];
 
-export function Ticket({ menu, plan, diners, settings, source, sourceNote, locked, stale, loading, onLock, onSwap, onAiSwap, swapping, onRemove, onAdd, onPlan, onOrder, canOrder, onParty }: Props) {
+export function Ticket({ menu, plan, diners, settings, source, sourceNote, locked, stale, loading, onLock, onSwap, onAiSwap, swapping, onRemove, onAdd, onRefine, onOrder, canOrder, onParty }: Props) {
   const [filter, setFilter] = useState("all");
   const [open, setOpen] = useState<string[]>([]);
+  const [refining, setRefining] = useState(false);
   const byId: Record<string, Dish> = Object.fromEntries(menu.dishes.map((d) => [d.id, d]));
   const items = plan.items.filter((i) => byId[i.dish_id]);
   const cur = currencySymbol(menu.currency);
@@ -57,12 +93,16 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
           {source !== "mock" && plan.summary && <p className={`plan-summary${source === "rules" ? " plan-summary-rules" : ""}`}>{plan.summary}</p>}
         </div>
         {!stale && (
-          <button className="btn btn-outline" onClick={onPlan} disabled={loading}>
+          <button className="btn btn-outline" onClick={() => setRefining((v) => !v)} disabled={loading} aria-expanded={refining}>
             <RefreshCw size={15} className={loading ? "spin" : ""} />
-            {loading ? "Finding dishes…" : "Refresh suggestions"}
+            {loading ? "Updating the order…" : "Change suggestions"}
           </button>
         )}
       </div>
+
+      {refining && !stale && (
+        <RefineBox loading={loading} onCancel={() => setRefining(false)} onSubmit={(chips, text) => { setRefining(false); onRefine(chips, text); }} />
+      )}
 
       {failed.length > 0 && (
         <div className="notice error-notice" role="status">
@@ -92,7 +132,7 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
               </div>
               <p className="course-hint">
                 <LockKeyhole size={13} />
-                Keep a dish to hold onto it when suggestions refresh.
+                Keep a dish to hold onto it when suggestions change.
               </p>
             </div>
             <div className="dish-grid">
@@ -349,7 +389,7 @@ function DishCard({ item, dish, diners, cur, kept, ai, expanded, disabled, onTog
         <button
           className={`dish-action ${kept ? "kept" : ""}`}
           aria-label={`Keep ${name}`}
-          title={kept ? "Kept when suggestions refresh" : "Keep this dish"}
+          title={kept ? "Kept when suggestions change" : "Keep this dish"}
           aria-pressed={kept}
           onClick={() => onLock(dish.id)}
           disabled={disabled}

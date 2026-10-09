@@ -549,3 +549,5 @@ details[open] > summary .who-count svg { transform: rotate(180deg); }
 .suggest-chip { border-style: dashed; background: transparent; cursor: pointer; }
 .term-add { display: flex; gap: 8px; align-items: center; }
 .term-add .field { flex: 1; }
+.refine-box { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; margin: 12px 0; border: 1px solid #ddd; border-radius: 10px; background: #fff; }
+.refine-actions { display: flex; gap: 8px; }

@@ -22,7 +22,7 @@ from michelin import llm
 from michelin.explain import explain
 from michelin.meal import PeopleAction, apply_people_action
 from michelin.model import ExtractionRequest, ExtractionResponse
-from michelin.plan import ai_swap, dish_facts, llm_planner
+from michelin.plan import ai_swap, dish_facts, llm_planner, refine
 from michelin.plan.budget import subtotal_cap, totals
 from michelin.plan.edibility import assessment, edible_by, open_questions
 from michelin.plan.score import variety_score
@@ -131,6 +131,8 @@ class PlanRequest(BaseModel):
     dish_count_target: int | None = Field(default=None, ge=1, le=20)
     style_preference: str = Field(default="balanced", pattern="^(balanced|lighter|favorites)$")
     explain: bool = False  # ask the LLM stage for one-line reasons
+    # "What should change?": the AI revises feedback.current (bypassing the plan cache).
+    feedback: refine.Feedback | None = None
 
     @model_validator(mode="after")
     def _someone_is_eating(self) -> PlanRequest:
@@ -150,6 +152,8 @@ class PlanResponse(BaseModel):
     subtotal_cap: float
     source: str = "ai"  # "ai" (LLM chose, rules checked) | "rules" (fallback) | "mock" (demo)
     source_note: str | None = None
+    change_note: str | None = None  # refinement: one line on what changed (checked)
+    changes: list[str] = Field(default_factory=list)  # refinement: the computed changes
 
 
 # ---------------------------------------------------------------------------
@@ -384,11 +388,13 @@ def plan(req: PlanRequest, x_profile_scope: str | None = Header(default=None)) -
 
     # Recommendations come from the LLM only; the rules below validate, never choose.
     source, source_note = "mock" if MOCK else "ai", None
+    change_note, changes = None, []
     if MOCK:
         result = _mock_solve(menu, request)
     else:
-        outcome = llm_planner.plan(menu, request)
+        outcome = llm_planner.plan(menu, request, feedback=req.feedback)
         source_note = outcome.note
+        change_note, changes = outcome.change_note, outcome.changes
         if outcome.fallback:
             source = "rules"  # the AI's orders failed; the rules built this one
         result = outcome.plan if outcome.plan is not None else outcome.conflict
@@ -439,7 +445,13 @@ def plan(req: PlanRequest, x_profile_scope: str | None = Header(default=None)) -
     except (ValueError, TypeError, KeyError, AttributeError) as exc:
         raise HTTPException(502, "Planner or explanation returned invalid output.") from exc
     return PlanResponse(
-        kind="plan", plan=result, subtotal_cap=cap, source=source, source_note=source_note
+        kind="plan",
+        plan=result,
+        subtotal_cap=cap,
+        source=source,
+        source_note=source_note,
+        change_note=change_note,
+        changes=changes,
     )
 
 

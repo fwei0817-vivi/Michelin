@@ -152,6 +152,16 @@ export interface PlanRequest {
   menu_override?: Menu;
   style_preference?: string;
   explain?: boolean;
+  /** "What should change?": the AI revises `current` per the chips and words. */
+  feedback?: PlanFeedback;
+}
+
+export type FeedbackChip = "less_spicy" | "more_seafood" | "more_veggies" | "cheaper" | "more_filling" | "something_different";
+
+export interface PlanFeedback {
+  chips: FeedbackChip[];
+  text: string;
+  current: { dish_id: string; quantity: number }[];
 }
 
 /** AI single-dish swap: only that dish changes; "failed" offers the manual pick. */
@@ -170,6 +180,8 @@ export interface PlanResponse {
   subtotal_cap: number;
   source?: "ai" | "rules" | "mock";
   source_note?: string | null;
+  change_note?: string | null; // refinement: what changed, checked against the real changes
+  changes?: string[];
 }
 
 export interface DiningSettings {
