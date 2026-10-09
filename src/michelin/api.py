@@ -301,12 +301,14 @@ def _prepare(req: PlanRequest, x_profile_scope: str | None) -> tuple[Menu, Table
     for dish_id in req.locked_dish_ids + req.excluded_dish_ids:
         if dish_id not in known:
             raise HTTPException(404, f"unknown dish {dish_id!r}")
-    # Only name, price and category are trusted; the AI's dish facts are filled in here.
-    menu = dish_facts.prepare(menu)
+    diners = _resolve_diners(req, x_profile_scope)
+    # Only name, price and category are trusted; the AI's dish facts are filled in here,
+    # with answers for the table's own allergies and diets ("mango", "halal").
+    menu = dish_facts.prepare(menu, diners=diners)
 
     request = TableRequest(
         menu_id=req.menu_id,
-        diners=_resolve_diners(req, x_profile_scope),
+        diners=diners,
         budget_per_person=req.budget_per_person,
         budget_total=req.budget_total,
         tax_rate=req.tax_rate,
@@ -768,7 +770,7 @@ class EvaluateRequest(BaseModel):
 
 @app.post("/api/menu/evaluate")
 def evaluate_menu(req: EvaluateRequest) -> dict:
-    menu = dish_facts.prepare(req.menu)
+    menu = dish_facts.prepare(req.menu, diners=req.diners)
     return {
         d.id: {
             "edible_by": edible_by(d, req.diners),
@@ -792,7 +794,8 @@ class OrderValidationRequest(BaseModel):
 
 @app.post("/api/order/validate")
 def order_validation(body: OrderValidationRequest):
-    return validate_order(dish_facts.prepare(body.menu), body.request, body.items)
+    menu = dish_facts.prepare(body.menu, diners=body.request.diners)
+    return validate_order(menu, body.request, body.items)
 
 
 # ---------------------------------------------------------------------------

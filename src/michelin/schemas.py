@@ -41,6 +41,43 @@ class Diet(str, Enum):
     NO_BEEF = "no_beef"
 
 
+class Preference(str, Enum):
+    """SOFT tastes picked as quick chips: the AI weighs them, the rules never exclude a dish."""
+
+    NO_SPICY = "no_spicy"
+    MILD = "mild"
+    LOVES_SPICY = "loves_spicy"
+    LIKES_SEAFOOD = "likes_seafood"
+    LIKES_MEAT = "likes_meat"
+    LIGHT = "light"  # 清淡: light, not oily or heavy
+    NO_OFFAL = "no_offal"  # 内脏
+
+
+PREFERENCE_TEXT = {
+    Preference.NO_SPICY: "no spicy food",
+    Preference.MILD: "mild heat at most",
+    Preference.LOVES_SPICY: "loves spicy food",
+    Preference.LIKES_SEAFOOD: "likes seafood",
+    Preference.LIKES_MEAT: "likes meat dishes",
+    Preference.LIGHT: "prefers light, not oily or heavy dishes (清淡)",
+    Preference.NO_OFFAL: "no offal (内脏: tripe, intestine, liver, kidney, blood)",
+}
+
+
+def clean_terms(values) -> list[str]:
+    """Free-text allergy/diet chips ("Mango ", "no  alcohol") -> ["mango", "no alcohol"]:
+    lower case, single spaces, letters/digits/'-' only, at most 10 of 40 characters."""
+    import re
+
+    out: list[str] = []
+    for v in values or []:
+        t = re.sub(r"[^a-z0-9 '\-]+", " ", str(v).lower())
+        t = " ".join(t.split())[:40].strip()
+        if t and t not in out:
+            out.append(t)
+    return out[:10]
+
+
 class DishCategory(str, Enum):
     COLD_APPETIZER = "cold_appetizer"
     STIR_FRY = "stir_fry"
@@ -129,6 +166,18 @@ class Dish(BaseModel):
     menu_marks: list[MenuMark] = Field(default_factory=list)
     menu_spice: int | None = Field(default=None, ge=0, le=3)  # pepper icons, capped at 3
     menu_section: str | None = None  # the printed heading ("Dim Sum"), as read
+    # The AI's answer for a diner's own allergy or diet ("mango", "halal"); set by the server.
+    custom_flags: list[CustomFlag] = Field(default_factory=list)
+
+
+class CustomFlag(BaseModel):
+    """Does this dish hold a free-text allergen, or break a free-text diet?"""
+
+    term: str  # "mango", "halal"
+    kind: str = Field(pattern="^(allergy|diet)$")
+    answer: str = Field(pattern="^(likely|possible|no|unknown)$")
+    why: str = ""
+    printed: bool = False  # the menu's own words name it
 
 
 class Menu(BaseModel):
@@ -158,8 +207,18 @@ class DinerProfile(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     allergies: list[Allergen] = Field(default_factory=list)  # HARD
     diets: list[Diet] = Field(default_factory=list)  # HARD
+    # HARD, in the diner's words: "mango", "cilantro", "MSG"; "halal", "kosher", "no alcohol".
+    other_allergies: list[str] = Field(default_factory=list, max_length=10)
+    other_diets: list[str] = Field(default_factory=list, max_length=10)
+    # SOFT quick chips (spice, seafood, meat, light, offal); the AI weighs them.
+    preferences: list[Preference] = Field(default_factory=list)
     # SOFT: tastes and preferences in the diner's own words; the AI reads it, the rules don't.
     notes: str = Field(default="", max_length=500)
+
+    @field_validator("other_allergies", "other_diets", mode="before")
+    @classmethod
+    def _clean_terms(cls, v):
+        return clean_terms(v if isinstance(v, list) else [])
 
     @model_validator(mode="before")
     @classmethod

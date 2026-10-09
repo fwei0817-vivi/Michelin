@@ -14,6 +14,16 @@ export type Allergen =
   | "sesame";
 
 export type Diet = "vegetarian" | "vegan" | "no_pork" | "no_beef";
+/** Soft taste chips: the AI weighs them, the rules never exclude a dish for them. */
+export type Preference = "no_spicy" | "mild" | "loves_spicy" | "likes_seafood" | "likes_meat" | "light" | "no_offal";
+
+export interface CustomFlag {
+  term: string;
+  kind: "allergy" | "diet";
+  answer: "likely" | "possible" | "no" | "unknown";
+  why?: string;
+  printed?: boolean;
+}
 
 export interface IngredientClaim {
   name: string;
@@ -52,6 +62,7 @@ export interface Dish {
   menu_marks?: MenuMark[];
   menu_spice?: number | null;
   menu_section?: string | null;
+  custom_flags?: CustomFlag[];
 }
 
 export type MenuMark = "vegetarian" | "vegan" | "vegetarian_possible" | "gluten_free" | "gluten_free_possible";
@@ -80,6 +91,10 @@ export interface DinerProfile {
   name: string;
   allergies: Allergen[];
   diets: Diet[];
+  /** Hard rules in the diner's own words: "mango", "cilantro"; "halal", "no alcohol". */
+  other_allergies?: string[];
+  other_diets?: string[];
+  preferences?: Preference[];
   /** Tastes and preferences in their own words; the AI reads it, the rules don't. */
   notes: string;
 }

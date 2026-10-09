@@ -20,7 +20,8 @@ const CONCERN: [RegExp, string[]][] = [
 /** The diners an ingredient (e.g. "pork fat", "bamboo shoots") matters to; [] for nobody. */
 export function concernedBy(ingredient: string, diners: DinerProfile[]): DinerProfile[] {
   const tags = CONCERN.filter(([re]) => re.test(ingredient)).flatMap(([, t]) => t);
-  return diners.filter(p => [...p.allergies, ...p.diets].some(t => tags.includes(t)));
+  const low = ingredient.toLowerCase();
+  return diners.filter(p => [...p.allergies, ...p.diets].some(t => tags.includes(t)) || (p.other_allergies ?? []).some(t => low.includes(t)));
 }
 
 /** Open questions are not confirmations. Keep them visible alongside eligibility, but only

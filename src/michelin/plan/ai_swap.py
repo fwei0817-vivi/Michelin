@@ -22,7 +22,7 @@ from michelin.plan import llm_planner
 from michelin.plan.budget import cents, subtotal_cap, totals
 from michelin.plan.edibility import assessment, edible_by, risks
 from michelin.plan.validation import family_repeats, validate_order
-from michelin.schemas import Menu, Plan, PlanItem, TableRequest
+from michelin.schemas import PREFERENCE_TEXT, Menu, Plan, PlanItem, TableRequest
 
 log = logging.getLogger(__name__)
 MAX_RETRIES = 1
@@ -117,8 +117,15 @@ def brief(menu: Menu, request: TableRequest, plan: Plan, old_id: str) -> dict:
         for key in ("allergies", "diets"):
             if getattr(p, key):
                 row[key] = [llm_planner.humanize(getattr(x, "value", x)) for x in getattr(p, key)]
+        if p.other_allergies:  # hard, in their own words; "ok_for" already applies them
+            row["other_allergies"] = list(p.other_allergies)
+        if p.other_diets:
+            row["other_diets"] = list(p.other_diets)
+        tastes = [PREFERENCE_TEXT[x] for x in p.preferences]
         if p.notes:
-            row["notes"] = p.notes
+            tastes.append(p.notes)
+        if tastes:
+            row["notes"] = "; ".join(tastes)
         # How many of the dishes that stay this diner can eat (rice aside): favour the
         # least-served diners when choosing.
         row["dishes_they_can_eat_after_swap"] = sum(

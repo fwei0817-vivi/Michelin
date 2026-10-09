@@ -175,8 +175,18 @@ Send `X-Profile-Scope: synthetic-group-a` consistently for stored profiles and p
 All person routes require a scope. Scoped lookups never fall back to another scope or the
 sample group. The header is a namespace, **not authentication**: use only synthetic data in
 this prototype until a trusted identity/access-control layer binds scopes to callers.
-A person is allergies and diets (one-tap checkboxes, hard rules) plus one free-text
-`notes` field for tastes ("no spicy food, loves tofu") that only the AI reads. Older saved
+A person is allergies and diets (one-tap checkboxes, hard rules), their own allergies and
+diets in their words (`other_allergies`: "mango", "cilantro", "msg"; `other_diets`: "halal",
+"kosher", "no alcohol"; also hard rules), soft taste chips (`preferences`: no spicy, mild,
+loves spicy, likes seafood, likes meat, light/清淡, no offal/内脏), and one free-text
+`notes` field for tastes ("loves tofu"). Only the AI reads the tastes and notes.
+For each dish, an AI call (`plan/custom_facts.py`) answers likely, possible or no for
+every own term that someone at the table has. Answers are cached per dish name and term.
+The menu's own words count as likely. The rules then apply them:
+- An allergy that is likely or possible excludes the dish.
+- A diet that is likely broken excludes the dish. A diet that is possibly broken becomes a
+  question for the server.
+- With no answer, the dish is not offered to that diner and becomes a question. Older saved
 people with heat/likes/dislikes are migrated into `notes`. Planning with saved `diner_ids`
 uses the latest snapshot. An inline profile controls current restrictions; an omitted
 `notes` inherits the saved note in that scope, and an empty one clears it for the request.

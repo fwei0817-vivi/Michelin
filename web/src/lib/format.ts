@@ -1,4 +1,4 @@
-import type { Allergen, AllergenFlag, Diet, DinerProfile, Dish } from "../types";
+import type { Allergen, AllergenFlag, Diet, DinerProfile, Dish, Preference } from "../types";
 
 export const ALLERGENS: Allergen[] = [
   "peanut",
@@ -34,6 +34,24 @@ export const DIET_LABEL: Record<Diet, string> = {
 };
 
 
+export const PREFERENCES: Preference[] = ["no_spicy", "mild", "loves_spicy", "likes_seafood", "likes_meat", "light", "no_offal"];
+export const SPICE_PREFS: Preference[] = ["no_spicy", "mild", "loves_spicy"]; // pick at most one
+
+export const PREFERENCE_LABEL: Record<Preference, string> = {
+  no_spicy: "No spicy",
+  mild: "Mild",
+  loves_spicy: "Loves spicy",
+  likes_seafood: "Likes seafood",
+  likes_meat: "Likes meat",
+  light: "Light / 清淡",
+  no_offal: "No offal / 内脏",
+};
+
+/** "Mango " -> "mango"; same cleaning as the server. */
+export function cleanTerm(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9 '\-]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 40).trim();
+}
+
 export function money(n: number | null | undefined, currency = "$"): string {
   if (n == null) return "—";
   return `${currency}${n.toFixed(2)}`;
@@ -62,7 +80,9 @@ export function dietWording(d: Dish): string | null {
 export function dinerSummary(p: DinerProfile): string {
   const parts = [
     ...p.diets.map((d) => DIET_LABEL[d]),
+    ...(p.other_diets ?? []),
     ...p.allergies.map((a) => `no ${ALLERGEN_LABEL[a]}`),
+    ...(p.other_allergies ?? []).map((a) => `no ${a}`),
   ];
   if (avoidsHeat(p)) parts.push("no heat");
   return parts.join(", ");
@@ -70,6 +90,7 @@ export function dinerSummary(p: DinerProfile): string {
 
 /** The diner's own note says they avoid spicy food ("no spicy food", "mild only"). */
 export function avoidsHeat(p: DinerProfile): boolean {
+  if (p.preferences?.some((x) => x === "no_spicy" || x === "mild")) return true;
   return /\b(no|not|avoids?|hates?|without|can't|cannot|don't)\b[^.;]*\b(spic|heat|hot|chil)|\bmild\b/i.test(p.notes ?? "");
 }
 

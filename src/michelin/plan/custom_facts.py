@@ -1,0 +1,206 @@
+"""The diners' own allergies and diets ("mango", "cilantro", "MSG"; "halal", "no alcohol").
+
+Hard rules, like the fixed ones. For every dish the AI answers, per term, whether it is
+likely, possible or not in the dish (an allergen), or likely, possibly or not breaking the
+diet. Answers are cached per dish name and term, and only terms someone at the table has are
+asked about. The menu's own words win: a printed "mango" is likely whatever the AI says. No
+answer stays "unknown", which the rules treat as a question for the server, never as safe.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import logging
+import re
+
+from michelin import llm
+from michelin.schemas import CustomFlag, DinerProfile, Dish
+
+log = logging.getLogger("michelin")
+MAX_DISHES = 40
+ANSWERS = ("likely", "possible", "no")
+
+SYSTEM = """You are a careful kitchen expert for restaurants in the US (mostly Chinese).
+For each dish, and each item in "allergens", answer whether that ingredient is usually in the \
+dish as normally cooked: "likely" (it is a usual ingredient), "possible" (some kitchens use \
+it, or it can hide in a sauce, oil, stock, marinade, seasoning or garnish), or "no" (it is \
+not normally used). For each item in "diets", answer whether the dish as normally cooked \
+breaks that diet: "likely", "possible" (e.g. cooking wine, lard, meat stock or uncertified \
+meat may be used), or "no". Be cautious: when unsure, say "possible". Give a short "why" \
+(under 12 words)."""
+
+# Words in the menu's own text that settle a diet (the AI cannot overrule them).
+_DIET_WORDS = {
+    "no alcohol": r"wine|beer|liquor|liqueur|sake|shaoxing|rum|baijiu|brandy|whisk(?:e)?y|料酒|酒",
+    "halal": r"pork|lard|bacon|ham\b|wine|beer|sake|shaoxing|猪|酒",
+    "kosher": r"pork|lard|bacon|ham\b|shrimp|prawn|crab|lobster|clam|oyster|scallop|squid|猪|虾|蟹",
+}
+
+
+def cache_path():
+    from michelin.plan import dish_facts  # tests point dish_facts.CACHE_PATH at a temp dir
+
+    return dish_facts.CACHE_PATH.with_name(dish_facts.CACHE_PATH.stem + "_custom.json")
+
+
+def terms(diners: list[DinerProfile]) -> list[tuple[str, str]]:
+    """(kind, term) pairs someone at the table has: only these are asked about."""
+    out = {("allergy", t) for p in diners for t in p.other_allergies}
+    out |= {("diet", t) for p in diners for t in p.other_diets}
+    return sorted(out)
+
+
+def _key(dish: Dish, kind: str, term: str) -> str:
+    from michelin.plan import dish_facts
+
+    return hashlib.sha256(f"{kind}|{term}|{dish_facts._key(dish)}".encode()).hexdigest()[:24]
+
+
+def _load() -> dict:
+    try:
+        raw = json.loads(cache_path().read_text())
+        return raw if isinstance(raw, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _save(cache: dict) -> None:
+    try:
+        path = cache_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(cache, ensure_ascii=False, indent=1, sort_keys=True))
+        tmp.replace(path)
+    except OSError:
+        log.warning("Could not write the custom facts cache", exc_info=True)
+
+
+def _text(dish: Dish) -> str:
+    words = [dish.name_en, dish.name_zh, dish.description_raw, dish.variant]
+    words += [i.name for i in dish.main_ingredients if i.tier.value == "menu"]
+    return " ".join(w for w in words if w).lower()
+
+
+def printed(dish: Dish, kind: str, term: str) -> bool:
+    """The menu's own words name it: "Mango Pudding" for mango, "Shaoxing wine" for no alcohol."""
+    text = _text(dish)
+    if kind == "diet":
+        pattern = _DIET_WORDS.get(term)
+        if pattern is None and term.startswith("no "):
+            pattern = rf"\b{re.escape(term[3:])}"
+        return bool(pattern and re.search(pattern, text, re.IGNORECASE))
+    stem = re.escape(term.rstrip("s"))
+    return bool(re.search(rf"(?<![a-z]){stem}(?:s|es)?(?![a-z])", text))
+
+
+def _schema(ids: list[str], allergies: list[str], diets: list[str]) -> dict:
+    answer = {"type": "string", "enum": list(ANSWERS)}
+
+    def items(names):
+        return {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "item": {"type": "string", "enum": names},
+                    "answer": answer,
+                    "why": {"type": "string"},
+                },
+                "required": ["item", "answer"],
+            },
+        }
+
+    props = {"id": {"type": "string", "enum": ids}}
+    if allergies:
+        props["allergens"] = items(allergies)
+    if diets:
+        props["diets"] = items(diets)
+    return {
+        "type": "object",
+        "properties": {
+            "dishes": {
+                "type": "array",
+                "items": {"type": "object", "properties": props, "required": list(props)},
+            }
+        },
+        "required": ["dishes"],
+    }
+
+
+def _ask(dishes: list[Dish], allergies: list[str], diets: list[str], client=None):
+    """One model call -> (JSON text, model used). Tests replace this with a fake."""
+    rows = [{"id": d.id, "name": d.name_en, "name_zh": d.name_zh} for d in dishes]
+    brief = {"allergens": allergies, "diets": diets, "dishes": rows}
+    turns = [llm.Turn("user", json.dumps(brief, ensure_ascii=False))]
+    return llm.generate_json(
+        "plan",
+        system=SYSTEM,
+        turns=turns,
+        schema=_schema([d.id for d in dishes], allergies, diets),
+        client=client,
+        temperature=0,
+    )
+
+
+def annotate(dishes: list[Dish], diners: list[DinerProfile], client=None) -> list[Dish]:
+    """The dishes with a CustomFlag for every term someone at the table has."""
+    wanted = terms(diners)
+    if not wanted:
+        return dishes
+    cache = _load()
+    missing = [
+        d
+        for d in dishes
+        if any(_key(d, k, t) not in cache and not printed(d, k, t) for k, t in wanted)
+    ]
+    if missing and (llm.provider() is not None or client is not None):
+        for start in range(0, len(missing), MAX_DISHES):
+            batch = missing[start : start + MAX_DISHES]
+            need = {(k, t) for d in batch for k, t in wanted if _key(d, k, t) not in cache}
+            allergies = sorted(t for k, t in need if k == "allergy")
+            diets = sorted(t for k, t in need if k == "diet")
+            try:
+                text, used = _ask(batch, allergies, diets, client)
+                ids = {d.id: d for d in batch}
+                for row in json.loads(text or "{}").get("dishes", []):
+                    dish = ids.get(row.get("id")) if isinstance(row, dict) else None
+                    if not dish:
+                        continue
+                    for kind, field in (("allergy", "allergens"), ("diet", "diets")):
+                        for a in row.get(field) or []:
+                            if not isinstance(a, dict) or a.get("answer") not in ANSWERS:
+                                continue
+                            term = str(a.get("item") or "")
+                            if (kind, term) in need:
+                                cache[_key(dish, kind, term)] = {
+                                    "name": dish.name_en or dish.name_zh,
+                                    "term": term,
+                                    "answer": a["answer"],
+                                    "why": str(a.get("why") or "")[:120],
+                                }
+                _save(cache)
+                log.info(
+                    "Custom facts (%d terms) for %d dishes from %s", len(need), len(batch), used
+                )
+            except Exception as exc:  # noqa: BLE001 - answers stay unknown; the rules stay strict
+                log.warning("Custom facts failed: %s: %s", type(exc).__name__, str(exc)[:300])
+                break
+    out = []
+    for d in dishes:
+        flags = []
+        for kind, term in wanted:
+            if printed(d, kind, term):
+                flags.append(
+                    CustomFlag(
+                        term=term, kind=kind, answer="likely", why="on the menu", printed=True
+                    )
+                )
+                continue
+            hit = cache.get(_key(d, kind, term))
+            answer = hit["answer"] if hit and hit.get("answer") in ANSWERS else "unknown"
+            flags.append(
+                CustomFlag(term=term, kind=kind, answer=answer, why=(hit or {}).get("why", ""))
+            )
+        out.append(d.model_copy(update={"custom_flags": flags}))
+    return out

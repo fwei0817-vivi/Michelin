@@ -625,13 +625,15 @@ async def demo(browser, url: str, shots: Path, errors: list[str]) -> None:
     ]
     await pg.get_by_role("button", name="Add a new person").click()
     boxes = await dialog(pg).get_by_role("checkbox").all_inner_texts()
-    labels = await dialog(pg).locator(".check-chip").all_inner_texts()
+    labels = await dialog(pg).locator("label.check-chip").all_inner_texts()
     check(
-        len(labels) == 13
-        and {"peanuts", "tree nuts", "shellfish", "milk", "sesame", "no pork"} <= set(labels)
+        len(labels) == 20  # 9 allergies, 4 diets, 7 soft preference chips
+        and {"peanuts", "tree nuts", "shellfish", "milk", "sesame", "no pork", "No spicy"}
+        <= set(labels)
+        and await dialog(pg).get_by_label("Other allergies").count() == 1
         and await dialog(pg).get_by_label("Tastes and preferences").count() == 1
         and await dialog(pg).get_by_text("Dislikes").count() == 0,
-        f"add-person form: one-tap allergies and diets, one taste note ({len(boxes)} boxes)",
+        f"add-person form: one-tap allergies, diets, own terms, taste chips ({len(boxes)} boxes)",
     )
     await pg.screenshot(path=str(shots / "step2a_add_person_form.png"))
     await close_dialog(pg)

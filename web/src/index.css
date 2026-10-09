@@ -544,3 +544,8 @@ details[open] > summary .who-count svg { transform: rotate(180deg); }
 .page-thumbs .page-pdf { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 0.8em; color: #555; }
 .page-thumbs small { font-size: 0.75em; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .import-review .menu-section-head { font-weight: 700; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.04em; color: #6b6b6b; padding-top: 8px; border: 0; }
+.term-chips { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.term-chip button { margin-left: 6px; border: 0; background: none; cursor: pointer; font-weight: 700; color: inherit; }
+.suggest-chip { border-style: dashed; background: transparent; cursor: pointer; }
+.term-add { display: flex; gap: 8px; align-items: center; }
+.term-add .field { flex: 1; }

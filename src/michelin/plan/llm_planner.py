@@ -45,7 +45,16 @@ from michelin.plan.edibility import (
 )
 from michelin.plan.score import variety_score
 from michelin.plan.validation import family_repeats, validate_order
-from michelin.schemas import Check, Conflict, Menu, Plan, PlanItem, Relaxation, TableRequest
+from michelin.schemas import (
+    PREFERENCE_TEXT,
+    Check,
+    Conflict,
+    Menu,
+    Plan,
+    PlanItem,
+    Relaxation,
+    TableRequest,
+)
 
 log = logging.getLogger("michelin")
 # Same idea as the web app's heat note: names that usually mean a hot dish.
@@ -73,7 +82,13 @@ is added for everyone), more if dishes are small and the budget allows, fewer if
 large or money is tight; make sure each diner has a fair share they can eat. Then, softly: \
 vary the main ingredients and cooking methods, and follow each diner's "notes" (their tastes \
 in their own words, e.g. "no spicy food, loves tofu": do not recommend a hot dish to someone \
-who avoids heat, in "for" or in the reason).
+who avoids heat, in "for" or in the reason). Notes may start with quick taste picks: \
+"no spicy food" or "mild heat at most" means choose dishes with spice 0-1 for them and \
+avoid spice 2-3 unless nothing else fits; "loves spicy food" means include a hot dish they \
+can eat; "likes seafood" or "likes meat dishes" means include one they can eat; "prefers \
+light..." (清淡) favours steamed, cold, soup and simple stir-fried dishes over deep-fried, \
+heavy braised or oily ones; "no offal" means avoid tripe, intestine, liver, kidney, blood. \
+These are tastes, not rules: never let them leave a diner with nothing to eat.
 Dishes with the same "family" are one menu line in different versions (e.g. Kung Pao \
 with chicken, beef, shrimp or tofu, each with its own price and "ok_for"): choose the \
 version that suits the table. Order a second version of the same family only if each \
@@ -196,8 +211,15 @@ def brief(menu: Menu, request: TableRequest, hint: rules_hints.Hints | None = No
         for key in ("allergies", "diets"):
             if getattr(p, key):
                 row[key] = [humanize(getattr(x, "value", x)) for x in getattr(p, key)]
+        if p.other_allergies:  # hard, in their own words; "ok_for" already applies them
+            row["other_allergies"] = list(p.other_allergies)
+        if p.other_diets:
+            row["other_diets"] = list(p.other_diets)
+        tastes = [PREFERENCE_TEXT[x] for x in p.preferences]
         if p.notes:
-            row["notes"] = p.notes
+            tastes.append(p.notes)
+        if tastes:
+            row["notes"] = "; ".join(tastes)
         diners.append(row)
     return {
         "diners": diners,
@@ -431,7 +453,9 @@ def _fair_reason(text: str | None, dish, request: TableRequest, n: int = 0) -> s
         if assessment(dish, person)["status"] != "validated_under_known_data":
             return None
         taste = rf"{re.escape(name)},? (?:who )?(?:loves|likes|enjoys|prefers|avoids|craves)\b"
-        if re.search(taste, text, re.IGNORECASE) and not _noted(dish, person.notes):
+        if re.search(taste, text, re.IGNORECASE) and not _noted(
+            dish, " ".join([person.notes, *(PREFERENCE_TEXT[x] for x in person.preferences)])
+        ):
             return None  # a taste nobody recorded ("Pat, who loves peanuts")
     return text
 
@@ -579,7 +603,7 @@ def _misstates(text: str, diners) -> bool:
         claims += re.findall(
             rf"\b{name}\s+(?:is|are)\s+allergic\s+to\s+([a-z]+(?:\s+nuts?)?)", text, re.IGNORECASE
         )
-        if any(not same(c, p.allergies) for c in claims):
+        if any(not same(c, [*p.allergies, *p.other_allergies]) for c in claims):
             return True
         for diet in re.findall(
             rf"\b{name}\s+(?:is|are)\s+(vegetarian|vegan)\b", text, re.IGNORECASE

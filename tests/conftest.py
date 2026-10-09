@@ -56,7 +56,17 @@ def recorded_dish_facts(request, monkeypatch, tmp_path):
 
     monkeypatch.setattr(dish_facts, "CACHE_PATH", tmp_path / "dish_facts.json")
     if "real_dish_facts" not in request.keywords:
-        monkeypatch.setattr(dish_facts, "prepare", lambda menu, client=None: menu)
+
+        def recorded(menu, client=None, diners=None):
+            if not diners:
+                return menu
+            from michelin.plan import custom_facts  # the table's own terms: real path
+
+            return menu.model_copy(
+                update={"dishes": custom_facts.annotate(menu.dishes, diners, client)}
+            )
+
+        monkeypatch.setattr(dish_facts, "prepare", recorded)
 
 
 def pytest_configure(config):

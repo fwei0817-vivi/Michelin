@@ -694,7 +694,7 @@ def _floor_merge(facts: dict, base: dict) -> dict:
     return out
 
 
-def prepare(menu: Menu, client=None) -> Menu:
+def prepare(menu: Menu, client=None, diners=None) -> Menu:
     """The menu stripped to name/price/category, then annotated with the AI's facts.
     Dishes the AI has not answered for stay unknown (nobody with a restriction can eat them)."""
     plain = bare(menu)
@@ -721,7 +721,12 @@ def prepare(menu: Menu, client=None) -> Menu:
         except Exception as exc:  # noqa: BLE001 - facts stay unknown; the rules stay strict
             log.warning("Dish facts failed: %s: %s", type(exc).__name__, str(exc)[:300])
             break
-    return plain.model_copy(update={"dishes": [apply(d, cache.get(_key(d))) for d in plain.dishes]})
+    dishes = [apply(d, cache.get(_key(d))) for d in plain.dishes]
+    if diners:  # the table's own allergies and diets ("mango", "halal"), asked per term
+        from michelin.plan import custom_facts
+
+        dishes = custom_facts.annotate(dishes, diners, client)
+    return plain.model_copy(update={"dishes": dishes})
 
 
 def known(menu: Menu) -> bool:

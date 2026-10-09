@@ -108,6 +108,27 @@ def assessment(dish: Dish, diner: DinerProfile) -> dict:
             or allergen not in dish.reviewed_allergens
         ):
             unknown.append(f"Confirm {allergen.value}, including sauces and cross-contact")
+    # The diner's own allergies and diets, in their words. Allergies: likely or possible
+    # excludes the dish, no answer asks. Diets: likely excludes, possible or no answer asks.
+    custom = {(f.kind, f.term): f for f in dish.custom_flags}
+    for term in diner.other_allergies:
+        flag = custom.get(("allergy", term))
+        answer = flag.answer if flag else "unknown"
+        if answer == "likely":
+            conflicts.append(f"Contains {term}" + (" (on the menu)" if flag.printed else ""))
+        elif answer == "possible":
+            conflicts.append(f"May contain {term}")
+        elif answer != "no":
+            unknown.append(f"Confirm {term.replace(' ', '_')}, including sauces and cross-contact")
+    for term in diner.other_diets:
+        flag = custom.get(("diet", term))
+        answer = flag.answer if flag else "unknown"
+        if answer == "likely":
+            conflicts.append(f"Breaks {term}" + (" (on the menu)" if flag.printed else ""))
+        elif answer == "possible":
+            ask.append(f"Confirm {term.replace(' ', '_')} preparation")
+        elif answer != "no":
+            unknown.append(f"Confirm {term.replace(' ', '_')} preparation")
     fields = DIET_FIELDS
     # Positive labels cannot erase contradictory recorded evidence. Allergen evidence
     # still wins over reviewed_allergens. Unknown claims remain confirmation questions.
@@ -163,6 +184,9 @@ _DIET_ASK = {
     "vegan": "Is it vegan, with no meat, seafood, egg, dairy or meat broth?",
     "no_pork": "Is there any pork or lard in it?",
     "no_beef": "Is there any beef in it?",
+    "no_alcohol": "Is there any alcohol or cooking wine in it?",
+    "halal": "Is it halal, with no pork, lard or alcohol, and halal meat?",
+    "kosher": "Is it kosher, with no pork or shellfish?",
 }
 
 
@@ -181,7 +205,10 @@ def natural(reason: str) -> str:
         return f"Is there any {m.group(1).replace('_', ' ')} in it? It needs to be {m.group(2)}."
     m = re.fullmatch(r"Confirm (.+?) preparation", reason)
     if m:
-        return _DIET_ASK.get(m.group(1), f"Is it {m.group(1).replace('_', ' ')}?")
+        diet = m.group(1).replace("_", " ")
+        if diet.startswith("no "):
+            return _DIET_ASK.get(m.group(1), f"Is there any {diet[3:]} in it?")
+        return _DIET_ASK.get(m.group(1), f"Is it {diet}?")
     return reason
 
 
@@ -313,6 +340,7 @@ def _words(term: str) -> list[str]:
 def _matters(words: list[str], person: DinerProfile) -> bool:
     """Whether an ingredient question (its cover words) touches this diner's allergies/diets."""
     terms = [getattr(x, "value", x) for x in [*person.allergies, *person.diets]]
+    terms += [t.replace(" ", "_") for t in [*person.other_allergies, *person.other_diets]]
     return any(set(words) & set(_words(t)) for t in terms)
 
 

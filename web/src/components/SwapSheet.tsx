@@ -95,7 +95,38 @@ const CONCERNS = ["peanut", "tree nut", "sesame", "shellfish", "fish", "egg", "d
 
 /** One plain line per diner, e.g. "has pork", "may have peanut, ask", or both: what is only
  * possible always reads "may have", whatever else the diner can't have. */
-export function plainReason(reasons: string[], confirm: boolean): string {
+export function plainReason(reasons: string[], confirm: boolean, person?: DinerProfile): string {
+  // The diner's own terms ("mango", "halal") read as they wrote them.
+  const own = [...(person?.other_allergies ?? []), ...(person?.other_diets ?? [])].map((t) => t.replace(/ /g, "_"));
+  const isOwn = (r: string) => own.some((t) => r.toLowerCase().replace(/ /g, "_").includes(t));
+  const parts = reasons.filter(isOwn).map(ownReason);
+  // "may have mango, ask; may have cilantro, ask" -> "may have mango and cilantro, ask"
+  const maybe = parts.filter((x) => /^may have .+, ask$/.test(x)).map((x) => x.slice(9, -5));
+  const ownParts = [...parts.filter((x) => !/^may have .+, ask$/.test(x)), ...(maybe.length ? [`may have ${joinWords(maybe)}, ask`] : [])];
+  const rest = reasons.filter((r) => !isOwn(r));
+  if (!ownParts.length) return plainCore(rest, confirm);
+  return [...new Set([...(rest.length ? [plainCore(rest, confirm)] : []), ...ownParts])].join("; ");
+}
+
+/** "Contains mango" -> "has mango"; "May contain mango" / "Confirm mango, …" -> "may have
+ * mango, ask"; "Breaks halal" -> "not halal"; "Confirm no_alcohol preparation" -> "may have
+ * alcohol, ask"; "Confirm halal preparation" -> "ask if it's halal". */
+function ownReason(r: string): string {
+  let m = /^Contains (.+?)( \(on the menu\))?$/.exec(r);
+  if (m) return `has ${m[1]}`;
+  m = /^May contain (.+)$/.exec(r) ?? /^Confirm (.+?), including sauces/.exec(r);
+  if (m) return `may have ${m[1].replace(/_/g, " ")}, ask`;
+  m = /^Breaks (.+?)( \(on the menu\))?$/.exec(r);
+  if (m) return m[1].startsWith("no ") ? `has ${m[1].slice(3)}` : `not ${m[1]}`;
+  m = /^Confirm (.+?) preparation$/.exec(r);
+  if (m) {
+    const diet = m[1].replace(/_/g, " ");
+    return diet.startsWith("no ") ? `may have ${diet.slice(3)}, ask` : `ask if it's ${diet}`;
+  }
+  return r;
+}
+
+function plainCore(reasons: string[], confirm: boolean): string {
   const sure = reasons.filter((r) => !/^confirm/i.test(r));
   const maybe = reasons.filter((r) => /^confirm/i.test(r));
   if (!sure.length) return reasonLine(maybe, maybe.length > 0 || confirm);
@@ -477,8 +508,8 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                         ) : (
                           (notFor.length > 0 || askFor.length > 0) && (
                             <div className="dish-notes">
-                              {notFor.map(p => <p className="not-for" key={p.id}><UserX size={13}/><span>{p.name}: {plainReason(e.blocked_for[p.id] ?? [], e.assessments?.[p.id]?.status === "requires_confirmation" || (e.blocked_for[p.id] ?? []).every(r => /^confirm/i.test(r)))}</span></p>)}
-                              {askFor.map(p => <p className="ask-for" key={p.id}><CircleHelp size={13}/><span>{p.name}: {plainReason(e.assessments?.[p.id]?.reasons ?? [], true)}</span></p>)}
+                              {notFor.map(p => <p className="not-for" key={p.id}><UserX size={13}/><span>{p.name}: {plainReason(e.blocked_for[p.id] ?? [], e.assessments?.[p.id]?.status === "requires_confirmation" || (e.blocked_for[p.id] ?? []).every(r => /^confirm/i.test(r)), p)}</span></p>)}
+                              {askFor.map(p => <p className="ask-for" key={p.id}><CircleHelp size={13}/><span>{p.name}: {plainReason(e.assessments?.[p.id]?.reasons ?? [], true, p)}</span></p>)}
                             </div>
                           )
                         )}
