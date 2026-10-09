@@ -29,6 +29,7 @@ interface Props {
   onPreset: (id: string) => void;
   onPlan: () => void;
   loading: boolean;
+  current?: boolean; // a recommendation for exactly these inputs already exists
 }
 
 const PHOTO_TEXT = {
@@ -37,7 +38,7 @@ const PHOTO_TEXT = {
   none: "Take or upload a photo, or paste the text. Our reviewed ingredient knowledge does the rest.",
 };
 
-export function SetupFlow({ step, onStep, canPlan, menu, diners, saved, onPick, onRemove, settings, photoReader, onMenu, onPhoto, onPaste, onSample, onChange, onEdit, onAdd, onPreset, onPlan, loading }: Props) {
+export function SetupFlow({ step, onStep, canPlan, menu, diners, saved, onPick, onRemove, settings, photoReader, onMenu, onPhoto, onPaste, onSample, onChange, onEdit, onAdd, onPreset, onPlan, loading, current }: Props) {
   const cur = currencySymbol(menu.currency);
   const camera = useRef<HTMLInputElement>(null);
   const upload = useRef<HTMLInputElement>(null);
@@ -118,7 +119,7 @@ export function SetupFlow({ step, onStep, canPlan, menu, diners, saved, onPick, 
               Or try the sample plan
             </button>
           </div>
-          <p className="session-note">Classroom prototype. Menu edits stay on this page. Only explicit profile saves persist locally.</p>
+          <p className="session-note">Classroom prototype with no login: menu edits stay on this page, and the people you add are saved on this server for everyone using it.</p>
         </>
       ) : (
         <>
@@ -129,7 +130,7 @@ export function SetupFlow({ step, onStep, canPlan, menu, diners, saved, onPick, 
           <h1>Who's at the table?</h1>
           <p className="setup-intro">Pick saved people or add someone new; everyone you add is remembered for next time. Recorded allergies and diets rule dishes out; tastes only change the ranking.</p>
           <div className="setup-table">
-            <TableSetup diners={diners} saved={saved} onPick={onPick} onRemove={onRemove} settings={settings} currency={menu.currency} onChange={onChange} onEdit={onEdit} onAdd={onAdd} onPreset={onPreset} onPlan={onPlan} loading={loading} initial />
+            <TableSetup diners={diners} saved={saved} onPick={onPick} onRemove={onRemove} settings={settings} currency={menu.currency} onChange={onChange} onEdit={onEdit} onAdd={onAdd} onPreset={onPreset} onPlan={onPlan} loading={loading} current={current} initial />
           </div>
         </>
       )}

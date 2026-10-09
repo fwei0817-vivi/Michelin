@@ -24,9 +24,10 @@ interface Props {
   onPlan: () => void;
   loading: boolean;
   initial?: boolean;
+  current?: boolean;
 }
 
-export function TableSetup({ diners, saved, onPick, onRemove, settings, currency, onChange, onEdit, onAdd, onPreset, onPlan, loading, initial = false }: Props) {
+export function TableSetup({ diners, saved, onPick, onRemove, settings, currency, onChange, onEdit, onAdd, onPreset, onPlan, loading, initial = false, current = false }: Props) {
   const cur = currencySymbol(currency);
   const set = (key: keyof DiningSettings, value: number | string) => onChange({ ...settings, [key]: value });
   const valid =
@@ -154,7 +155,7 @@ export function TableSetup({ diners, saved, onPick, onRemove, settings, currency
         </p>
         <button className="btn btn-primary" onClick={onPlan} disabled={loading || !diners.length || !valid}>
           <RefreshCw size={16} className={loading ? "spin" : ""} />
-          {loading ? "Planning…" : initial ? "Find dishes" : "Update dishes"}
+          {loading ? "Planning…" : current ? "See your dishes" : initial ? "Find dishes" : "Update dishes"}
         </button>
       </div>
     </div>
