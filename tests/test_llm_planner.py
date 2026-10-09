@@ -176,6 +176,11 @@ def test_model_no_fit_becomes_a_verified_change_one_thing(setup, tmp_path):
     ]
     assert validate_order(menu, raised, items)["valid"]
     assert not validate_order(menu, lower, items)["valid"]
+    # The AI's dishes cost more than the rules minimum, so the amount is not called "lowest".
+    floor = hints.min_budget(menu, tight)
+    assert change.new_value > floor
+    assert f"A budget that works: ${change.new_value:.2f} per person." in out.conflict.message
+    assert "lowest" not in out.conflict.message
     # An order that breaks another rule (an unsafe dish for everyone) gives no budget fix,
     # and a model figure below the current budget is ignored; the rules' minimal budget is
     # offered instead, so there is always one thing to change.

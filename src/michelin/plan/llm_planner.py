@@ -558,7 +558,11 @@ def _conflict(menu: Menu, request: TableRequest, info: dict, problems: list[str]
         if x
     )
     if relaxations and relaxations[0].kind == "budget":
-        message += f" The lowest budget that works is ${relaxations[0].new_value:.2f} per person."
+        price = relaxations[0].new_value
+        if hint is not None and hint.min_budget is not None and price == hint.min_budget:
+            message += f" The lowest budget that works is ${price:.2f} per person."
+        else:  # priced from the AI's suggested dishes: it works, but is not the minimum
+            message += f" A budget that works: ${price:.2f} per person."
     if problems:
         message += " Last attempt: " + "; ".join(problems[:3])
     return Conflict(code="no_solution", message=message, relaxations=relaxations)
