@@ -113,10 +113,10 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
 .steps { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 24px; font-size: 13px; color: var(--color-fg-3); }
 .steps li { display: flex; align-items: center; gap: 8px; }
 .steps li + li::before { content: ""; width: 24px; height: 1px; background: var(--color-line-strong); }
-.steps li > span { display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--color-line-strong); border-radius: 50%; font-size: 12px; }
+.steps li > span, .step-link > span { display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--color-line-strong); border-radius: 50%; font-size: 12px; }
 .steps .current { color: var(--color-fg); font-weight: 600; }
 .steps .current > span { background: var(--color-fg); border-color: var(--color-fg); color: var(--color-surface); }
-.steps .complete > span { background: var(--color-brand-soft); border-color: transparent; color: var(--color-brand); }
+.steps .complete > span, .steps .complete .step-link > span { background: var(--color-brand-soft); border-color: transparent; color: var(--color-brand); }
 .onboarding h1 { font-size: 30px; font-weight: 650; line-height: 1.15; letter-spacing: -0.6px; }
 .setup-intro { max-width: 600px; margin: 8px 0 20px; font-size: 15px; line-height: 1.55; color: var(--color-fg-2); }
 .setup-back { min-height: 32px; margin-bottom: 6px; color: var(--color-fg-2); text-decoration: none; }
@@ -431,9 +431,13 @@ details[open] > summary .who-count svg { transform: rotate(180deg); }
 }
 
 /* Photo-first menu step and the stepper on every step (reference demo). */
-.step-link { display: inline-flex; align-items: center; gap: 8px; color: inherit; font: inherit; }
+.step-link { display: inline-flex; align-items: center; gap: 8px; color: var(--color-brand); font: inherit; font-weight: 600; cursor: pointer; border-radius: 6px; }
+.step-link:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 3px; }
 .step-link:hover { color: var(--color-fg); text-decoration: underline; text-underline-offset: 4px; }
-.plan-steps { max-width: 1200px; margin: 0 auto; }
+.plan-steps { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; max-width: 1200px; margin: 0 auto 8px; }
+.plan-steps .steps { margin-bottom: 0; }
+.setup-back { display: inline-flex; align-items: center; gap: 6px; }
+.plan-back { margin-bottom: 0; }
 .photo-first { padding: 22px; margin-bottom: 28px; border: 1px solid var(--color-line); border-radius: 12px; background: var(--color-brand-soft); }
 .photo-first h2 { font-size: 18px; font-weight: 650; }
 .photo-first > p { margin-top: 6px; max-width: 560px; font-size: 14px; line-height: 1.55; color: var(--color-fg-2); }

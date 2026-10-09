@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { BadgeCheck, Camera, ImageUp } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Camera, ImageUp } from "lucide-react";
 import type { DinerProfile, DiningSettings, Menu } from "../types";
 import { currencySymbol, dishName, money } from "../lib/format";
 import { photoFor } from "../lib/dishPhotos";
@@ -47,7 +47,7 @@ export function SetupFlow({ step, onStep, canPlan, menu, diners, settings, photo
   };
   return (
     <div className="onboarding">
-      <Stepper step={step} onStep={onStep} canPlan={canPlan} />
+      <Stepper step={step} onStep={onStep} canPlan={canPlan} canTable={!!menu?.verified && diners.length > 0} />
       {step === "menu" ? (
         <>
           <h1>Choose a menu</h1>
@@ -120,6 +120,7 @@ export function SetupFlow({ step, onStep, canPlan, menu, diners, settings, photo
       ) : (
         <>
           <button className="text-button setup-back" onClick={() => onStep("menu")}>
+            <ArrowLeft size={15} />
             Back to menu
           </button>
           <h1>Who's at the table?</h1>
