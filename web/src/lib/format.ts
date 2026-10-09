@@ -115,3 +115,12 @@ export function checkLabel(name: string, passed: boolean): string {
   return labels[name]?.[passed ? 0 : 1] ?? name;
 }
 export const currencySymbol = (currency: string) => currency === "USD" ? "$" : currency === "CNY" ? "¥" : `${currency} `;
+
+const KEEP_CAPS = new Set(["BBQ", "XO", "NYC", "USA", "UK", "LA", "NY", "II", "III"]);
+
+/** "SKY PAVILION 天阁" -> "Sky Pavilion 天阁"; names that are not all caps stay as typed. */
+export function niceName(name: string): string {
+  const letters = name.match(/[A-Za-z]/g) ?? [];
+  if (letters.length < 4 || letters.some((c) => c !== c.toUpperCase())) return name;
+  return name.replace(/[A-Za-z][A-Za-z']*/g, (w) => (KEEP_CAPS.has(w) ? w : w[0] + w.slice(1).toLowerCase()));
+}

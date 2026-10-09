@@ -203,8 +203,24 @@ def test_developer_api_by_default_vertex_on_request(monkeypatch):
 
 
 def test_text_paste_notice_says_no_model(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY")
     r = client.post("/api/menu/parse", json={"text": "Mapo Tofu 14.95"})
     assert "No model API was called" in r.json()["notice"]
+
+
+def test_notice_tells_the_truth_about_ai_facts(monkeypatch):
+    from michelin import api as api_module
+    from michelin.plan import dish_facts
+
+    monkeypatch.setattr(dish_facts, "coverage", lambda menu: (1, 1))
+    notice = client.post("/api/menu/parse", json={"text": "Mapo Tofu 14.95"}).json()["notice"]
+    assert "The AI guessed each dish" in notice and "No AI model" not in notice
+    monkeypatch.setattr(dish_facts, "coverage", lambda menu: (2, 3))
+    notice = client.post("/api/menu/parse", json={"text": "Mapo Tofu 14.95"}).json()["notice"]
+    assert "2 of 3 dishes" in notice
+    monkeypatch.setattr(dish_facts, "coverage", lambda menu: (0, 1))
+    notice = api_module._parse_notice("local_text", (0, 1))
+    assert "could not guess" in notice and "No AI model" not in notice
 
 
 class BusyThenOk:
@@ -264,3 +280,9 @@ def test_daily_quota_is_friendly_and_stops_further_calls(monkeypatch):
     second = client.post("/api/menu/parse", json=image)
     assert second.status_code == 429
     assert models.calls == 1  # the cooldown skips the request instead of spending another
+
+
+def test_all_caps_restaurant_name_is_title_cased():
+    assert vision.nice_name("SKY PAVILION 天阁") == "Sky Pavilion 天阁"
+    assert vision.nice_name("Café China") == "Café China"
+    assert vision.nice_name("XO BBQ HOUSE") == "XO BBQ House"

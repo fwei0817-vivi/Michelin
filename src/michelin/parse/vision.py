@@ -96,6 +96,21 @@ def rows_to_dishes(rows: list[dict]) -> list[Dish]:
     return dishes
 
 
+_KEEP_CAPS = {"BBQ", "XO", "NYC", "USA", "UK", "LA", "NY", "II", "III"}
+
+
+def nice_name(name: str) -> str:
+    """'SKY PAVILION 天阁' -> 'Sky Pavilion 天阁'. Only an all-caps Latin part is changed."""
+    letters = [c for c in name if c.isascii() and c.isalpha()]
+    if len(letters) < 4 or not all(c.isupper() for c in letters):
+        return name
+    return re.sub(
+        r"[A-Za-z][A-Za-z']*",
+        lambda m: m.group(0) if m.group(0) in _KEEP_CAPS else m.group(0).capitalize(),
+        name,
+    )
+
+
 def read_menu_photo(image: bytes, mime: str, client=None) -> tuple[list[Dish], str | None, str]:
     """(dishes, restaurant name if printed, model used). Raises gemini.RateLimited on 429,
     and other errors on transport or malformed output."""
@@ -103,5 +118,5 @@ def read_menu_photo(image: bytes, mime: str, client=None) -> tuple[list[Dish], s
         "vision", turns=[llm.Turn("user", PROMPT, image, mime)], schema=SCHEMA, client=client
     )
     body = json.loads(text)
-    name = str(body.get("restaurant_name") or "").strip() or None
+    name = nice_name(str(body.get("restaurant_name") or "").strip()) or None
     return rows_to_dishes(body.get("dishes") or []), name, used

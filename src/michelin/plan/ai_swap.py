@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from michelin import llm
 from michelin.plan import llm_planner
 from michelin.plan.budget import cents, subtotal_cap, totals
-from michelin.plan.edibility import edible_by, risks
+from michelin.plan.edibility import assessment, edible_by, risks
 from michelin.plan.validation import validate_order
 from michelin.schemas import Menu, Plan, PlanItem, TableRequest
 
@@ -34,7 +34,8 @@ only, never one already ordered or removed). Hard rules: it must fit the money l
 it should suit the diners' allergies and diets ("ok_for" lists who can eat it; never pick a
 dish nobody can eat). After the swap every diner must still have at least one non-rice dish
 they can eat. Prefer, in order: the dish that the MOST diners can eat (longest "ok_for";
-all diners is best), a price close to the replaced dish, and a dish that does not repeat the main ingredient, category
+all diners is best), then one the least-served diners can eat (lowest
+"dishes_they_can_eat_after_swap"), a price close to the replaced dish (cheaper is fine), and a dish that does not repeat the main ingredient, category
 or cooking method of the dishes that stay. Follow each diner's "notes" (tastes in their own
 words, e.g. "no spicy food"). Return "dish_id", "reason": ONE short clause (under 10 words), naming only diners in
 its "ok_for", e.g. "Kevin can eat it" or "adds a vegetable", and
@@ -109,6 +110,13 @@ def brief(menu: Menu, request: TableRequest, plan: Plan, old_id: str) -> dict:
                 row[key] = [llm_planner.humanize(getattr(x, "value", x)) for x in getattr(p, key)]
         if p.notes:
             row["notes"] = p.notes
+        # How many of the dishes that stay this diner can eat (rice aside): favour the
+        # least-served diners when choosing.
+        row["dishes_they_can_eat_after_swap"] = sum(
+            p.id in edible_by(known[i.dish_id], request.diners)
+            for i in others
+            if known[i.dish_id].category.value != "staple"
+        )
         diners.append(row)
     return {
         "replace": {
@@ -218,10 +226,14 @@ def _line(
     if why and len(ok) < len(request.diners) and everyone.search(why):
         why = None  # the model claimed a dish suits everyone when the rules say it does not
     if why and any(
-        p.id not in ok and p.name and re.search(rf"\b{re.escape(p.name)}\b", why, re.IGNORECASE)
+        (p.id not in ok or assessment(new, p)["status"] != "validated_under_known_data")
+        and p.name
+        and re.search(rf"\b{re.escape(p.name)}\b", why, re.IGNORECASE)
         for p in request.diners
     ):
-        why = None  # it named someone the rules say cannot eat this dish
+        # It named someone the rules say cannot eat this dish, or can only if the server
+        # confirms ("especially Cai" on a dish that may hide Cai's allergen).
+        why = None
     if why and (len(why.split()) > 10 or re.search(r"[;:]|\$\d", why)):
         why = None  # one short clause only; the price part is computed below
     if not why:
@@ -246,18 +258,18 @@ def _join_names(names: list[str]) -> str:
 def _better(
     menu: Menu, request: TableRequest, plan: Plan, old_id: str, new_id: str, payload: dict
 ) -> list[dict]:
-    """Similar-priced candidates (within $5 or 30%) that more diners can eat than new_id and
-    that pass the same checks. Empty when the model's pick already covers the most."""
+    """Candidates that more diners can eat than new_id and that pass the same checks (budget
+    included), most-covered first, then closest in price. Empty when the model's pick already
+    covers the most. No price window: a cheaper dish more of the table can eat is better."""
     got = len(edible_by(menu.dish(new_id), request.diners))
     ref = menu.dish(old_id).price or 0
-    near = max(5.0, 0.3 * ref)
     out = []
     for c in payload["candidates"]:
-        if len(c["ok_for"]) <= got or abs((c["price"] or 0) - ref) > near:
+        if len(c["ok_for"]) <= got:
             continue
         if not check(menu, request, plan, old_id, {"dish_id": c["id"]})[0]:
             out.append(c)
-    return sorted(out, key=lambda c: (-len(c["ok_for"]), abs(c["price"] - ref)))[:4]
+    return sorted(out, key=lambda c: (-len(c["ok_for"]), abs((c["price"] or 0) - ref)))[:4]
 
 
 def manual(

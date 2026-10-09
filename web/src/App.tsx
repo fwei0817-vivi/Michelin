@@ -22,6 +22,12 @@ const initialSettings: DiningSettings = { budget: 25, tax: .08875, tip: .18, sty
 const LOCAL_PREFIX = "local-";
 const ADDING = "__adding__";  // `swapping` while a dish is being added
 const keyFor = (c: Context) => JSON.stringify(c);
+// Imported menus and tonight's table survive a reload (this browser only).
+const SESSION_KEY = "michelin.session.v1";
+interface Session { menus: Menu[]; menuId: string; diners: DinerProfile[]; settings: DiningSettings; step: "menu" | "table" | "plan" }
+function loadSession(): Partial<Session> {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY) ?? "{}") ?? {}; } catch { return {}; }
+}
 const errorText = (e: unknown) => e instanceof Error ? e.message : String(e);
 
 export default function App() {
@@ -56,6 +62,7 @@ export default function App() {
   const [photoReader, setPhotoReader] = useState<"openrouter" | "gemini" | "ocr" | null>(null);
   const menuSequence = useRef(0);
   const menuCache = useRef(new Map<string, Menu>());
+  const restored = useRef<Partial<Session> | null>(null);
   const focusedStep = useRef<string | null>(null);
   useEffect(() => {
     if (starting || loading || focusedStep.current === step) return;
@@ -98,8 +105,15 @@ export default function App() {
     let active = true;
     Promise.all([getMenus(), getProfiles(), getHealth()]).then(([ms, ps, health]) => {
       if (!active) return;
-      setMenus(ms); setDiners([]); setPresets(ps); setMock(health.mock); setPhotoReader(health.photo ?? null);
-      if (ms.length) setMenuId(ms[0].slug); else setStarting(false);
+      const session = loadSession();
+      const own = (session.menus ?? []).filter(m => m?.restaurant_id?.startsWith(LOCAL_PREFIX) && Array.isArray(m.dishes));
+      own.forEach(m => menuCache.current.set(m.restaurant_id, m));
+      const all = [...ms, ...own.map(m => ({ slug: m.restaurant_id, restaurant_name: m.restaurant_name, cuisine: m.cuisine, verified: m.verified, n_dishes: m.dishes.length }))];
+      restored.current = session;
+      setMenus(all); setDiners(Array.isArray(session.diners) ? session.diners : []); setPresets(ps); setMock(health.mock); setPhotoReader(health.photo ?? null);
+      if (session.settings) setSettings({ ...initialSettings, ...session.settings });
+      const start = all.some(m => m.slug === session.menuId) ? session.menuId! : all[0]?.slug;
+      if (start) setMenuId(start); else setStarting(false);
     }).catch(e => { if (active) { setError(`Could not load the table: ${errorText(e)}`); setStarting(false); } });
     getSavedPeople().then(people => { if (active) setSaved(people); }).catch(() => undefined);
     return () => { active = false; sequence.current++; };
@@ -113,9 +127,17 @@ export default function App() {
     (cached ? Promise.resolve(cached) : menuId.startsWith(LOCAL_PREFIX) ? Promise.reject(new Error("This imported menu is no longer available.")) : getMenu(menuId)).then(m => {
       if (seq !== menuSequence.current) return;
       menuCache.current.set(menuId, m); setMenu(m); setStarting(false);
+      const back = restored.current; restored.current = null;
+      if (back?.menuId === menuId && back.step && back.step !== "menu" && back.diners?.length) setStep("table");
     }).catch(e => { if (seq === menuSequence.current) { setError(errorText(e)); setStarting(false); } });
     return () => { menuSequence.current++; };
   }, [menuId]);
+
+  useEffect(() => {
+    if (starting && !menu) return; // not restored yet: don't overwrite the saved session
+    const own = menus.filter(m => m.slug.startsWith(LOCAL_PREFIX)).map(m => menuCache.current.get(m.slug)).filter((m): m is Menu => !!m);
+    try { localStorage.setItem(SESSION_KEY, JSON.stringify({ menus: own, menuId, diners, settings, step } satisfies Session)); } catch { /* storage full or blocked */ }
+  }, [menus, menuId, menu, diners, settings, step, starting]);
 
   const startSample = async () => {
     try {

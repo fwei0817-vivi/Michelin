@@ -375,3 +375,44 @@ def test_summary_stays_visible_after_a_swap(table):
     out = ai_swap.manual(menu, request, named, old, new)
     assert out.plan.summary and menu.dish(old).name_en not in out.plan.summary
     assert "per person with tax and tip" in out.plan.summary
+
+
+def test_better_has_no_price_window_and_brief_counts_dishes_per_diner(table, monkeypatch):
+    """QA round 4 #3: a cheaper dish more diners can eat must count as better (the old
+    +/-30% window hid Smashed Cucumber at $7.95 when replacing a $14.95 dish)."""
+    menu, request, plan = table
+    old = next(i.dish_id for i in plan.items if menu.dish(i.dish_id).category.value != "staple")
+    req = ai_swap._swap_request(request, old)
+    brief = ai_swap.brief(menu, req, plan, old)
+    assert all("dishes_they_can_eat_after_swap" in d for d in brief["diners"])
+    ids = [p.id for p in request.diners]
+    ref = menu.dish(old).price
+    weak = min(menu.dishes, key=lambda d: len(ai_swap.edible_by(d, request.diners))).id
+    got = len(ai_swap.edible_by(menu.dish(weak), request.diners))
+    assert got + 2 <= len(ids)
+    payload = {
+        "candidates": [
+            {"id": "far_cheap", "price": round(ref * 0.4, 2), "ok_for": ids[: got + 2]},
+            {"id": "near", "price": ref, "ok_for": ids[: got + 1]},
+            {"id": "same", "price": ref, "ok_for": ids[:got]},
+        ]
+    }
+    monkeypatch.setattr(ai_swap, "check", lambda *a, **k: ([], []))
+    better = ai_swap._better(menu, req, plan, old, weak, payload)
+    assert [c["id"] for c in better] == ["far_cheap", "near"]
+
+
+def test_swap_reason_never_singles_out_a_flagged_diner(table):
+    menu, request, _plan = table
+    for d in menu.dishes:
+        flagged = [
+            p
+            for p in request.diners
+            if ai_swap.assessment(d, p)["status"] == "requires_confirmation"
+        ]
+        if flagged:
+            p = flagged[0]
+            line = ai_swap._line(menu, request, None, d.id, f"great, especially for {p.name}")
+            assert "especially" not in line
+            return
+    pytest.skip("no dish with a confirmation-only diner")

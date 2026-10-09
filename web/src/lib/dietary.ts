@@ -1,9 +1,35 @@
 import type { DinerProfile, Dish } from "../types";
 import { ALLERGEN_LABEL, avoidsHeat, listNames } from "./format";
 
-/** Open questions are not confirmations. Keep them visible alongside eligibility. */
+// Which allergies and diets an ingredient word can matter to.
+const CONCERN: [RegExp, string[]][] = [
+  [/pork|lard|bacon|ham\b/i, ["no_pork", "vegetarian", "vegan"]],
+  [/beef/i, ["no_beef", "vegetarian", "vegan"]],
+  [/chicken|duck|lamb|meat|broth|stock|gelatin/i, ["vegetarian", "vegan"]],
+  [/shrimp|prawn|crab|oyster|scallop|shellfish|lobster|clam|mussel/i, ["shellfish", "vegetarian", "vegan"]],
+  [/fish|anchov/i, ["fish", "vegetarian", "vegan"]],
+  [/egg/i, ["egg", "vegan"]],
+  [/milk|butter|cream|cheese|dairy/i, ["dairy", "vegan"]],
+  [/peanut/i, ["peanut"]],
+  [/sesame/i, ["sesame"]],
+  [/cashew|almond|walnut|pecan|pistachio|tree nut/i, ["tree_nut"]],
+  [/soy|tofu/i, ["soy"]],
+  [/wheat|flour|gluten|noodle/i, ["wheat"]],
+];
+
+/** The diners an ingredient (e.g. "pork fat", "bamboo shoots") matters to; [] for nobody. */
+export function concernedBy(ingredient: string, diners: DinerProfile[]): DinerProfile[] {
+  const tags = CONCERN.filter(([re]) => re.test(ingredient)).flatMap(([, t]) => t);
+  return diners.filter(p => [...p.allergies, ...p.diets].some(t => tags.includes(t)));
+}
+
+/** Open questions are not confirmations. Keep them visible alongside eligibility, but only
+ * the ones that matter to someone at this table ("uses bamboo shoots" asks nobody). */
 export function dishQuestions(dish: Dish, diners: DinerProfile[]): string[] {
-  const questions = [...dish.confirm_with_staff];
+  const questions = dish.confirm_with_staff.filter(q => {
+    const m = /uses (.+?)\.?$/.exec(q);
+    return !m || !diners.length || concernedBy(m[1], diners).length > 0;
+  });
   for (const flag of dish.allergens) {
     if (flag.tier !== "unknown") continue;
     const affected = diners.filter(p => p.allergies.includes(flag.allergen));

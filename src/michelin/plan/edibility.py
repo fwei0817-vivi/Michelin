@@ -62,7 +62,11 @@ def assessment(dish: Dish, diner: DinerProfile) -> dict:
     # A small explicit vocabulary is contradiction detection, not an ingredient
     # extractor. Unrecognized text never establishes absence or safety.
     terms = {
-        "pork": (r"\bpork\b|猪肉", {Diet.VEGETARIAN, Diet.VEGAN, Diet.NO_PORK}, set()),
+        "pork": (
+            r"\bpork\b|\blard\b|\bbacon\b|\bham\b|猪肉|猪油",
+            {Diet.VEGETARIAN, Diet.VEGAN, Diet.NO_PORK},
+            set(),
+        ),
         "beef": (r"\bbeef\b|牛肉", {Diet.VEGETARIAN, Diet.VEGAN, Diet.NO_BEEF}, set()),
         "chicken": (r"\bchicken\b|鸡肉", {Diet.VEGETARIAN, Diet.VEGAN}, set()),
         "fish": (r"\bfish\b|\btilapia\b", {Diet.VEGETARIAN, Diet.VEGAN}, {Allergen.FISH}),
@@ -157,7 +161,13 @@ def edible_by(dish: Dish, diners: list[DinerProfile]) -> list[str]:
 def open_questions(dish: Dish, diners: list[DinerProfile]) -> list[str]:
     """Staff questions that matter for someone at this table: the dish's own questions plus
     any `unknown`-tier flag that matches a diner's allergy."""
-    questions = list(dish.confirm_with_staff)
+    # Only the dish's own questions that touch someone here ("uses bamboo shoots" asks
+    # nothing of a table without such an allergy or diet).
+    questions = []
+    for q in dish.confirm_with_staff:
+        m = re.search(r"uses (.+?)\.?$", q)
+        if not m or not diners or any(_matters(_words(m.group(1)), p) for p in diners):
+            questions.append(q)
     # One question per dish and concern, naming everyone it matters for (names, not ids).
     who: dict[str, list[str]] = {}
     for person in diners:
@@ -322,7 +332,10 @@ def risks(dish: Dish, diners: list[DinerProfile]) -> list[Risk]:
     for reason, names in who.items():
         term = re.match(r"Confirm (\S+?)(,| ingredient| for| preparation|$)", reason)
         about = term.group(1) if term else reason
-        out.append(Risk(about, names, _words(about), f"{label} (for {', '.join(names)}): {reason}"))
+        words = _words(about)
+        if any(set(r.words) & set(words) and set(names) <= set(r.names) for r in out):
+            continue  # "uses lard" already asks Ben and Cai about pork
+        out.append(Risk(about, names, words, f"{label} (for {', '.join(names)}): {reason}"))
     table = {a for p in diners for a in p.allergies}
     for f in dish.allergens:
         if f.tier == EvidenceTier.UNKNOWN and f.allergen in table:

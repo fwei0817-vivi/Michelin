@@ -488,7 +488,7 @@ def _image_mime(image: bytes) -> str | None:
 
 
 def _parse_notice(
-    mode: str, facts: bool, fallback: str | None = None, vision_model: str | None = None
+    mode: str, facts: tuple[int, int], fallback: str | None = None, vision_model: str | None = None
 ) -> str:
     """Say which steps used a model, so the notice is true whether a model is on or off."""
     parts = []
@@ -507,23 +507,34 @@ def _parse_notice(
         parts.append("Local OCR read the photo.")
     elif mode == "local_text":
         parts.append("The pasted text was split into dishes locally.")
-    if facts:
+    found, total = facts
+    if total and found == total:
         parts.append(
             "The AI guessed each dish's likely ingredients and allergens from its name; "
             "anything uncertain becomes a question for your server."
+        )
+    elif found:
+        parts.append(
+            f"The AI guessed likely ingredients and allergens for {found} of {total} dishes; "
+            "the rest stay unknown for allergies and diets, so ask your server about them."
+        )
+    elif llm.provider() is not None:
+        parts.append(
+            "The AI could not guess ingredients just now, so every dish is unknown for "
+            "allergies and diets. Try the import again in a minute."
         )
     else:
         parts.append(
             "No AI model was available to guess ingredients, so every dish is unknown for "
             "allergies and diets until one is."
         )
-    if mode != "gemini" and not facts and not fallback:
+    if mode != "gemini" and not found and llm.provider() is None and not fallback:
         parts.append("No model API was called.")
     parts.append("Check every row against the menu.")
     return " ".join(parts)
 
 
-def _with_facts(dishes: list) -> tuple[list, bool]:
+def _with_facts(dishes: list) -> tuple[list, tuple[int, int]]:
     """Imported rows with the AI's dish facts (cached, so planning later reuses them)."""
     menu = dish_facts.prepare(
         Menu(
@@ -534,7 +545,7 @@ def _with_facts(dishes: list) -> tuple[list, bool]:
             dishes=dishes,
         )
     )
-    return menu.dishes, dish_facts.known(menu)
+    return menu.dishes, dish_facts.coverage(menu)
 
 
 @app.post("/api/menu/parse")

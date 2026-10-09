@@ -82,6 +82,7 @@ def generate_json(
     system: str | None = None,
     which: str | None = None,
     client=None,
+    temperature: float | None = None,
 ) -> tuple[str, str]:
     """(JSON text, model used). Raises Unavailable, RateLimited, or provider errors."""
     which = which or provider()
@@ -90,7 +91,7 @@ def generate_json(
     model_id = model(task, which)
     if which == "openrouter":
         try:
-            return _openrouter(model_id, turns, schema, system, client), model_id
+            return _openrouter(model_id, turns, schema, system, client, temperature), model_id
         except BadKey:
             forced = os.environ.get("MICHELIN_LLM_PROVIDER", "").lower() == "openrouter"
             if forced or not gemini.available():
@@ -99,11 +100,11 @@ def generate_json(
                     "GEMINI_API_KEY to use the free Gemini tier."
                 ) from None
             log.warning("OpenRouter rejected the key; using the Gemini key instead.")
-            return _gemini(model(task, "gemini"), turns, schema, system, None)
-    return _gemini(model_id, turns, schema, system, client)
+            return _gemini(model(task, "gemini"), turns, schema, system, None, temperature)
+    return _gemini(model_id, turns, schema, system, client, temperature)
 
 
-def _gemini(model_id, turns, schema, system, client):
+def _gemini(model_id, turns, schema, system, client, temperature=None):
     from google.genai import types
 
     contents = []
@@ -121,13 +122,17 @@ def _gemini(model_id, turns, schema, system, client):
             system_instruction=system,
             response_mime_type="application/json",
             response_json_schema=schema,
-            **gemini.sampling(model_id),
+            **(
+                {"temperature": temperature}
+                if temperature is not None
+                else gemini.sampling(model_id)
+            ),
         ),
     )
     return response.text or "", used
 
 
-def _openrouter(model_id, turns, schema, system, client) -> str:
+def _openrouter(model_id, turns, schema, system, client, temperature=None) -> str:
     import httpx
 
     messages = [{"role": "system", "content": system}] if system else []
@@ -155,6 +160,8 @@ def _openrouter(model_id, turns, schema, system, client) -> str:
         },
         "usage": {"include": True},
     }
+    if temperature is not None:
+        body["temperature"] = temperature
     headers = {
         "Authorization": f"Bearer {openrouter_key()}",
         "X-Title": "Michelin table planner",

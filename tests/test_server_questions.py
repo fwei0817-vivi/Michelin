@@ -63,7 +63,10 @@ def plan_with(body, tmp_path):
 def test_brief_gives_the_model_the_rule_flagged_risks():
     payload = llm_planner.brief(MENU, REQUEST)
     rows = {d["id"]: d for d in payload["dishes"]}
-    assert "pork (matters for Ben, Cai)" in rows["eggplant_with_garlic_sauce"]["risks"]
+    assert any(
+        r.endswith("pork (matters for Ben, Cai)")
+        for r in rows["eggplant_with_garlic_sauce"]["risks"]
+    )
     assert rows["scallion_pancake"]["risks"] == ["lard (matters for Ben, Cai)"]
     assert all("ask" not in r for r in rows.values())
 

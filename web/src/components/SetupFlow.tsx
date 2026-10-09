@@ -34,10 +34,10 @@ interface Props {
 }
 
 const PHOTO_TEXT = {
-  openrouter: "Take or upload a photo. The AI reads the dishes and prices; our reviewed ingredient knowledge does the rest.",
-  gemini: "Take or upload a photo. Gemini reads the dishes and prices; our reviewed ingredient knowledge does the rest.",
-  ocr: "Take or upload a photo. This server reads the dishes and prices; our reviewed ingredient knowledge does the rest.",
-  none: "Take or upload a photo, or paste the text. Our reviewed ingredient knowledge does the rest.",
+  openrouter: "Take or upload a photo. The AI reads the dishes and prices, then guesses likely ingredients from each name.",
+  gemini: "Take or upload a photo. Gemini reads the dishes and prices; the AI guesses likely ingredients from each name.",
+  ocr: "Take or upload a photo. This server reads the dishes and prices; the AI guesses likely ingredients from each name when it is available.",
+  none: "Take or upload a photo, or paste the text. Without an AI model every dish stays unknown for allergies and diets.",
 };
 
 export function SetupFlow({ step, onStep, canPlan, menu, diners, saved, onPick, onRemove, settings, photoReader, onMenu, onPhoto, onPaste, onSample, onChange, onEdit, onAdd, onPreset, onPlan, loading, current, onApprove }: Props) {

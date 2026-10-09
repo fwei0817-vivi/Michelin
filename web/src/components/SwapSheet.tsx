@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeftRight, Check, CheckCircle2, CircleHelp, FileImage, Flame, Leaf, Pencil, Plus, Search, Sparkles, TriangleAlert, Upload, UserX, Users } from "lucide-react";
 import { evaluateMenu, parseMenu, getPreparedInputs, extractMenu } from "../api";
-import { CATEGORY_LABEL, currencySymbol, dishName, flagWording, money } from "../lib/format";
+import { CATEGORY_LABEL, currencySymbol, dishName, flagWording, listNames, money, niceName } from "../lib/format";
 import { photoFor } from "../lib/dishPhotos";
-import { mayHideMeat } from "../lib/dietary";
+import { concernedBy, mayHideMeat } from "../lib/dietary";
 import type { DinerProfile, Dish, Eligibility, Menu, MenuSummary, Plan, PreparedInput } from "../types";
 import { DishEditor } from "./DishEditor";
 import { Sheet } from "./Sheet";
@@ -42,14 +42,23 @@ const SPICE = ["", "Mild", "Medium", "Hot"];
 // Animal products and allergens that a dish name often does not reveal.
 const HIDDEN = /pork|lard|beef|chicken|duck|lamb|meat|broth|stock|shrimp|prawn|crab|oyster|fish|anchov|scallop|egg|milk|butter|cream|cheese|peanut|sesame|nut/i;
 
-/** Ingredients the knowledge base expects but the menu does not print, in plain words. */
-function hiddenIngredients(d: Dish): string | null {
+/** Ingredients the AI thinks a dish may hide, in plain words, naming who they matter to
+ * ("may hide pork fat, ask (Pat)"). Notes that matter to nobody at the table are left out. */
+export function hiddenIngredients(d: Dish, diners: DinerProfile[] = []): string | null {
   const name = `${d.name_en ?? ""} ${d.description_raw ?? ""}`.toLowerCase();
   const printed = (ingredient: string) => ingredient.toLowerCase().split(/\W+/).some((w) => w.length >= 4 && name.includes(w));
-  const notes = d.main_ingredients
-    .filter((i) => i.tier !== "menu" && HIDDEN.test(i.name) && !printed(i.name))
-    .map((i) => (i.tier === "inferred" ? `usually made with ${i.name}` : `may hide ${i.name}, ask`));
-  return notes.length ? notes.join("; ") : null;
+  const stem = (n: string) => n.toLowerCase().replace(/s\b/g, "");
+  const shown = d.main_ingredients.filter((i) => i.tier !== "menu" && HIDDEN.test(i.name) && !printed(i.name));
+  // "pork" adds nothing next to "minced pork"; "peanut" nothing next to "peanuts".
+  const distinct = shown.filter((i, k) => !shown.some((o, j) => j !== k && (stem(o.name) === stem(i.name) ? j < k : stem(o.name).includes(stem(i.name)))));
+  const notes = distinct
+    .flatMap((i) => {
+      const who = diners.length ? concernedBy(i.name, diners) : [];
+      if (diners.length && !who.length) return [];
+      const text = i.tier === "inferred" ? `usually made with ${i.name}` : `may hide ${i.name}, ask`;
+      return [who.length ? `${text} (${listNames(who.map((p) => p.name))})` : text];
+    });
+  return notes.length ? [...new Set(notes)].slice(0, 3).join("; ") : null;
 }
 
 const cents = (n: number) => Math.round(n * 100 + 1e-6) / 100;
@@ -63,13 +72,29 @@ function overBudget(subtotal: number, tax: number, tip: number, budget: number):
 
 const CONCERNS = ["peanut", "tree nut", "sesame", "shellfish", "fish", "egg", "dairy", "milk", "soy", "wheat", "gluten", "pork", "chicken", "beef", "lamb", "duck", "meat", "alcohol"];
 
-/** One plain line per diner, e.g. "has pork" or "may have peanut, ask". */
+/** One plain line per diner, e.g. "has pork", "may have peanut, ask", or both: what is only
+ * possible always reads "may have", whatever else the diner can't have. */
 export function plainReason(reasons: string[], confirm: boolean): string {
+  const sure = reasons.filter((r) => !/^confirm/i.test(r));
+  const maybe = reasons.filter((r) => /^confirm/i.test(r));
+  if (!sure.length) return reasonLine(maybe, maybe.length > 0 || confirm);
+  const has = reasonLine(sure, false);
+  if (!maybe.length) return has;
+  const hasItems = has.startsWith("has ") ? has.slice(4).split(/, | and /) : [];
+  const may = reasonLine(maybe, true);
+  if (!may.startsWith("may have ")) return has;
+  const rest = may.slice(9, -5).split(/, | and /).filter((w) => !hasItems.includes(w));
+  return rest.length ? `${has}; may have ${joinWords(rest)}, ask` : has;
+}
+
+const joinWords = (w: string[]) => (w.length <= 1 ? w.join("") : `${w.slice(0, -1).join(", ")} and ${w[w.length - 1]}`);
+
+function reasonLine(reasons: string[], confirm: boolean): string {
   const text = reasons.join(" ").toLowerCase().replace(/_/g, " ").replace(/\bno pork\b/g, "pork");
   const items = CONCERNS.filter(w => new RegExp(`\\b${w}s?\\b`).test(w === "fish" ? text.replace(/shellfish/g, "") : text));
   const named = items.some(w => ["pork", "chicken", "beef", "lamb", "duck"].includes(w));
   const shown = named ? items.filter(w => w !== "meat") : items; // "has beef", not "has beef and meat"
-  const list = shown.length <= 1 ? shown.join("") : `${shown.slice(0, -1).join(", ")} and ${shown[shown.length - 1]}`;
+  const list = joinWords(shown);
   if (!list) return confirm ? `ask if it's ${/vegan/.test(text) ? "vegan" : /vegetarian/.test(text) ? "vegetarian" : "safe"}` : /vegan/.test(text) ? "not vegan" : /vegetarian/.test(text) ? "not vegetarian" : "can't eat it";
   return confirm ? `may have ${list}, ask` : `has ${list}`;
 }
@@ -89,7 +114,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
     try {
       const result = await extractMenu({menu_id: input.menu_id, text: input.input_text});
       setExtractedMenu(result.menu); setImported(result.menu.dishes); setImportMode("replace");
-      setExtractionNotice(result.notice); setRestaurantName(result.menu.restaurant_name); setCreated(null);
+      setExtractionNotice(result.notice); setRestaurantName(niceName(result.menu.restaurant_name)); setCreated(null);
     } catch(e) {setError(e instanceof Error ? e.message : String(e));}
     finally {setParsing(false);}
   };
@@ -160,7 +185,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
       setImported(result.dishes);
       setText(result.text);
       setReadNotice(result.notice ?? "");
-      if (result.restaurant_name && !restaurantName.trim()) setRestaurantName(result.restaurant_name);
+      if (result.restaurant_name && !restaurantName.trim()) setRestaurantName(niceName(result.restaurant_name));
       if (!result.dishes.length) setError("No name-and-price rows found. Put one dish per line, with the price at the end, then try again.");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -244,7 +269,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
             <label className="upload-area">
               <FileImage size={24} />
               <strong>{photo?.name ?? "Choose a menu photo"}</strong>
-              <span>PNG, JPEG or WebP, up to 8 MB. Names and prices are read from the photo; ingredients come from our reviewed knowledge base.</span>
+              <span>PNG, JPEG or WebP, up to 8 MB. Names and prices are read from the photo; the AI guesses likely ingredients from each name.</span>
               <input
                 aria-label="Menu image"
                 type="file"
@@ -303,7 +328,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                     if (importMode === "replace" || extractedMenu) {
                       // A new, independent restaurant. The current one keeps its name and dishes,
                       // and stays selected until the user switches.
-                      const name = restaurantName.trim() || extractedMenu?.restaurant_name || "My restaurant";
+                      const name = niceName(restaurantName.trim() || extractedMenu?.restaurant_name || "My restaurant");
                       const fresh: Menu = extractedMenu
                         ? { ...extractedMenu, restaurant_name: name, verified: false }
                         : { restaurant_id: "", restaurant_name: name, cuisine: "custom", source: "User-imported menu", currency: menu.currency, verified: false, dishes: imported };
@@ -382,6 +407,8 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                 const delta = ((d.price ?? 0) * qty - (oldDish?.price ?? 0) * oldQuantity) * (1 + tax + tip);
                 const photo = photoFor(d);
                 const notFor = e ? diners.filter((p) => !e.edible_by.includes(p.id)) : [];
+                // Diners who can eat it only if the server confirms (e.g. "Pat: may have pork, ask").
+                const askFor = e ? diners.filter((p) => e.edible_by.includes(p.id) && e.assessments?.[p.id]?.status === "requires_confirmation") : [];
                 const over = plan && budget != null && d.price != null && !onSlip.has(d.id) ? overBudget(plan.subtotal + d.price * qty - (oldDish?.price ?? 0) * (oldDish ? oldQuantity : 0), tax, tip, budget) : 0;
                 const canPick = !!e && e.edible_by.length > 0 && d.price != null && menu.verified && diners.length > 0 && over <= 0;
                 return (
@@ -402,13 +429,14 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                         {!e ? (
                           <p className="helper">Checking diner requirements…</p>
                         ) : (
-                          notFor.length > 0 && (
+                          (notFor.length > 0 || askFor.length > 0) && (
                             <div className="dish-notes">
                               {notFor.map(p => <p className="not-for" key={p.id}><UserX size={13}/><span>{p.name}: {plainReason(e.blocked_for[p.id] ?? [], e.assessments?.[p.id]?.status === "requires_confirmation" || (e.blocked_for[p.id] ?? []).every(r => /^confirm/i.test(r)))}</span></p>)}
+                              {askFor.map(p => <p className="ask-for" key={p.id}><CircleHelp size={13}/><span>{p.name}: {plainReason(e.assessments?.[p.id]?.reasons ?? [], true)}</span></p>)}
                             </div>
                           )
                         )}
-                        {hiddenIngredients(d) && <p className="hidden-flag"><TriangleAlert size={13} /><span>Hidden ingredient: {hiddenIngredients(d)}</span></p>}
+                        {hiddenIngredients(d, diners) && <p className="hidden-flag"><TriangleAlert size={13} /><span>Hidden ingredient: {hiddenIngredients(d, diners)}</span></p>}
                         {e && e.questions.length > 0 && <p className="dish-question"><CircleHelp size={13} /><span>{e.questions[0]}</span></p>}
                         {d.allergens.length > 0 && (
                           <details className="dish-flags">

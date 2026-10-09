@@ -405,6 +405,8 @@ async def run(url: str, shots: Path) -> None:
 
         async def remember():
             # Everyone added is saved: after a reload Zoe is a saved chip with her allergy.
+            # (Start from a fresh session: tonight's table itself is checked in the demo.)
+            await pg.evaluate("localStorage.removeItem('michelin.session.v1')")
             await pg.reload()
             await pg.wait_for_selector("main h1")
             await settle(pg)
@@ -612,6 +614,22 @@ async def demo(browser, url: str, shots: Path, errors: list[str]) -> None:
     )
     await pg.screenshot(path=str(shots / "step3b_order_ticket.png"))
     await close_dialog(pg)
+    # The imported menu and tonight's table survive a reload.
+    await pg.reload()
+    await pg.wait_for_selector("main h1")
+    await settle(pg, 800)
+    main = await pg.locator("main").inner_text()
+    await pg.screenshot(path=str(shots / "step3c_after_reload.png"), full_page=True)
+    await pg.get_by_role("button", name="Find dishes").click()
+    await settle(pg, 1000)
+    session = await pg.evaluate("JSON.parse(localStorage.getItem('michelin.session.v1'))")
+    current = next((m for m in session["menus"] if m["restaurant_id"] == session["menuId"]), {})
+    check(
+        all(n in main for n, _, _ in people)
+        and current.get("restaurant_name") == "Sky Pavilion"
+        and await heading(pg) != "No order fits yet",
+        "reload keeps the imported menu and tonight's table",
+    )
     await pg.get_by_role("button", name="Your table").click()
     budget = dialog(pg).locator("input").first
     await budget.fill("3")

@@ -389,6 +389,24 @@ def _summary(text: object, n: int) -> str | None:
     return text or None
 
 
+def _fair_reason(text: str | None, dish, request: TableRequest) -> str | None:
+    """The AI's one-line reason, unless it singles out a diner the rules flag for this dish
+    ("Great for everyone, especially Cai" on a dish that may hide Cai's allergen). Then the
+    rule-based reason is used instead."""
+    if not text:
+        return None
+    for person in request.diners:
+        name = (person.name or "").strip()
+        if not name or not re.search(rf"(?<!\w){re.escape(name)}(?!\w)", text, re.IGNORECASE):
+            continue
+        if assessment(dish, person)["status"] != "validated_under_known_data":
+            return None
+        taste = rf"{re.escape(name)},? (?:who )?(?:loves|likes|enjoys|prefers|avoids|craves)\b"
+        if not (person.notes or "").strip() and re.search(taste, text, re.IGNORECASE):
+            return None  # a taste nobody recorded ("Pat, who loves peanuts")
+    return text
+
+
 def _to_plan(menu: Menu, request: TableRequest, answer: dict, items: list) -> Plan:
     known = {d.id: d for d in menu.dishes}
     selected = [(known[i.dish_id], i.quantity) for i in items]
@@ -416,7 +434,13 @@ def _to_plan(menu: Menu, request: TableRequest, answer: dict, items: list) -> Pl
         request,
     )
     items = [
-        i.model_copy(update={"reason": reasons.get(i.dish_id) or i.reason}) for i in base.items
+        i.model_copy(
+            update={
+                "reason": _fair_reason(reasons.get(i.dish_id), known[i.dish_id], request)
+                or i.reason
+            }
+        )
+        for i in base.items
     ]
     asked = server_questions(answer, selected, request)
     items = [i.model_copy(update={"server_question": asked.get(i.dish_id)}) for i in items]
