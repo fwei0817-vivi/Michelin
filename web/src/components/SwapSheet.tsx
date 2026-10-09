@@ -114,7 +114,7 @@ export function plainReason(reasons: string[], confirm: boolean, person?: DinerP
 function ownReason(r: string): string {
   let m = /^Contains (.+?)( \(on the menu\))?$/.exec(r);
   if (m) return `has ${m[1]}`;
-  m = /^May contain (.+)$/.exec(r) ?? /^Confirm (.+?), including sauces/.exec(r);
+  m = /^May contain (.+)$/.exec(r) ?? /^Confirm (.+?)(?:, including sauces|, can it be left out| ingredient\/preparation)/.exec(r);
   if (m) return `may have ${m[1].replace(/_/g, " ")}, ask`;
   m = /^Breaks (.+?)( \(on the menu\))?$/.exec(r);
   if (m) return m[1].startsWith("no ") ? `has ${m[1].slice(3)}` : `not ${m[1]}`;

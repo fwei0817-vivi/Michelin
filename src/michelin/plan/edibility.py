@@ -108,18 +108,20 @@ def assessment(dish: Dish, diner: DinerProfile) -> dict:
             or allergen not in dish.reviewed_allergens
         ):
             unknown.append(f"Confirm {allergen.value}, including sauces and cross-contact")
-    # The diner's own allergies and diets, in their words. Allergies: likely or possible
-    # excludes the dish, no answer asks. Diets: likely excludes, possible or no answer asks.
+    # The diner's own allergies and diets, in their words (Yukino, 2026-10-09). Allergies:
+    # likely (or printed) excludes; possible or no answer is allowed with a server question.
+    # Diets: likely excludes, possible asks, no answer is not offered and asks. The nine
+    # standard allergens above keep the strict rule.
     custom = {(f.kind, f.term): f for f in dish.custom_flags}
     for term in diner.other_allergies:
         flag = custom.get(("allergy", term))
         answer = flag.answer if flag else "unknown"
         if answer == "likely":
             conflicts.append(f"Contains {term}" + (" (on the menu)" if flag.printed else ""))
-        elif answer == "possible":
-            conflicts.append(f"May contain {term}")
-        elif answer != "no":
-            unknown.append(f"Confirm {term.replace(' ', '_')}, including sauces and cross-contact")
+        elif answer == "possible":  # allowed, asking the kitchen to leave it out
+            ask.append(f"Confirm {term.replace(' ', '_')}, can it be left out")
+        elif answer != "no":  # no answer: allowed, with a question
+            ask.append(f"Confirm {term.replace(' ', '_')} ingredient/preparation")
     for term in diner.other_diets:
         flag = custom.get(("diet", term))
         answer = flag.answer if flag else "unknown"
@@ -193,6 +195,9 @@ _DIET_ASK = {
 def natural(reason: str) -> str:
     """A rule's "Confirm …" note as a question a diner could ask the server (QA r6):
     "Confirm peanut ingredient/preparation" -> "Is there any peanut in it?"."""
+    m = re.fullmatch(r"Confirm (.+?), can it be left out", reason)
+    if m:
+        return f"Can it be made without {m.group(1).replace('_', ' ')}?"
     m = re.fullmatch(r"Confirm (.+?), including sauces and cross-contact", reason)
     if m:
         x = m.group(1).replace("_", " ")

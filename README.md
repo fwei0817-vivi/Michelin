@@ -183,10 +183,16 @@ loves spicy, likes seafood, likes meat, light/清淡, no offal/内脏), and one 
 For each dish, an AI call (`plan/custom_facts.py`) answers likely, possible or no for
 every own term that someone at the table has. Answers are cached per dish name and term.
 The menu's own words count as likely. The rules then apply them:
-- An allergy that is likely or possible excludes the dish.
-- A diet that is likely broken excludes the dish. A diet that is possibly broken becomes a
-  question for the server.
-- With no answer, the dish is not offered to that diner and becomes a question. Older saved
+
+| AI answer | Own allergy ("cilantro") | Own diet ("halal") |
+|---|---|---|
+| likely, or named on the menu | excluded | excluded |
+| possible | allowed, with a question: "Can it be made without cilantro?" | allowed, with a question |
+| no answer | allowed, with a question: "Is there any cilantro in it?" | not offered, with a question |
+| no | allowed | allowed |
+
+The nine standard allergens keep the strict rule: any recorded, inferred or open risk takes
+the dish off that diner's list. Cards read "Mia: may have cilantro, ask". Older saved
 people with heat/likes/dislikes are migrated into `notes`. Planning with saved `diner_ids`
 uses the latest snapshot. An inline profile controls current restrictions; an omitted
 `notes` inherits the saved note in that scope, and an empty one clears it for the request.

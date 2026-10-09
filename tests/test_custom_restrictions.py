@@ -68,23 +68,40 @@ def test_terms_are_cleaned_and_old_saved_people_still_load():
     assert old.other_allergies == [] and old.preferences == [] and "no spicy" in old.notes.lower()
 
 
-def test_allergy_likely_or_possible_excludes_unknown_asks_no_is_fine():
+def test_own_allergy_likely_excludes_possible_or_unknown_asks():
     assert not assessment(dish("Mango Pudding", flag("mango", "allergy", "likely")), MIA)[
         "eligible"
     ]
-    possible = assessment(
-        dish(
-            "Fruit Salad", flag("mango", "allergy", "possible"), flag("cilantro", "allergy", "no")
-        ),
-        MIA,
+    printed = dish("Mango Pudding", flag("mango", "allergy", "likely", printed=True))
+    assert not assessment(printed, MIA)["eligible"]
+    possible = dish(
+        "Fruit Salad", flag("mango", "allergy", "possible"), flag("cilantro", "allergy", "no")
     )
-    assert not possible["eligible"] and "May contain mango" in possible["reasons"]
+    a = assessment(possible, MIA)
+    assert a["eligible"] and a["status"] == "requires_confirmation"
+    assert any("Can it be made without mango?" in q for q in open_questions(possible, [MIA]))
     unknown = dish("Rice", flag("mango", "allergy", "no"))  # cilantro never answered
     a = assessment(unknown, MIA)
-    assert not a["eligible"] and a["status"] == "requires_confirmation"
-    assert any("cilantro" in q for q in open_questions(unknown, [MIA]))
+    assert a["eligible"] and a["status"] == "requires_confirmation"
+    assert any("Is there any cilantro in it?" in q for q in open_questions(unknown, [MIA]))
     ok = dish("Rice", flag("mango", "allergy", "no"), flag("cilantro", "allergy", "no"))
-    assert assessment(ok, MIA)["eligible"]
+    assert assessment(ok, MIA)["status"] == "validated_under_known_data"
+
+
+def test_standard_allergens_stay_strict():
+    from michelin.schemas import AllergenFlag, EvidenceTier
+
+    pat = DinerProfile(id="pat", name="Pat", allergies=["peanut"])
+    maybe = Dish(
+        id="x",
+        name_en="Noodles",
+        price=9,
+        allergens=[
+            AllergenFlag(allergen="peanut", tier=EvidenceTier.UNKNOWN, confidence=0.4, reason="r")
+        ],
+    )
+    assert not assessment(maybe, pat)["eligible"]
+    assert not assessment(Dish(id="y", name_en="Rice", price=2), pat)["eligible"]  # unreviewed
 
 
 def test_diet_likely_excludes_possible_asks_but_stays_eligible():
@@ -126,7 +143,7 @@ def test_only_the_tables_terms_are_asked_once_and_cached(fake_custom):
     assert edible == {
         "Mango Pudding": [],
         "Steamed Rice": ["mia", "omar"],
-        "Beef with Shaoxing Wine": [],
+        "Beef with Shaoxing Wine": ["mia"],  # cilantro only possible: allowed, asked
     }
     dish_facts.prepare(menu, client=object(), diners=[MIA, OMAR])
     assert len(fake.calls) == 2  # only Mango Pudding's never-answered terms asked again
@@ -139,7 +156,8 @@ def test_only_the_tables_terms_are_asked_once_and_cached(fake_custom):
 def test_without_a_model_every_dish_is_a_question_not_safe():
     out = custom_facts.annotate([dish("Steamed Rice")], [MIA])
     assert {f.answer for f in out[0].custom_flags} == {"unknown"}
-    assert not assessment(out[0], MIA)["eligible"]
+    a = assessment(out[0], MIA)
+    assert a["eligible"] and a["status"] == "requires_confirmation"  # allowed, but asked
 
 
 def test_evaluate_shows_the_reason_on_cards():
