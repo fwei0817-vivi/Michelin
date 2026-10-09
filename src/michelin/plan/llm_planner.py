@@ -897,10 +897,28 @@ def plan(
     if feedback is None or outcome.plan is None:
         return outcome
     before = [(c.dish_id, c.quantity) for c in feedback.current]
-    after = [(i.dish_id, i.quantity) for i in outcome.plan.items]
-    d = refine.diff(menu, before, after)
+
+    def check_goals(out):
+        after = [(i.dish_id, i.quantity) for i in out.plan.items]
+        d = refine.diff(menu, before, after)
+        locked = request.locked_dish_ids
+        return d, refine.unmet(feedback.chips, menu, before, after, locked, d)
+
+    d, missed = check_goals(outcome)
+    if missed and not outcome.fallback:
+        # One retry, told in code-checked words what the revision missed.
+        again = feedback.model_copy(update={"fix": refine.missed_text(missed, d)})
+        second = _plan(menu, request, client, cache_path, again)
+        if second.plan is not None and not second.fallback:
+            d2, missed2 = check_goals(second)
+            if len(missed2) <= len(missed):
+                outcome, d, missed = second, d2, missed2
+        outcome.attempts += 1
     ai_note = None if outcome.fallback else (outcome.answer or {}).get("change_note")
     note, from_ai = refine.final_note(ai_note, d)
+    if missed:
+        after = [(i.dish_id, i.quantity) for i in outcome.plan.items]
+        note, from_ai = refine.honest_note(missed, d, menu, after), False
     if not from_ai and ai_note:
         log.info("Change note replaced: %r does not match the changes", str(ai_note)[:120])
     outcome.change_note = note

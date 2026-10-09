@@ -34,11 +34,14 @@ class Feedback(BaseModel):
     chips: list[str] = Field(default_factory=list, max_length=6)
     text: str = Field(default="", max_length=200)
     current: list[CurrentItem] = Field(min_length=1, max_length=40)
+    # Set by the server on its one retry: why the last revision missed the goal.
+    fix: list[str] = Field(default_factory=list, exclude=True)
 
     def asks(self) -> list[str]:
         out = [CHIPS[c] for c in self.chips if c in CHIPS]
         if self.text.strip():
             out.append("In their words: " + self.text.strip())
+        out += [f"Your last revision did not do this: {f}" for f in self.fix]
         return out
 
 
@@ -91,7 +94,102 @@ def diff(menu: Menu, before: list[tuple[str, int]], after: list[tuple[str, int]]
         "veg": total(a, _veg) - total(b, _veg),
         "dishes": sum(a.values()) - sum(b.values()),
         "names": {i: known[i].name_en or known[i].name_zh or i for i in {*a, *b} if i in known},
+        "menu_names": {d.id: d.name_en or "" for d in menu.dishes},
     }
+
+
+GOAL_TEXT = {
+    "less_spicy": "make it less spicy",
+    "cheaper": "make it cheaper",
+    "more_seafood": "add more seafood",
+    "more_veggies": "add more vegetables",
+    "more_filling": "make it more filling",
+    "something_different": "change at least half of the dishes",
+}
+
+
+def unmet(
+    chips: list[str], menu: Menu, before, after, locked=(), d: dict | None = None
+) -> list[str]:
+    """The chips whose goal the revision did not reach, checked on the real orders:
+    less spicy = remove or swap a spicy (non-kept) dish so the max or average spice of the
+    non-kept dishes drops; cheaper = total drops; more seafood/veggies = count rises; more
+    filling = more dishes, or a dearer dish added; something different = at least half of the
+    non-kept dishes change. A goal already met before (nothing spicy to remove) counts as met."""
+    known = {x.id: x for x in menu.dishes}
+    d = d or diff(menu, before, after)
+    locked = set(locked)
+
+    def free(rows):
+        return [
+            (i, q)
+            for i, q in rows
+            if i in known and i not in locked and known[i].category.value != "staple"
+        ]
+
+    fb, fa = free(before), free(after)
+    simple = {
+        "cheaper": d["price"] < 0,
+        "more_seafood": d["seafood"] > 0,
+        "more_veggies": d["veg"] > 0,
+        "more_filling": d["dishes"] > 0 or bool(d["added"] and d["price"] > 0),
+    }
+    out = []
+    for chip in chips:
+        if chip == "less_spicy":
+            spicy_before = [i for i, _ in fb if _spice(known[i]) > 0]
+            if not spicy_before:
+                continue
+            sb = [_spice(known[i]) for i, q in fb for _ in range(q)]
+            sa = [_spice(known[i]) for i, q in fa for _ in range(q)] or [0]
+            dropped = max(sa) < max(sb) or sum(sa) / len(sa) < sum(sb) / len(sb)
+            cut = any(i in spicy_before for i in d["removed"] + d["fewer"])
+            if not (dropped and cut):
+                out.append(chip)
+        elif chip in simple and not simple[chip]:
+            out.append(chip)
+        elif chip == "something_different":
+            ids = {i for i, _ in fb}
+            changed = len(ids & set(d["removed"]))
+            if ids and changed * 2 < len(ids):
+                out.append(chip)
+    return out
+
+
+def missed_text(chips: list[str], d: dict) -> list[str]:
+    """Why, in words for the model's retry."""
+    n = d["names"]
+    added = ", ".join(n[i] for i in d["added"]) or "nothing"
+    removed = ", ".join(n[i] for i in d["removed"]) or "nothing"
+    return [
+        f"{GOAL_TEXT[c]} (you added {added} and removed {removed}; "
+        + {
+            "less_spicy": "remove or swap at least one spicy dish that is not kept",
+            "cheaper": f"the menu prices went {'up' if d['price'] > 0 else 'unchanged'}",
+            "more_seafood": "include more fish or shellfish dishes",
+            "more_veggies": "include more vegetable or tofu dishes",
+            "more_filling": "add a dish or swap in a heartier one within the budget",
+            "something_different": "replace at least half of the dishes that are not kept",
+        }[c]
+        + ")"
+        for c in chips
+    ]
+
+
+def honest_note(chips: list[str], d: dict, menu: Menu | None = None, after=()) -> str:
+    """Said plainly when a goal was not met, even after one retry."""
+    goals = " or ".join(GOAL_TEXT[c] for c in chips)
+    if not (d["added"] or d["removed"] or d["more"] or d["fewer"]):
+        extra = ""
+        if "less_spicy" in chips and menu is not None:
+            known = {x.id: x for x in menu.dishes}
+            top = max((_spice(known[i]) for i, _ in after if i in known), default=0)
+            extra = f" Its spiciest dish is {['not spicy', 'mild', 'medium', 'hot'][min(top, 3)]}."
+        return f"Couldn't {goals}: the AI kept the same order.{extra}"
+    return (
+        f"Couldn't fully {goals} within everyone's allergies, diets, kept dishes and the "
+        f"budget. {code_note(d)}"
+    )
 
 
 def changes_list(d: dict) -> list[str]:
@@ -135,7 +233,10 @@ def note_ok(note: str, d: dict) -> bool:
     changed = bool(d["added"] or d["removed"] or d["more"] or d["fewer"])
     if not changed:
         return bool(
-            re.search(r"\b(no change|unchanged|kept the same|same order|nothing changed)", low)
+            re.search(
+                r"\b(no change|unchanged|kept (?:the same|all|every)|same order|nothing changed)",
+                low,
+            )
         )
     if re.search(r"\b(no change|unchanged|nothing changed|same order)\b", low):
         return False
@@ -179,6 +280,11 @@ def note_ok(note: str, d: dict) -> bool:
         and d["veg"] <= 0
     ):
         return False
+    moved = {*d["added"], *d["removed"], *d["more"], *d["fewer"]}
+    for dish_id, name in d.get("menu_names", {}).items():
+        # A dish the note names must really have been added, removed or changed.
+        if len(name) >= 5 and name.lower() in low and dish_id not in moved:
+            return False
     if re.search(r"\$\s*(\d+(?:\.\d+)?)", low):
         claimed = float(re.search(r"\$\s*(\d+(?:\.\d+)?)", low).group(1))
         if abs(claimed - abs(d["price"])) > 0.5:

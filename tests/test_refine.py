@@ -83,6 +83,7 @@ def test_note_claims_are_checked_against_the_diff():
     assert refine.note_ok("Added more seafood", up)
     same = refine.diff(MENU, [("mapo_tofu", 1)], [("mapo_tofu", 1)])
     assert not refine.note_ok("Swapped a dish", same) and refine.note_ok("No change needed", same)
+    assert refine.note_ok("Kept all dishes as they are", same)
     assert refine.final_note("", d)[0].startswith("Swapped Mapo Tofu")
 
 
@@ -114,7 +115,7 @@ def test_a_note_that_does_not_match_is_rewritten_by_the_code(fake):
             note="Made it cheaper and milder",
         )
     )
-    r = post({"chips": ["cheaper"], "current": CURRENT})
+    r = post({"text": "something fancier", "current": CURRENT})
     assert r["kind"] == "plan" and "cheaper" not in r["change_note"].lower()
     assert r["change_note"].startswith("Added Boiled Fish")
 
@@ -124,8 +125,8 @@ def test_feedback_bypasses_the_cache_and_is_part_of_its_key(fake):
     post()
     post()
     assert len(f.calls) == 1  # a plain refresh is cached
-    post({"chips": ["more_veggies"], "current": CURRENT})
-    post({"chips": ["more_veggies"], "current": CURRENT})
+    post({"text": "more veg please", "current": CURRENT})
+    post({"text": "more veg please", "current": CURRENT})
     assert len(f.calls) == 3  # every refinement asks the model again
     a = llm_planner._key({"x": 1, "feedback": ["a"]}, "m")
     assert a != llm_planner._key({"x": 1, "feedback": ["b"]}, "m")
@@ -142,3 +143,74 @@ def test_kept_dishes_stay_and_failures_retry_then_the_rules_build(fake):
     r = post({"chips": ["something_different"], "current": CURRENT})
     assert r["source"] == "rules" and r["kind"] == "plan"
     assert "everything" not in r["change_note"]  # the rules' order: the code writes the note
+
+
+def test_each_chip_goal_is_checked_on_the_real_orders():
+    cur = [("mapo_tofu", 1), ("kung_pao_chicken", 1), ("steamed_rice", 2)]
+
+    def miss(chips, after, locked=()):
+        return refine.unmet(chips, MENU, cur, after, locked)
+
+    only_added = [*cur, ("garlic_seasonal_greens", 1)]
+    assert miss(["less_spicy"], only_added) == ["less_spicy"]  # a mild dish added is not enough
+    swapped = [("garlic_seasonal_greens", 1), ("kung_pao_chicken", 1), ("steamed_rice", 2)]
+    assert miss(["less_spicy", "cheaper", "more_veggies"], swapped) == []
+    assert miss(["less_spicy"], swapped, locked=["mapo_tofu"]) == ["less_spicy"]  # kept stays
+    assert miss(["more_seafood"], [*cur, ("boiled_fish_chili_oil", 1)]) == []
+    assert miss(["more_seafood", "cheaper"], swapped) == ["more_seafood"]
+    assert miss(["more_filling"], only_added) == [] and miss(["more_filling"], cur) == [
+        "more_filling"
+    ]
+    assert miss(["something_different"], swapped) == []  # 1 of 2 changed: half
+    assert miss(["something_different"], only_added) == ["something_different"]
+
+
+def test_note_may_only_name_dishes_that_really_changed():
+    d = refine.diff(
+        MENU,
+        [("mapo_tofu", 1), ("kung_pao_chicken", 1)],
+        [("mapo_tofu", 1), ("kung_pao_chicken", 1), ("garlic_seasonal_greens", 1)],
+    )
+    assert refine.note_ok("Added Garlic Seasonal Greens", d)
+    assert not refine.note_ok("Added garlic seasonal greens, kept mapo tofu", d)
+    assert not refine.note_ok("Replaced the spicy mapo tofu with garlic seasonal greens", d)
+
+
+def test_less_spicy_that_only_adds_a_dish_is_retried_with_the_reason(fake):
+    f = fake(
+        order(
+            "mapo_tofu",
+            "kung_pao_chicken",
+            "garlic_seasonal_greens",
+            note="Added Garlic Seasonal Greens",
+        ),
+        order(
+            "garlic_seasonal_greens",
+            "kung_pao_chicken",
+            note="Swapped Mapo Tofu for Garlic Seasonal Greens",
+        ),
+    )
+    r = post({"chips": ["less_spicy"], "current": CURRENT})
+    assert len(f.calls) == 2
+    assert "Your last revision did not do this: make it less spicy" in f.calls[1][0][0].text
+    assert r["change_note"] == "Swapped Mapo Tofu for Garlic Seasonal Greens."
+    assert "Removed Mapo Tofu" in r["changes"]
+
+
+def test_still_not_less_spicy_after_the_retry_says_so_honestly(fake):
+    f = fake(
+        order("mapo_tofu", "kung_pao_chicken", "garlic_seasonal_greens", note="Made it milder")
+    )
+    r = post({"chips": ["less_spicy"], "current": CURRENT})
+    assert len(f.calls) == 2 and r["kind"] == "plan"
+    assert r["change_note"].startswith("Couldn't fully make it less spicy within")
+    assert "Added Garlic Seasonal Greens" in r["change_note"]
+
+
+def test_unchanged_order_says_plainly_that_nothing_changed(fake):
+    fake(order("mapo_tofu", "kung_pao_chicken", note="Kept all dishes as they are"))
+    r = post({"chips": ["less_spicy"], "current": CURRENT})
+    assert (
+        r["change_note"]
+        == "Couldn't make it less spicy: the AI kept the same order. Its spiciest dish is hot."
+    )
