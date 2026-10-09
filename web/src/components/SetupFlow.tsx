@@ -14,6 +14,9 @@ interface Props {
   canPlan: boolean;
   menu: Menu;
   diners: DinerProfile[];
+  saved: DinerProfile[];
+  onPick: (d: DinerProfile) => void;
+  onRemove: (id: string) => void;
   settings: DiningSettings;
   photoReader: "gemini" | "ocr" | null;
   onMenu: () => void;
@@ -34,7 +37,7 @@ const PHOTO_TEXT = {
   none: "Take or upload a photo, or paste the text. Our reviewed ingredient knowledge does the rest.",
 };
 
-export function SetupFlow({ step, onStep, canPlan, menu, diners, settings, photoReader, onMenu, onPhoto, onPaste, onSample, onChange, onEdit, onAdd, onPreset, onPlan, loading }: Props) {
+export function SetupFlow({ step, onStep, canPlan, menu, diners, saved, onPick, onRemove, settings, photoReader, onMenu, onPhoto, onPaste, onSample, onChange, onEdit, onAdd, onPreset, onPlan, loading }: Props) {
   const cur = currencySymbol(menu.currency);
   const camera = useRef<HTMLInputElement>(null);
   const upload = useRef<HTMLInputElement>(null);
@@ -124,9 +127,9 @@ export function SetupFlow({ step, onStep, canPlan, menu, diners, settings, photo
             Back to menu
           </button>
           <h1>Who's at the table?</h1>
-          <p className="setup-intro">Use the example group or add your own people. Recorded allergies and diets rule dishes out; tastes only change the ranking.</p>
+          <p className="setup-intro">Pick saved people or add someone new; everyone you add is remembered for next time. Recorded allergies and diets rule dishes out; tastes only change the ranking.</p>
           <div className="setup-table">
-            <TableSetup diners={diners} settings={settings} currency={menu.currency} onChange={onChange} onEdit={onEdit} onAdd={onAdd} onPreset={onPreset} onPlan={onPlan} loading={loading} initial />
+            <TableSetup diners={diners} saved={saved} onPick={onPick} onRemove={onRemove} settings={settings} currency={menu.currency} onChange={onChange} onEdit={onEdit} onAdd={onAdd} onPreset={onPreset} onPlan={onPlan} loading={loading} initial />
           </div>
         </>
       )}

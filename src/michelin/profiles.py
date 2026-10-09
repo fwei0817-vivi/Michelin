@@ -46,14 +46,16 @@ class ProfileStore:
             ).fetchall()
         return {p.id: p for (body,) in rows for p in [DinerProfile.model_validate_json(body)]}
 
-    def save(self, scope: str, profile: DinerProfile, expected_revision: int):
+    def save(self, scope: str, profile: DinerProfile, expected_revision: int | None):
+        """Append a revision. With expected_revision None the latest record is replaced
+        (upsert): there is one current record per person, edited in place by the app."""
         with self.connection() as db:
             db.execute("BEGIN IMMEDIATE")
             current = db.execute(
                 "SELECT COALESCE(MAX(revision), 0) FROM profiles WHERE scope=? AND person=?",
                 (scope, profile.id),
             ).fetchone()[0]
-            if current != expected_revision:
+            if expected_revision is not None and current != expected_revision:
                 raise ValueError("Profile revision changed; reload before saving.")
             db.execute(
                 "INSERT INTO profiles(scope, person, revision, body) VALUES (?, ?, ?, ?)",

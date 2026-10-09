@@ -197,7 +197,9 @@ def _profiles(scope):
 
 class ProfileWrite(BaseModel):
     profile: DinerProfile
-    expected_revision: int = Field(ge=0, strict=True)
+    # None = save as the person's current record (create or replace); an int keeps the
+    # optimistic check for callers that edit a specific revision.
+    expected_revision: int | None = Field(default=None, ge=0, strict=True)
 
 
 @app.post("/api/profiles", status_code=201)
@@ -230,8 +232,8 @@ def get_profile(person_id: str, x_profile_scope: str | None = Header(default=Non
 def update_profile(
     person_id: str, body: ProfileWrite, x_profile_scope: str | None = Header(default=None)
 ):
-    if person_id != body.profile.id or body.expected_revision < 1:
-        raise HTTPException(422, "Keep the person ID stable and supply the current revision.")
+    if person_id != body.profile.id or body.expected_revision == 0:
+        raise HTTPException(422, "Keep the person ID stable; omit the revision or supply it.")
     return _save_profile(body.profile, body.expected_revision, x_profile_scope)
 
 

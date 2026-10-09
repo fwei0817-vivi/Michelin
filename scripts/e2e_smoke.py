@@ -1,6 +1,7 @@
 """Drive the built app like a user (headless Chromium) and check the flows end to end.
 
-    uv run uvicorn michelin.api:app --port 8000      # serves web/dist
+    # serves web/dist; a fresh profile DB so saved people from earlier runs don't interfere
+    MICHELIN_PROFILE_DB=$(mktemp -d)/p.sqlite3 uv run uvicorn michelin.api:app --port 8000
     pip install playwright && playwright install chromium
     python scripts/e2e_smoke.py [--url http://127.0.0.1:8000/] [--shots /tmp/shots]
 
@@ -15,7 +16,6 @@ import argparse
 import asyncio
 import re
 import sys
-import uuid
 from pathlib import Path
 
 from playwright.async_api import Page, async_playwright
@@ -36,6 +36,25 @@ async def settle(pg: Page, ms: int = 300) -> None:
     except Exception:  # noqa: BLE001, S110 - a spinner that never clears is caught by the checks
         pass
     await pg.wait_for_timeout(ms)
+
+
+async def seat(scope, name: str, chips: list[str] = ()) -> None:
+    """Add a new person (or the saved person with that name) with these chips on."""
+    pg = scope.page if hasattr(scope, "page") else scope
+    await scope.get_by_role("button", name="Add a new person").click()
+    await dialog(pg).get_by_label("Name").fill(name)
+    reuse = dialog(pg).get_by_role("button", name=f"Add saved {name}")
+    if await reuse.count():
+        await reuse.click()
+        await settle(pg)
+        await scope.get_by_role("button", name=f"Edit {name}").click()
+    for c in chips:
+        btn = dialog(pg).get_by_role("button", name=c, exact=True)
+        if await btn.get_attribute("aria-pressed") != "true":
+            await btn.click()
+    submit = dialog(pg).get_by_role("button", name=re.compile(r"^(Add to table|Save)$"))
+    await submit.click()
+    await settle(pg)
 
 
 async def heading(pg: Page) -> str:
@@ -190,7 +209,7 @@ async def run(url: str, shots: Path) -> None:
             await pg.get_by_role("button", name="Continue with this menu").click()
             await settle(pg)
             check(await pg.locator(".not-for").count() == 0, "table step has no per-diner notes")
-            await pg.get_by_label("Load a group").select_option("saved")
+            await pg.get_by_label("Quick fill").select_option("saved")
             await settle(pg)
             people = await pg.locator(".people-list li").count()
             total = (await pg.locator(".footer-total").inner_text()).splitlines()[0]
@@ -263,14 +282,13 @@ async def run(url: str, shots: Path) -> None:
             await dialog(pg).get_by_role("button", name="Edit Kevin").click()
             await dialog(pg).get_by_role("button", name="Not eating tonight").click()
             await settle(pg, 800)
-            await dialog(pg).get_by_role("button", name="Add a person").click()
-            await dialog(pg).get_by_label("Name").fill("Zoe")
-            await dialog(pg).get_by_role("button", name="peanuts").click()
-            await dialog(pg).get_by_role("button", name="Use for this meal").click()
+            await seat(dialog(pg), "Zoe", ["peanuts"])
             await settle(pg, 800)
             await dialog(pg).get_by_role("button", name="Edit Tom").click()
-            await dialog(pg).get_by_role("button", name="dairy").click()
-            await dialog(pg).get_by_role("button", name="Use for this meal").click()
+            dairy = dialog(pg).get_by_role("button", name="dairy")
+            if await dairy.get_attribute("aria-pressed") != "true":
+                await dairy.click()
+            await dialog(pg).get_by_role("button", name="Save", exact=True).click()
             await settle(pg, 800)
             people = await dialog(pg).locator(".people-list li").all_inner_texts()
             check(
@@ -294,29 +312,42 @@ async def run(url: str, shots: Path) -> None:
             )
 
         async def remember():
-            await pg.locator("summary", has_text="Remember people").click()
-            box = pg.locator("details", has_text="Remember people")
-            await box.get_by_label("Profile scope").fill(f"e2e-{uuid.uuid4().hex[:6]}")
-            await box.get_by_role("button", name="View history").click()
+            # Everyone added is saved: after a reload Zoe is a saved chip with her allergy.
+            await pg.reload()
+            await pg.wait_for_selector("main h1")
+            await settle(pg)
+            await pg.get_by_role("button", name="Continue with this menu").click()
+            await settle(pg)
+            chip = pg.locator(".saved-chip", has_text="Zoe")
+            check(await chip.count() == 1, "Zoe is saved after a reload")
+            await chip.click()
+            await settle(pg)
+            await pg.get_by_role("button", name="Edit Zoe").click()
+            check(
+                await dialog(pg).get_by_role("button", name="peanuts").get_attribute("aria-pressed")
+                == "true",
+                "Zoe's saved allergy came back",
+            )
+            await dialog(pg).get_by_role("button", name="sesame").click()
+            await dialog(pg).get_by_role("button", name="Save", exact=True).click()
             await settle(pg)
             check(
-                await box.get_by_role("alert").count() == 0
-                and not any("pageerror" in e for e in errors),
-                "history of an unsaved person is not an error",
+                not any("409" in e or "revision" in e.lower() for e in errors)
+                and await pg.get_by_role("alert").count() == 0,
+                "editing a saved person after a reload saves (no revision error)",
             )
-            await box.get_by_role("button", name="Save for future meals").click()
+            await pg.get_by_role("button", name="Edit Zoe").click()
+            await dialog(pg).get_by_role("button", name="Delete saved person").click()
+            await dialog(pg).get_by_role("button", name="Yes, delete Zoe for good").click()
             await settle(pg)
-            check("revision 1" in await box.inner_text(), "save person")
-            await box.get_by_role("button", name="Save for future meals").click()
+            check(
+                await pg.locator(".saved-chip, .person-text", has_text="Zoe").count() == 0,
+                "deleting a saved person removes them",
+            )
+            await pg.get_by_label("Quick fill").select_option("saved")
             await settle(pg)
-            check("revision 2" in await box.inner_text(), "save again bumps revision")
-            await box.get_by_role("button", name="View history").click()
-            await settle(pg)
-            check("History: 2 revisions" in await box.inner_text(), "history lists revisions")
-            await box.get_by_role("button", name="Load saved preferences").click()
-            await settle(pg, 800)
-            check("Applied saved preferences" in await box.inner_text(), "load saved preferences")
-            await pg.locator("summary", has_text="Remember people").click()
+            await pg.get_by_role("button", name="Find dishes").click()
+            await settle(pg, 1000)
 
         async def no_fit():
             await pg.get_by_role("button", name="Your table").click()
@@ -343,7 +374,7 @@ async def run(url: str, shots: Path) -> None:
                 "explicit switch to CHILI",
             )
             await pg.get_by_role("button", name="Continue with this menu").click()
-            await pg.get_by_label("Load a group").select_option("new")
+            await pg.get_by_label("Quick fill").select_option("new")
             await settle(pg)
             check(
                 await pg.locator(".not-for, .dish-card").count() == 0,
@@ -448,16 +479,7 @@ async def demo(browser, url: str, shots: Path, errors: list[str]) -> None:
         ("Eli", [], []),
     ]
     for name, diets, allergies in people:
-        await pg.get_by_role("button", name="Add a person").click()
-        await dialog(pg).get_by_label("Name").fill(name)
-        for d in diets:
-            await dialog(pg).get_by_role("button", name=d, exact=True).click()
-        for a in allergies:
-            await dialog(pg).get_by_role("button", name=a, exact=True).click()
-        if name == "Kevin":
-            await dialog(pg).get_by_role("button", name="no heat", exact=True).click()
-        await dialog(pg).get_by_role("button", name="Use for this meal").click()
-        await settle(pg)
+        await seat(pg, name, diets + allergies + (["no heat"] if name == "Kevin" else []))
     budget = pg.locator(".setup-table input").first
     await budget.fill("25")
     await budget.press("Tab")

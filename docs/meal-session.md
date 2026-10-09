@@ -11,15 +11,15 @@ The UI supports 1–6 people; the project target remains shared meals for 3–6.
 
 ## Current meal versus remembered people
 
-New people receive random stable IDs independent of display names. Same names do
-not merge identities. “Use for this meal” changes browser session state only.
-“Save for future meals” explicitly writes a complete profile snapshot/revision.
-Loading saved preferences matches IDs, keeps existing people's current allergies,
-diets and names, replaces only likes/dislikes/spice, and adds saved people absent
-from the table. It never removes other current participants. Loading over six
-people is rejected atomically. For a new meal, start empty and load saved people.
-A save conflict requires loading/viewing the current revision before intentional
-replacement. No natural-language interpretation or conversation memory exists.
+Everyone you add is saved (2026-10-09). Adding or editing a person writes their one
+current record to the profile store (`PUT /api/profiles/{id}` without a revision, i.e.
+an upsert), so it also works after a page reload. The Table step lists everyone saved as
+chips; tap one to seat them tonight (at most six). The × on a row means "not eating
+tonight" and keeps the record; "Delete saved person" in the edit sheet erases it.
+New people get a stable id from their name (`li-wei`, then `li-wei-2`); typing the name
+of someone already saved offers that person instead of creating a duplicate. Sample
+groups reuse saved records with the same id, so nothing saved is overwritten, and no
+merge happens: one record per person. No natural-language memory exists.
 
 Browser meal/menu/plan state resets on page reload. Explicit profile snapshots
 survive a server restart when `MICHELIN_PROFILE_DB` points to the same retained

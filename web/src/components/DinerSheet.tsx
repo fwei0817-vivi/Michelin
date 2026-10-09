@@ -5,16 +5,29 @@ import { Sheet } from "./Sheet";
 
 interface Props {
   diner: DinerProfile | null; // null = someone new
-  existingIds: string[];
+  existingIds: string[]; // tonight's and saved people's ids, so a new id never collides
+  saved: DinerProfile[]; // everyone known: tonight's table and saved people
+  tonight: string[];
+  atTable: boolean;
   onSave: (d: DinerProfile) => void;
+  onPick: (d: DinerProfile) => void;
   onRemove: (id: string) => void;
+  onForget: (id: string) => void;
   onClose: () => void;
+}
+
+/** Stable, readable id from the name ("Li Wei" -> "li-wei", then "li-wei-2" if taken). */
+export function personId(name: string, taken: string[]): string {
+  const base = name.normalize("NFKD").replace(/[^\x00-\x7f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "person";
+  let id = base, n = 2;
+  while (taken.includes(id)) id = `${base}-${n++}`;
+  return id;
 }
 
 const chip = (on: boolean) =>
   `rounded-full border px-3 py-1.5 text-sm ${on ? "border-brand bg-brand text-surface" : "border-line-strong text-fg-2 hover:border-fg-3"}`;
 
-export function DinerSheet({ diner, existingIds, onSave, onRemove, onClose }: Props) {
+export function DinerSheet({ diner, existingIds, saved, tonight, atTable, onSave, onPick, onRemove, onForget, onClose }: Props) {
   const [name, setName] = useState(diner?.name ?? "");
   const [allergies, setAllergies] = useState<Allergen[]>(diner?.allergies ?? []);
   const [diets, setDiets] = useState<Diet[]>(diner?.diets ?? []);
@@ -22,19 +35,21 @@ export function DinerSheet({ diner, existingIds, onSave, onRemove, onClose }: Pr
   const [dislikes, setDislikes] = useState((diner?.dislikes ?? []).join(", "));
   const [likes, setLikes] = useState((diner?.likes ?? []).join(", "));
 
+  const match = !diner ? saved.find((p) => p.name.trim().toLowerCase() === name.trim().toLowerCase()) : undefined;
+  const [confirmForget, setConfirmForget] = useState(false);
   const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
   const save = () => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    let id = diner?.id ?? `diner_${crypto.randomUUID()}`;
-    if (!diner) while (existingIds.includes(id)) id = `${id}_`;
+    if (!diner && match) return; // pick the saved person instead of creating a duplicate
+    const id = diner?.id ?? personId(trimmed, existingIds);
     onSave({ id, name: trimmed, allergies, diets, max_spice: spice, dislikes: splitList(dislikes), likes: splitList(likes) });
   };
 
   return (
     <Sheet title={diner ? `About ${diner.name}` : "Someone new"} onClose={onClose}>
-      <p className="helper">Changes apply only to this meal. Use “Save for future meals” separately to remember them.</p>
+      <p className="helper">Saved automatically, so next time you can just pick {diner ? diner.name : "them"} from your saved people.</p>
       <form
         className="mt-5 space-y-6"
         onSubmit={(e) => {
@@ -51,6 +66,18 @@ export function DinerSheet({ diner, existingIds, onSave, onRemove, onClose }: Pr
             className="field"
           />
         </label>
+        {match && (
+          <div className="notice" role="status">
+            <span>
+              {tonight.includes(match.id) ? `${match.name} is already at the table. Use a different name for someone else.` : `${match.name} is already saved${match.allergies.length || match.diets.length ? ` (${[...match.allergies, ...match.diets].join(", ")})` : ""}.`}
+            </span>
+            {!tonight.includes(match.id) && (
+              <button type="button" className="btn btn-outline btn-small" onClick={() => onPick(match)}>
+                Add saved {match.name}
+              </button>
+            )}
+          </div>
+        )}
 
         <fieldset>
           <legend className="text-sm text-fg-2">Allergies</legend>
@@ -112,9 +139,22 @@ export function DinerSheet({ diner, existingIds, onSave, onRemove, onClose }: Pr
 
         <div className="drawer-footer flex flex-wrap items-center justify-between gap-3">
           {diner ? (
-            <button type="button" onClick={() => onRemove(diner.id)} className="text-sm text-fg-2 hover:text-danger">
-              Not eating tonight
-            </button>
+            <span className="flex flex-wrap gap-3">
+              {atTable && (
+                <button type="button" onClick={() => onRemove(diner.id)} className="text-sm text-fg-2 hover:text-danger">
+                  Not eating tonight
+                </button>
+              )}
+              {confirmForget ? (
+                <button type="button" onClick={() => onForget(diner.id)} className="text-sm text-danger font-semibold">
+                  Yes, delete {diner.name} for good
+                </button>
+              ) : (
+                <button type="button" onClick={() => setConfirmForget(true)} className="text-sm text-fg-2 hover:text-danger">
+                  Delete saved person
+                </button>
+              )}
+            </span>
           ) : (
             <span />
           )}
@@ -122,8 +162,8 @@ export function DinerSheet({ diner, existingIds, onSave, onRemove, onClose }: Pr
             <button type="button" onClick={onClose} className="btn btn-outline">
               Cancel
             </button>
-            <button type="submit" disabled={!name.trim()} className="btn btn-primary">
-              Use for this meal
+            <button type="submit" disabled={!name.trim() || !!match} className="btn btn-primary">
+              {diner ? "Save" : "Add to table"}
             </button>
           </div>
         </div>

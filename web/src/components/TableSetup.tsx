@@ -1,4 +1,4 @@
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw, UserPlus, X } from "lucide-react";
 import { currencySymbol, dinerSummary, money, subtotalCap } from "../lib/format";
 import type { DinerProfile, DiningSettings } from "../types";
 import { NumberField } from "./NumberField";
@@ -12,6 +12,9 @@ const pct = (x: number) => `${Number((x * 100).toFixed(3))}%`;
 
 interface Props {
   diners: DinerProfile[];
+  saved: DinerProfile[];
+  onPick: (d: DinerProfile) => void;
+  onRemove?: (id: string) => void;
   settings: DiningSettings;
   currency: string;
   onChange: (s: DiningSettings) => void;
@@ -23,7 +26,7 @@ interface Props {
   initial?: boolean;
 }
 
-export function TableSetup({ diners, settings, currency, onChange, onEdit, onAdd, onPreset, onPlan, loading, initial = false }: Props) {
+export function TableSetup({ diners, saved, onPick, onRemove, settings, currency, onChange, onEdit, onAdd, onPreset, onPlan, loading, initial = false }: Props) {
   const cur = currencySymbol(currency);
   const set = (key: keyof DiningSettings, value: number | string) => onChange({ ...settings, [key]: value });
   const valid =
@@ -36,19 +39,18 @@ export function TableSetup({ diners, settings, currency, onChange, onEdit, onAdd
       <section className="setup-section" aria-labelledby="people-heading">
         <div className="setup-section-head">
           <h3 id="people-heading">
-            People <span>{diners.length}</span>
+            Tonight <span>{diners.length} of 6</span>
           </h3>
-          <select className="field preset" aria-label="Load a group" value="" onChange={(e) => { if (e.target.value) onPreset(e.target.value); }}>
-            <option value="">Load a group…</option>
-            <option value="synthetic-three">Three synthetic diners (no restrictions)</option>
-            <option value="saved">Example group</option>
-            <option value="two">Example dinner for two</option>
-            <option value="new">Start empty</option>
+          <select className="field preset" aria-label="Quick fill" value="" onChange={(e) => { if (e.target.value) onPreset(e.target.value); }}>
+            <option value="">Quick fill…</option>
+            <option value="saved">Sample group of six</option>
+            <option value="two">Sample dinner for two</option>
+            <option value="new">Clear tonight's table</option>
           </select>
         </div>
         <ul className="people-list">
           {diners.map((d, i) => (
-            <li key={d.id}>
+            <li key={d.id} className="person-item">
               <button className="person-row" onClick={() => onEdit(d)} aria-label={`Edit ${d.name}`}>
                 <span className="avatar">{d.name.charAt(0).toUpperCase() || i + 1}</span>
                 <span className="person-text">
@@ -57,13 +59,36 @@ export function TableSetup({ diners, settings, currency, onChange, onEdit, onAdd
                 </span>
                 <span className="person-edit">Edit</span>
               </button>
+              {onRemove && (
+                <button type="button" className="person-remove" onClick={() => onRemove(d.id)} aria-label={`${d.name} is not eating tonight`} title="Not eating tonight (stays saved)">
+                  <X size={15} />
+                </button>
+              )}
             </li>
           ))}
         </ul>
         <button className="text-button add-person" onClick={onAdd} disabled={diners.length >= 6}>
           <Plus size={16} />
-          Add a person
+          Add a new person
         </button>
+        {(() => {
+          const others = saved.filter((s) => !diners.some((d) => d.id === s.id));
+          if (!others.length) return null;
+          return (
+            <div className="saved-people">
+              <p className="saved-people-head">Saved people · tap to add for tonight</p>
+              <div className="saved-chips">
+                {others.map((p) => (
+                  <button key={p.id} type="button" className="saved-chip" disabled={diners.length >= 6} onClick={() => onPick(p)} title={dinerSummary(p) || "No restrictions recorded"}>
+                    <UserPlus size={13} />
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+              {diners.length >= 6 && <p className="helper">Six people is the most per table. Remove someone to add another.</p>}
+            </div>
+          );
+        })()}
       </section>
 
       <section className="setup-section" aria-labelledby="budget-heading">

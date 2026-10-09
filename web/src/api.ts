@@ -42,14 +42,18 @@ export const extractMenu = (body: {menu_id: string; text?: string; image_base64?
   request<ExtractionResponse>("/api/menu/extract", {
     method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body),
   });
-const scopeHeaders = (scope: string) => ({"Content-Type": "application/json", "X-Profile-Scope": scope});
-export const loadStoredProfiles = (scope: string) => request<DinerProfile[]>("/api/profiles", {headers: scopeHeaders(scope)});
-export const profileHistory = (scope: string, id: string) => request<ProfileSnapshot[]>(`/api/profiles/${encodeURIComponent(id)}/history`, {headers: scopeHeaders(scope)});
-export const persistProfile = (scope: string, profile: DinerProfile, revision: number) =>
-  request<ProfileSnapshot>(revision ? `/api/profiles/${encodeURIComponent(profile.id)}` : "/api/profiles", {
-    method: revision ? "PUT" : "POST", headers: scopeHeaders(scope),
-    body: JSON.stringify(revision ? {profile, expected_revision: revision} : profile),
+/** Everyone you add is saved here and can be picked for the next meal. One shared household
+ * list for the class demo: a namespace, not a login. */
+export const PEOPLE_SCOPE = "household";
+const scopeHeaders = {"Content-Type": "application/json", "X-Profile-Scope": PEOPLE_SCOPE};
+export const getSavedPeople = () => request<DinerProfile[]>("/api/profiles", {headers: scopeHeaders});
+/** Create or replace the person's saved record (no revision needed, so it works after a reload). */
+export const savePerson = (profile: DinerProfile) =>
+  request<ProfileSnapshot>(`/api/profiles/${encodeURIComponent(profile.id)}`, {
+    method: "PUT", headers: scopeHeaders, body: JSON.stringify({profile}),
   });
+export const deletePerson = (id: string) =>
+  request<{deleted: boolean}>(`/api/profiles/${encodeURIComponent(id)}`, {method: "DELETE", headers: scopeHeaders});
 
 export const applyPeopleAction = (diners: DinerProfile[], action: "add" | "update" | "remove" | "load_preferences", extra: {person?: DinerProfile; person_id?: string; saved?: DinerProfile[]}) =>
   request<{diners: DinerProfile[]; recommendation_invalidated: boolean}>("/api/meal/people", {

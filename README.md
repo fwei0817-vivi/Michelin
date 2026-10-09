@@ -150,8 +150,9 @@ Send `X-Profile-Scope: synthetic-group-a` consistently for stored profiles and p
 - `POST /api/profiles`: a `DinerProfile`; creates revision 1, duplicate ID gives 409.
 - `GET /api/profiles`: current profiles in that scope; without a scope returns existing samples.
 - `GET /api/profiles/{id}` and `GET /api/profiles/{id}/history`: latest/all snapshots.
-- `PUT /api/profiles/{id}`: `{profile: DinerProfile, expected_revision: 1}` replaces the
-  full profile and appends a revision; stale revisions give 409. Keep stable person IDs.
+- `PUT /api/profiles/{id}`: `{profile: DinerProfile}` creates or replaces the person's
+  current record (appends a revision). Add `expected_revision: n` for an optimistic check;
+  a stale revision gives 409. Keep stable person IDs.
 - `DELETE /api/profiles/{id}`: erases that person's current profile and complete history.
 
 All person routes require a scope. Scoped lookups never fall back to another scope or the
@@ -160,7 +161,13 @@ this prototype until a trusted identity/access-control layer binds scopes to cal
 Likes/dislikes/spice preferences remain separate from allergies/diets. Planning with saved
 `diner_ids` uses the latest snapshot. An inline profile controls current restrictions and
 explicit preference values; omitted soft fields inherit saved preferences in that scope.
-An inline empty list clears that preference for the request. Nothing is saved automatically.
+An inline empty list clears that preference for the request.
+
+The web app saves **everyone** you add: each add/edit is a `PUT /api/profiles/{id}` with no
+`expected_revision` (upsert of the person's single current record), under the fixed scope
+`household`. The Table step shows saved people as chips to pick tonight's diners (max six);
+`DELETE` removes a person. Plans send tonight's diners inline. **There is no login**: anyone
+who can reach the server sees and edits the same saved people, so use it for the demo only.
 
 `POST /api/order/validate` accepts `{menu: Menu, request: TableRequest, items: PlanItem[]}`
 and returns `valid`, structured `reasons[{code, detail}]`, recomputed `totals`, per-dish

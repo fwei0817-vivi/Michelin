@@ -121,3 +121,27 @@ def test_saved_likes_cannot_override_current_vegan_restriction(client, monkeypat
     result = response.json()
     assert result["kind"] == "plan"
     assert {i["dish_id"] for i in result["plan"]["items"]} == {"greens", "rice"}
+
+
+def test_people_are_saved_by_upsert_after_reload(client):
+    """Every add or edit saves the person's one current record; no revision bookkeeping."""
+    h = {"X-Profile-Scope": "household"}
+    li = {"id": "li", "name": "Li", "allergies": ["peanut"]}
+    put = lambda body: client.put("/api/profiles/li", headers=h, json={"profile": body})
+    assert put(li).json()["revision"] == 1  # creates
+    # A fresh page (no known revision) can still save: this used to fail with 409.
+    edited = {**li, "allergies": ["peanut", "sesame"], "likes": ["tofu"]}
+    assert put(edited).json()["revision"] == 2
+    [saved] = client.get("/api/profiles", headers=h).json()
+    assert saved["allergies"] == ["peanut", "sesame"]  # never merged or overwritten
+    many = [{"id": f"p{i}", "name": f"Person {i}"} for i in range(8)]
+    for p in many:
+        assert (
+            client.put(f"/api/profiles/{p['id']}", headers=h, json={"profile": p}).status_code
+            == 200
+        )
+    assert len(client.get("/api/profiles", headers=h).json()) == 9  # more than six is fine
+    assert client.delete("/api/profiles/p7", headers=h).json() == {"deleted": True}
+    assert len(client.get("/api/profiles", headers=h).json()) == 8
+    bad = client.put("/api/profiles/li", headers=h, json={"profile": li, "expected_revision": 0})
+    assert bad.status_code == 422
