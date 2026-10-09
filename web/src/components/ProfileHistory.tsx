@@ -38,6 +38,8 @@ export function ProfileHistory({diners, onLoad}: {diners: DinerProfile[]; onLoad
           setHistory(await profileHistory(scope, person.id)); setStatus(`Saved ${person.name}, revision ${saved.revision}.`);
         })}>Save for future meals</button>
         <button className="btn btn-outline btn-small" disabled={busy || !scope} onClick={() => void run(async () => {
+          const saved = await loadStoredProfiles(scope);
+          if (!saved.some(p => p.id === person.id)) { setHistory([]); setStatus(`${person.name} has no saved history in this scope yet.`); return; }
           const rows = await profileHistory(scope, person.id); setHistory(rows);
           setRevisions(prev => ({...prev, [person.id]: rows.at(-1)!.revision}));
           setStatus(`History: ${rows.length} revisions. Current table is unchanged.`);

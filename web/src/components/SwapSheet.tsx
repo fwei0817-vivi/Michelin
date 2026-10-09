@@ -22,6 +22,8 @@ interface Props {
   onPick: (id: string) => void;
   onClose: () => void;
   onUpdate: (menu: Menu) => void;
+  /** Add an imported menu as a separate restaurant; returns its id. Does not switch to it. */
+  onCreate: (menu: Menu) => string;
   onSelectMenu: (id: string) => void;
 }
 
@@ -30,7 +32,8 @@ const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const SPICE = ["", "Mild", "Medium", "Hot"];
 
 /** The restaurant menu drawer: browse and edit the menu, import one, or pick a dish to add or swap in. */
-export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mode, initialTab = "browse", tax, tip, onPick, onClose, onUpdate, onSelectMenu }: Props) {
+export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mode, initialTab = "browse", tax, tip, onPick, onClose, onUpdate, onCreate, onSelectMenu }: Props) {
+  const [created, setCreated] = useState<{ id: string; name: string } | null>(null);
   const [prepared, setPrepared] = useState<PreparedInput[]>([]);
   const [preparedId, setPreparedId] = useState("");
   const [extractedMenu, setExtractedMenu] = useState<Menu | null>(null);
@@ -43,7 +46,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
     try {
       const result = await extractMenu({menu_id: input.menu_id, text: input.input_text});
       setExtractedMenu(result.menu); setImported(result.menu.dishes); setImportMode("replace");
-      setExtractionNotice(result.notice); setRestaurantName(result.menu.restaurant_name);
+      setExtractionNotice(result.notice); setRestaurantName(result.menu.restaurant_name); setCreated(null);
     } catch(e) {setError(e instanceof Error ? e.message : String(e));}
     finally {setParsing(false);}
   };
@@ -96,7 +99,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
   const importRows = async () => {
     setParsing(true);
     setError("");
-    setImported([]); setExtractedMenu(null); setExtractionNotice("");
+    setImported([]); setExtractedMenu(null); setExtractionNotice(""); setCreated(null);
     try {
       let image_base64: string | undefined;
       if (photo) {
@@ -148,7 +151,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
               Restaurant
               <select className="field" value={menuId} onChange={(e) => onSelectMenu(e.target.value)}>
                 {menus.map((m) => (
-                  <option key={m.slug} value={m.slug}>{m.slug === menuId ? menu.restaurant_name : m.restaurant_name}</option>
+                  <option key={m.slug} value={m.slug}>{m.restaurant_name}{m.slug.startsWith("local-") ? " (imported)" : ""}</option>
                 ))}
               </select>
             </label>
@@ -173,6 +176,12 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
               <button className="btn btn-outline" disabled={parsing || !preparedId} onClick={() => void replay()}>Replay prepared response</button>
               {extractionNotice && <p role="status">{extractionNotice}</p>}
             </section>
+            {created && (
+              <div className="notice" role="status">
+                <span>Added “{created.name}” as a new restaurant. {menu.restaurant_name} is still selected.</span>
+                <button className="btn btn-outline btn-small" onClick={() => onSelectMenu(created.id)}>Switch to {created.name}</button>
+              </div>
+            )}
             <p className="helper">Paste your menu below, one dish and price per line. After importing, review ingredients and dietary details before getting suggestions.</p>
             <details className="photo-import">
               <summary>Use a menu photo instead</summary>
@@ -205,13 +214,13 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
               <label className="field-label">
                 Use imported dishes
                 <select className="field" disabled={!!extractedMenu} value={importMode} onChange={(e) => setImportMode(e.target.value as "append" | "replace")}>
-                  <option value="replace">Start a new menu</option>
-                  <option value="append">Add to current menu</option>
+                  <option value="replace">Add as a new restaurant</option>
+                  <option value="append">Add to {menu.restaurant_name}</option>
                 </select>
               </label>
               {importMode === "replace" && (
                 <label className="field-label">
-                  Restaurant name
+                  New restaurant name
                   <input className="field" value={restaurantName} onChange={(e) => setRestaurantName(e.target.value)} placeholder="Your restaurant" />
                 </label>
               )}
@@ -236,18 +245,23 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                   className="btn btn-outline"
                   disabled={importedCount > MAX_DISHES}
                   onClick={() => {
-                    update(extractedMenu ?? {
-                      ...menu,
-                      ...(importMode === "replace" ? { restaurant_name: restaurantName.trim() || "My restaurant", source: "User-imported menu", cuisine: "Custom menu", preparation_mode: null } : {}),
-                      verified: false,
-                      dishes: importMode === "replace" ? imported : [...menu.dishes, ...imported],
-                    });
+                    if (importMode === "replace" || extractedMenu) {
+                      // A new, independent restaurant. The current one keeps its name and dishes,
+                      // and stays selected until the user switches.
+                      const name = restaurantName.trim() || extractedMenu?.restaurant_name || "My restaurant";
+                      const fresh: Menu = extractedMenu
+                        ? { ...extractedMenu, restaurant_name: name, verified: false }
+                        : { restaurant_id: "", restaurant_name: name, cuisine: "custom", source: "User-imported menu", currency: menu.currency, verified: false, dishes: imported };
+                      setCreated({ id: onCreate(fresh), name });
+                    } else {
+                      update({ ...menu, verified: false, dishes: [...menu.dishes, ...imported] });
+                      setTab("browse");
+                    }
                     setImported([]); setExtractedMenu(null);
-                    setTab("browse");
                   }}
                 >
                   <Check size={15} />
-                  Add to menu for review
+                  {importMode === "replace" || extractedMenu ? "Add restaurant for review" : `Add to ${menu.restaurant_name} for review`}
                 </button>
                 {importedCount > MAX_DISHES && <p className="helper">Use up to {MAX_DISHES} dishes in one menu.</p>}
               </div>

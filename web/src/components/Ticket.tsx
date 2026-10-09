@@ -50,6 +50,9 @@ export function Ticket({ menu, plan, diners, settings, locked, stale, loading, o
             {menu.restaurant_name}, {diners.length} {diners.length === 1 ? "diner" : "diners"}
           </p>
           <h1>{items.length} dishes to share</h1>
+          {items.length !== settings.dishCount && (
+            <p className="helper">You asked for {settings.dishCount}; {items.length} is the closest order that fits everyone and the budget.</p>
+          )}
         </div>
         {!stale && (
           <button className="btn btn-outline" onClick={onPlan} disabled={loading}>
