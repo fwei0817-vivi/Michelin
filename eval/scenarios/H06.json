@@ -1,0 +1,42 @@
+{
+  "id": "H06",
+  "category": "hidden_ingredient",
+  "menu": "trap",
+  "title": "Fish allergy and 'fish-fragrant'",
+  "trap": "Fish-fragrant eggplant contains no fish (over-blocking is a usability failure, not a safety one). XO sauce usually has dried fish.",
+  "diners": [
+    {
+      "id": "fish",
+      "name": "Fay",
+      "allergies": [
+        "fish"
+      ],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p1",
+      "name": "Ana",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p2",
+      "name": "Ben",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    }
+  ],
+  "budget_per_person": 30,
+  "expect": "plan",
+  "dish_subset": [
+    "yuxiang_eggplant",
+    "xo_green_beans",
+    "boiled_fish",
+    "tomato_egg",
+    "kung_pao_chicken",
+    "steamed_rice"
+  ]
+}

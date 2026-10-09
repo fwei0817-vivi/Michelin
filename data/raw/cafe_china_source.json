@@ -1,0 +1,354 @@
+{
+ "restaurant": "Café China",
+ "url": "https://cafechina.nyc/menu",
+ "retrieved": "2026-10-02",
+ "note": "Regular dinner menu as listed on the restaurant's own site; lunch and happy-hour prices excluded. Selection of up to 40 dishes; names, prices and printed descriptions/tags copied as listed.",
+ "dishes": [
+  {
+   "section": "Cold Appetizers",
+   "name_zh": "香薰豆腐",
+   "name_en": "House Smoked Tofu",
+   "description": "Smoked tofu, peanuts, fermented soybean",
+   "tags": [
+    "V"
+   ],
+   "price": 12.0
+  },
+  {
+   "section": "Cold Appetizers",
+   "name_zh": "糖醋小排",
+   "name_en": "Sweet & Sour Baby Ribs",
+   "description": "Pork rib tip, sesame",
+   "tags": [],
+   "price": 12.0
+  },
+  {
+   "section": "Cold Appetizers",
+   "name_zh": "捞汁秋葵",
+   "name_en": "Poached Okras",
+   "description": "Tabasco peppers, sesame oil",
+   "tags": [
+    "V"
+   ],
+   "price": 14.0
+  },
+  {
+   "section": "Cold Appetizers",
+   "name_zh": "蒜泥白肉卷",
+   "name_en": "Pork in Garlic Dressing",
+   "description": "Pork belly, cucumbers",
+   "tags": [],
+   "price": 16.0
+  },
+  {
+   "section": "Cold Appetizers",
+   "name_zh": "⼝⽔鸡",
+   "name_en": "Mouth Watering Chicken",
+   "description": "Chicken, chili oil, peanuts, sesame",
+   "tags": [],
+   "price": 16.0
+  },
+  {
+   "section": "Cold Appetizers",
+   "name_zh": "夫妻肺⽚",
+   "name_en": "Husband & Wife Special",
+   "description": "Beef tripe and tendon, chili oil, peanuts, sesame, cilantro",
+   "tags": [],
+   "price": 16.0
+  },
+  {
+   "section": "Cold Appetizers",
+   "name_zh": "鸡丝凉⾯",
+   "name_en": "Cold Noodles with Shredded Chicken",
+   "description": "Wheat noodles, chicken, chili oil, peanuts, sesame",
+   "tags": [],
+   "price": 12.0
+  },
+  {
+   "section": "Cold Appetizers",
+   "name_zh": "醋熏瓜条",
+   "name_en": "Spicy Cucumbers",
+   "description": "Cucumbers, chili peppers, Sichuan peppercorns",
+   "tags": [
+    "V"
+   ],
+   "price": 12.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": "原汤馄饨",
+   "name_en": "Wonton Soup",
+   "description": "Pork, chicken broth",
+   "tags": [],
+   "price": 10.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": "水晶虾饺",
+   "name_en": "Crystal Shrimp Dumplings (4)",
+   "description": "Shrimp, lard, potato starch",
+   "tags": [
+    "GF"
+   ],
+   "price": 12.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": "鲜肉锅贴",
+   "name_en": "Pork Pot Stickers (4)",
+   "description": "Pork, chives",
+   "tags": [],
+   "price": 10.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": "素菜贴",
+   "name_en": "Vegetable Pot Stickers (4)",
+   "description": "Mixed vegetables, shiitake mushrooms, tofu",
+   "tags": [
+    "V"
+   ],
+   "price": 12.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": "小笼汤包",
+   "name_en": "Pork Soup Dumplings (4)",
+   "description": "Pork, lard, ginger",
+   "tags": [],
+   "price": 10.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": "葱油饼",
+   "name_en": "Scallion Pancakes",
+   "description": null,
+   "tags": [
+    "V"
+   ],
+   "price": 8.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": "韭菜盒子",
+   "name_en": "Chive Pancakes (2)",
+   "description": "Dried shrimp, egg",
+   "tags": [],
+   "price": 12.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": "上海烧卖",
+   "name_en": "Shanghai Shumai (4)",
+   "description": "Sticky rice, Chinese pork sausages, salted egg yolk, shiitake mushrooms",
+   "tags": [],
+   "price": 10.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": "担担面",
+   "name_en": "Dan Dan Noodles",
+   "description": "Pork, snow pea shoots, mustard green shoots, sesame paste, wheat noodles",
+   "tags": [],
+   "price": 12.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": "红油水饺",
+   "name_en": "Pork Dumplings in Chili Oil (8)",
+   "description": "Pork, chili oil",
+   "tags": [],
+   "price": 10.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": "飞鸿大虾",
+   "name_en": "Kung Fu Shrimp",
+   "description": "Shell-on prawns, cayenne peppers , Sichuan peppercorns, peanuts, sesame",
+   "tags": [
+    "GF"
+   ],
+   "price": 32.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": "香辣软壳蟹",
+   "name_en": "Spicy Soft Shell Crabs",
+   "description": "Soft shell crabs, cayenne peppers, Sichuan peppercorns, garlic, wheat flour",
+   "tags": [],
+   "price": 38.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": "香辣鱼片",
+   "name_en": "Spicy Fish Fillets",
+   "description": "Sole fish, cayenne peppers, Sichuan peppercorns, cilantro",
+   "tags": [],
+   "price": 24.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": "樟茶鸭",
+   "name_en": "Tea Smoked Duck",
+   "description": "1/4 duck deboned, wheat buns",
+   "tags": [],
+   "price": 20.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": "豆花咸烧白",
+   "name_en": "Braised Pork Szechuan Style",
+   "description": "Pork belly, tofu, fermented mustard greens shoots, fish sauce",
+   "tags": [],
+   "price": 22.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": "三椒煸鸡",
+   "name_en": "Three Pepper Chicken",
+   "description": "Chicken, cayenne peppers, Asian chili peppers, Sichuan peppercorns",
+   "tags": [],
+   "price": 22.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": "宫保鸡丁",
+   "name_en": "Kung Pao Chicken",
+   "description": "Chicken, peanuts, cayenne peppers, Sichuan peppercorns",
+   "tags": [],
+   "price": 20.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": "重庆辣子鸡",
+   "name_en": "Chungking Spicy Chicken",
+   "description": "Chicken, cayenne peppers, Sichuan peppercorns, sesame",
+   "tags": [],
+   "price": 25.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": "奇味鸡",
+   "name_en": "Curiously Tasty Chicken",
+   "description": "Chicken, winter melon, cumin, oyster sauce, fish sauce, basil",
+   "tags": [],
+   "price": 24.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": "香辣孜然羊",
+   "name_en": "Spicy Cumin Lamb",
+   "description": "Lamb, onion, bell peppers, cilantro, cayenne peppers, Sichuan peppercorns",
+   "tags": [],
+   "price": 31.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": "小椒牛肉",
+   "name_en": "Shredded Beef with Green Chili",
+   "description": "Beef, Asian chili peppers, cayenne peppers, bamboo shoots",
+   "tags": [],
+   "price": 24.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": "麻婆豆腐",
+   "name_en": "Ma Po Tofu",
+   "description": "Tofu, leek, chili sauce, Sichuan peppercorns",
+   "tags": [
+    "V"
+   ],
+   "price": 19.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": "魚香肉絲",
+   "name_en": "Shredded Pork in Garlic Sauce",
+   "description": "Pork, bamboo shoots, wood ear mushrooms, bell peppers",
+   "tags": [],
+   "price": 20.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": "回锅肉",
+   "name_en": "Double Cooked Pork",
+   "description": "Pork belly, leek, Sichuan peppercorn, chili oil",
+   "tags": [],
+   "price": 25.0
+  },
+  {
+   "section": "Vegetables",
+   "name_zh": "丝瓜扇贝",
+   "name_en": "Loofah with Dried Scallops",
+   "description": "Loofah, dried scallops",
+   "tags": [],
+   "price": 24.0
+  },
+  {
+   "section": "Vegetables",
+   "name_zh": "四川双素",
+   "name_en": "Eggplants and String Beans",
+   "description": "Eggplants, string beans, oyster sauce",
+   "tags": [],
+   "price": 19.0
+  },
+  {
+   "section": "Vegetables",
+   "name_zh": "上汤豆苗",
+   "name_en": "Poached Snow Pea Shoots",
+   "description": "Snow pea shoots, oyster mushrooms, dried shrimp, dried scallops",
+   "tags": [
+    "GF"
+   ],
+   "price": 22.0
+  },
+  {
+   "section": "Vegetables",
+   "name_zh": "手撕包菜",
+   "name_en": "Stir-fried Cabbage",
+   "description": "Taiwan cabbage, cayenne peppers",
+   "tags": [
+    "V"
+   ],
+   "price": 17.0
+  },
+  {
+   "section": "Vegetables",
+   "name_zh": "鱼香茄子",
+   "name_en": "Eggplants in Garlic Sauce",
+   "description": "Eggplants, garlic",
+   "tags": [
+    "V"
+   ],
+   "price": 18.0
+  },
+  {
+   "section": "Rice",
+   "name_zh": "樟茶鸭丝炒饭",
+   "name_en": "Fried Rice with Shredded Duck",
+   "description": "Rice, egg, shredded duck, onion",
+   "tags": [
+    "GF"
+   ],
+   "price": 17.0
+  },
+  {
+   "section": "Rice",
+   "name_zh": "虾仁炒饭",
+   "name_en": "Shrimp Fried Rice with Chinese Sausage",
+   "description": "Rice, shrimp, Chinese pork sausage, egg, carrots, pea, onion",
+   "tags": [],
+   "price": 17.0
+  },
+  {
+   "section": "Rice",
+   "name_zh": "白饭",
+   "name_en": "White Rice",
+   "description": "Premium white rice",
+   "tags": [
+    "V GF"
+   ],
+   "price": 2.0
+  }
+ ]
+}

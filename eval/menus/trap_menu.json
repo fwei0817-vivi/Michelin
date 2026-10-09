@@ -1,0 +1,112 @@
+{
+  "restaurant_id": "eval_trap",
+  "restaurant_name": "Eval Trap Kitchen (fictional)",
+  "cuisine": "chinese_sichuan",
+  "note": "Fictional menu built for bad cases. Component certainty is confidence that the component is present in the typical NYC version (definite / likely / possible); hits are the restriction categories that component triggers, and inherit its certainty. Reviewed by Ruolin Bao on 2026-10-02. Dishes with \"holdout\": true are deliberately absent from data/knowledge/ to test how unknown dishes are handled. `name_en`, `name_zh` and `printed` are what the menu shows. `truth` is the author's assessment of typical NYC recipes and must be reviewed by a person before results are reported.",
+  "dishes": [
+    {"id": "ants_climbing_tree", "holdout": true, "name_zh": "蚂蚁上树", "name_en": "Ants Climbing a Tree", "printed": "glass noodles, spicy sauce", "price": 13.95, "category": "stir_fry", "portion": "medium", "traps": ["name_inference"],
+     "truth": {"components": [
+       {"name": "minced pork", "hits": ["pork"], "certainty": "definite", "trap": "name_inference"},
+       {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "likely", "trap": "hidden"}]}},
+    {"id": "yuxiang_eggplant", "name_zh": "鱼香茄子", "name_en": "Fish-Fragrant Eggplant", "printed": "eggplant in garlic sauce", "price": 14.95, "category": "stir_fry", "portion": "medium", "traps": ["false_alarm", "ambiguous"],
+     "truth": {"components": [
+       {"name": "minced pork", "hits": ["pork"], "certainty": "possible", "trap": "ambiguous"},
+       {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "likely", "trap": "hidden"}]}},
+    {"id": "mapo_tofu", "name_zh": "麻婆豆腐", "name_en": "Mapo Tofu", "printed": "soft tofu, chili bean sauce, Sichuan peppercorn", "price": 14.95, "category": "braise_or_stew", "portion": "medium", "traps": ["name_inference", "ambiguous"],
+     "truth": {"components": [
+       {"name": "minced meat", "hits": ["meat"], "certainty": "definite", "trap": "name_inference"},
+       {"name": "minced pork", "hits": ["pork"], "certainty": "likely", "trap": "name_inference"},
+       {"name": "minced beef", "hits": ["beef"], "certainty": "possible", "trap": "ambiguous"},
+       {"name": "doubanjiang", "hits": ["soy", "wheat"], "certainty": "definite", "trap": "name_inference"}]}},
+    {"id": "hot_sour_soup", "name_zh": "酸辣汤", "name_en": "Hot and Sour Soup", "printed": "tofu, wood ear mushroom, bamboo shoots", "price": 6.95, "category": "soup", "portion": "shared", "traps": ["hidden"],
+     "truth": {"components": [
+       {"name": "egg ribbons", "hits": ["egg"], "certainty": "likely", "trap": "hidden"},
+       {"name": "shredded pork", "hits": ["pork"], "certainty": "likely", "trap": "hidden"},
+       {"name": "chicken stock", "hits": ["meat_stock"], "certainty": "likely", "trap": "hidden"},
+       {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "definite", "trap": "hidden"}]}},
+    {"id": "smashed_cucumber", "holdout": true, "name_zh": "拍黄瓜", "name_en": "Smashed Cucumber", "printed": "garlic, black vinegar, chili oil", "price": 8.95, "category": "cold_appetizer", "portion": "small", "traps": ["ambiguous"],
+     "truth": {"components": [
+       {"name": "sesame oil", "hits": ["sesame"], "certainty": "possible", "trap": "ambiguous"},
+       {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "possible", "trap": "ambiguous"}]}},
+    {"id": "hot_sour_potato", "name_zh": "酸辣土豆丝", "name_en": "Hot and Sour Shredded Potato", "printed": "potato, vinegar, dried chili", "price": 10.95, "category": "stir_fry", "portion": "medium", "traps": ["negative_control"],
+     "truth": {"components": []}},
+    {"id": "tomato_egg", "name_zh": "番茄炒蛋", "name_en": "Tomato and Egg Stir-Fry", "printed": "scrambled eggs, tomato", "price": 12.95, "category": "stir_fry", "portion": "medium", "traps": ["explicit"],
+     "truth": {"components": [
+       {"name": "egg", "hits": ["egg"], "certainty": "definite", "trap": "explicit"}]}},
+    {"id": "kung_pao_chicken", "name_zh": "宫保鸡丁", "name_en": "Kung Pao Chicken", "printed": "diced chicken, dried chili, scallion", "price": 16.95, "category": "stir_fry", "portion": "medium", "traps": ["explicit", "hidden"],
+     "truth": {"components": [
+       {"name": "chicken", "hits": ["poultry"], "certainty": "definite", "trap": "explicit"},
+       {"name": "peanuts", "hits": ["peanut"], "certainty": "definite", "trap": "hidden"},
+       {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "definite", "trap": "hidden"}]}},
+    {"id": "dan_dan_noodles", "name_zh": "担担面", "name_en": "Dan Dan Noodles", "printed": "wheat noodles, spicy sauce", "price": 11.95, "category": "staple", "portion": "individual", "traps": ["name_inference", "hidden"],
+     "truth": {"components": [
+       {"name": "wheat noodles", "hits": ["wheat"], "certainty": "definite", "trap": "explicit"},
+       {"name": "minced pork", "hits": ["pork"], "certainty": "likely", "trap": "name_inference"},
+       {"name": "sesame paste", "hits": ["sesame"], "certainty": "likely", "trap": "name_inference"},
+       {"name": "crushed peanuts", "hits": ["peanut"], "certainty": "likely", "trap": "name_inference"},
+       {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "definite", "trap": "hidden"}]}},
+    {"id": "dry_fried_beans", "name_zh": "干煸四季豆", "name_en": "Dry-Fried String Beans", "printed": "string beans, preserved vegetable, chili", "price": 13.95, "category": "stir_fry", "portion": "medium", "traps": ["hidden", "ambiguous"],
+     "truth": {"components": [
+       {"name": "minced pork", "hits": ["pork"], "certainty": "likely", "trap": "hidden"},
+       {"name": "dried shrimp", "hits": ["shellfish"], "certainty": "possible", "trap": "ambiguous"},
+       {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "likely", "trap": "hidden"}]}},
+    {"id": "xo_green_beans", "holdout": true, "name_zh": "XO酱炒豆角", "name_en": "Long Beans in XO Sauce", "printed": "long beans, XO sauce", "price": 15.95, "category": "stir_fry", "portion": "medium", "traps": ["compound_sauce"],
+     "truth": {"components": [
+       {"name": "dried scallop and shrimp (XO sauce)", "hits": ["shellfish"], "certainty": "definite", "trap": "compound_sauce"},
+       {"name": "dried fish (XO sauce)", "hits": ["fish"], "certainty": "likely", "trap": "compound_sauce"},
+       {"name": "cured ham (XO sauce)", "hits": ["pork"], "certainty": "likely", "trap": "compound_sauce"},
+       {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "likely", "trap": "hidden"}]}},
+    {"id": "garlic_bok_choy", "name_zh": "蒜蓉菜心", "name_en": "Garlic Bok Choy", "printed": "bok choy, garlic", "price": 12.95, "category": "stir_fry", "portion": "medium", "traps": ["ambiguous"],
+     "truth": {"components": [
+       {"name": "oyster sauce", "hits": ["shellfish"], "certainty": "possible", "trap": "ambiguous"},
+       {"name": "chicken broth or powder", "hits": ["meat_stock"], "certainty": "possible", "trap": "ambiguous"}]}},
+    {"id": "buddhas_delight", "name_zh": "罗汉斋", "name_en": "Buddha's Delight", "printed": "mixed vegetables, tofu skin, mushrooms", "price": 13.95, "category": "braise_or_stew", "portion": "medium", "traps": ["ambiguous"],
+     "truth": {"components": [
+       {"name": "oyster sauce", "hits": ["shellfish"], "certainty": "possible", "trap": "ambiguous"},
+       {"name": "tofu skin", "hits": ["soy"], "certainty": "definite", "trap": "explicit"},
+       {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "likely", "trap": "hidden"}]}},
+    {"id": "vegetable_lo_mein", "name_zh": "素捞面", "name_en": "Vegetable Lo Mein", "printed": "egg noodles, cabbage, carrot", "price": 11.95, "category": "stir_fry", "portion": "medium", "traps": ["explicit", "ambiguous"],
+     "truth": {"components": [
+       {"name": "egg noodles", "hits": ["egg", "wheat"], "certainty": "definite", "trap": "explicit"},
+       {"name": "oyster sauce", "hits": ["shellfish"], "certainty": "possible", "trap": "ambiguous"},
+       {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "definite", "trap": "hidden"}]}},
+    {"id": "vegetable_spring_rolls", "name_zh": "素春卷", "name_en": "Vegetable Spring Rolls", "printed": "cabbage, carrot (2 pieces)", "price": 6.95, "category": "cold_appetizer", "portion": "small", "traps": ["hidden", "ambiguous"],
+     "truth": {"components": [
+       {"name": "wheat wrapper", "hits": ["wheat"], "certainty": "definite", "trap": "hidden"},
+       {"name": "egg wash", "hits": ["egg"], "certainty": "possible", "trap": "ambiguous"}]}},
+    {"id": "house_fried_rice", "name_zh": "扬州炒饭", "name_en": "House Special Fried Rice", "printed": "rice, peas, scallion", "price": 12.95, "category": "stir_fry", "portion": "medium", "traps": ["hidden"],
+     "truth": {"components": [
+       {"name": "egg", "hits": ["egg"], "certainty": "definite", "trap": "hidden"},
+       {"name": "shrimp", "hits": ["shellfish"], "certainty": "likely", "trap": "hidden"},
+       {"name": "char siu pork", "hits": ["pork"], "certainty": "likely", "trap": "hidden"},
+       {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "likely", "trap": "hidden"}]}},
+    {"id": "dry_pot_cauliflower", "holdout": true, "name_zh": "干锅花菜", "name_en": "Dry Pot Cauliflower", "printed": "cauliflower, chili, garlic", "price": 14.95, "category": "stir_fry", "portion": "large", "traps": ["hidden"],
+     "truth": {"components": [
+       {"name": "pork belly", "hits": ["pork"], "certainty": "likely", "trap": "hidden"},
+       {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "likely", "trap": "hidden"}]}},
+    {"id": "sesame_cold_noodles", "name_zh": "麻酱凉面", "name_en": "Cold Sesame Noodles", "printed": "noodles, sesame sauce, cucumber", "price": 9.95, "category": "cold_appetizer", "portion": "small", "traps": ["compound_sauce"],
+     "truth": {"components": [
+       {"name": "sesame paste", "hits": ["sesame"], "certainty": "definite", "trap": "explicit"},
+       {"name": "wheat noodles", "hits": ["wheat"], "certainty": "definite", "trap": "explicit"},
+       {"name": "peanut butter", "hits": ["peanut"], "certainty": "likely", "trap": "compound_sauce"},
+       {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "likely", "trap": "hidden"}]}},
+    {"id": "salt_pepper_shrimp", "holdout": true, "name_zh": "椒盐虾", "name_en": "Salt and Pepper Shrimp", "printed": "shrimp, jalapeño, garlic", "price": 19.95, "category": "stir_fry", "portion": "medium", "traps": ["explicit", "ambiguous"],
+     "truth": {"components": [
+       {"name": "shrimp", "hits": ["shellfish"], "certainty": "definite", "trap": "explicit"},
+       {"name": "batter", "hits": ["wheat", "egg"], "certainty": "possible", "trap": "ambiguous"}]}},
+    {"id": "cashew_shrimp", "name_zh": "腰果虾仁", "name_en": "Shrimp with Cashew Nuts", "printed": "shrimp, cashews, celery", "price": 18.95, "category": "stir_fry", "portion": "medium", "traps": ["explicit"],
+     "truth": {"components": [
+       {"name": "shrimp", "hits": ["shellfish"], "certainty": "definite", "trap": "explicit"},
+       {"name": "cashews", "hits": ["tree_nut"], "certainty": "definite", "trap": "explicit"}]}},
+    {"id": "boiled_fish", "name_zh": "水煮鱼", "name_en": "Boiled Fish in Chili Oil", "printed": "fish fillet, bean sprouts, chili oil", "price": 25.95, "category": "braise_or_stew", "portion": "large", "traps": ["explicit"],
+     "truth": {"components": [
+       {"name": "fish fillet", "hits": ["fish"], "certainty": "definite", "trap": "explicit"},
+       {"name": "doubanjiang", "hits": ["soy", "wheat"], "certainty": "likely", "trap": "hidden"}]}},
+    {"id": "beef_chow_fun", "name_zh": "干炒牛河", "name_en": "Beef Chow Fun", "printed": "wide rice noodles, beef, bean sprouts", "price": 14.95, "category": "stir_fry", "portion": "medium", "traps": ["explicit"],
+     "truth": {"components": [
+       {"name": "beef", "hits": ["beef"], "certainty": "definite", "trap": "explicit"},
+       {"name": "soy sauce", "hits": ["soy", "wheat"], "certainty": "definite", "trap": "hidden"}]}},
+    {"id": "steamed_rice", "name_zh": "白饭", "name_en": "Steamed Rice", "printed": "", "price": 2.0, "category": "staple", "portion": "individual", "traps": ["negative_control"],
+     "truth": {"components": []}}
+  ]
+}

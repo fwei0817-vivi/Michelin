@@ -1,0 +1,49 @@
+{
+  "id": "L02",
+  "category": "lock_exclude",
+  "menu": "trap",
+  "title": "Every vegetarian-safe dish excluded",
+  "trap": "With potato, cucumber and tomato-egg removed, the vegetarian has nothing: must report a conflict.",
+  "diners": [
+    {
+      "id": "veg",
+      "name": "Vera",
+      "allergies": [],
+      "diets": [
+        "vegetarian"
+      ],
+      "max_spice": null
+    },
+    {
+      "id": "p1",
+      "name": "Ana",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p2",
+      "name": "Ben",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    }
+  ],
+  "budget_per_person": 30,
+  "expect": "conflict",
+  "excluded_dish_ids": [
+    "hot_sour_potato",
+    "smashed_cucumber",
+    "tomato_egg"
+  ],
+  "dish_subset": [
+    "hot_sour_potato",
+    "smashed_cucumber",
+    "tomato_egg",
+    "ants_climbing_tree",
+    "mapo_tofu",
+    "kung_pao_chicken",
+    "beef_chow_fun",
+    "steamed_rice"
+  ]
+}

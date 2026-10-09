@@ -1,0 +1,60 @@
+{
+  "id": "H11",
+  "category": "hidden_ingredient",
+  "menu": "sample_sichuan",
+  "title": "Repo sample group, full table",
+  "trap": "The demo scenario from data/profiles/sample_group.json.",
+  "diners": [
+    {
+      "id": "li",
+      "name": "Li",
+      "allergies": [],
+      "diets": [],
+      "max_spice": 1
+    },
+    {
+      "id": "david",
+      "name": "David",
+      "allergies": [],
+      "diets": [
+        "vegetarian"
+      ],
+      "max_spice": 2
+    },
+    {
+      "id": "amy",
+      "name": "Amy",
+      "allergies": [
+        "shellfish",
+        "fish"
+      ],
+      "diets": [],
+      "max_spice": 3
+    },
+    {
+      "id": "kevin",
+      "name": "Kevin",
+      "allergies": [],
+      "diets": [],
+      "max_spice": 0
+    },
+    {
+      "id": "mei",
+      "name": "Mei",
+      "allergies": [],
+      "diets": [],
+      "max_spice": 3
+    },
+    {
+      "id": "tom",
+      "name": "Tom",
+      "allergies": [],
+      "diets": [
+        "no_pork"
+      ],
+      "max_spice": 2
+    }
+  ],
+  "budget_per_person": 30,
+  "expect": "any"
+}

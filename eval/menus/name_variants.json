@@ -1,0 +1,32 @@
+{
+  "note": "Menu names the knowledge base does not match exactly, with the entry a careful reader would choose. 'none' is expected for protein variants, other dishes and holdouts. Used by eval/matcher_eval.py.",
+  "variants": [
+    {"name_en": "Spicy Tofu w/ Ground Pork", "expect": "mapo_tofu"},
+    {"name_en": "Gong Bao Ji Ding", "expect": "kung_pao_chicken"},
+    {"name_en": "Diced Chicken w. Peanuts in Hot Sauce", "expect": "kung_pao_chicken"},
+    {"name_en": "Sliced Fish in Hot Chili Broth", "expect": "boiled_fish"},
+    {"name_en": "Shredded Pork w. Garlic Sauce", "expect": "yuxiang_shredded_pork"},
+    {"name_en": "Eggplant in Spicy Garlic Sauce", "expect": "yuxiang_eggplant"},
+    {"name_en": "Sauteed String Beans w. Minced Pork", "expect": "dry_fried_string_beans"},
+    {"name_en": "Tomato w. Scrambled Egg", "expect": "tomato_egg"},
+    {"name_en": "Twice-Cooked Pork Belly", "expect": "twice_cooked_pork"},
+    {"name_en": "General Tao Chicken", "expect": "general_tso_chicken"},
+    {"name_en": "Beef w. Chinese Broccoli", "expect": "beef_broccoli"},
+    {"name_en": "Pork & Chive Dumplings (6)", "expect": "pork_dumplings"},
+    {"name_en": "Steamed Pork Soup Buns", "expect": "xiao_long_bao"},
+    {"name_en": "Fish Filet w. Pickled Mustard Greens", "expect": "pickled_cabbage_fish"},
+    {"name_en": "Cumin Lamb Stir-Fry", "expect": "cumin_lamb"},
+    {"name_en": "Sesame Noodles (Cold)", "expect": "sesame_cold_noodles"},
+    {"name_en": "Chongqing Spicy Chicken w. Dried Chili", "expect": "chongqing_chicken"},
+    {"name_en": "Kung Pao Shrimp", "expect": "none"},
+    {"name_en": "Shrimp Lo Mein", "expect": "none"},
+    {"name_en": "Crab & Pork Soup Dumplings", "expect": "none"},
+    {"name_en": "Vegetable Fried Rice", "expect": "none"},
+    {"name_en": "Mapo Tofu (Vegetarian)", "expect": "none"},
+    {"name_en": "Ants on a Tree", "name_zh": "蚂蚁上树", "expect": "none", "holdout": true},
+    {"name_en": "String Beans in XO Sauce", "expect": "none", "holdout": true},
+    {"name_en": "Smashed Cucumber Salad", "expect": "none", "holdout": true},
+    {"name_en": "Dry Pot Cauliflower w. Pork Belly", "expect": "none", "holdout": true},
+    {"name_en": "Salt & Pepper Shrimp", "expect": "none", "holdout": true}
+  ]
+}
