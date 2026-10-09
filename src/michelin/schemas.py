@@ -11,6 +11,8 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+MAX_MENU_DISHES = 60  # real menus run 25-60 dishes; more than this is cut, with a notice
+
 
 class EvidenceTier(str, Enum):
     """How we know an ingredient or allergen claim. Drives UI wording and staff questions."""

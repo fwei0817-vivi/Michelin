@@ -116,7 +116,7 @@ and portion estimates were removed (2026-10-09). `plan/hints.py` finds the cheap
 order deterministically; it tells the model whether any order fits, and when none does it sets
 the "Raise the budget to $X per person" fix (X = the lowest budget at which an order exists).
 The model writes one server question per chosen dish, naming who it is for and why; rule-based
-risks are passed in as facts and any risk the model skips is added back from the rules. The API accepts up to 40 reviewed dishes.
+risks are passed in as facts and any risk the model skips is added back from the rules. The API accepts up to 60 reviewed dishes.
 Set `MICHELIN_MOCK=1` only for fixture-based demos.
 
 Menu editing and imports are session-local. Paste one English dish per line with its price

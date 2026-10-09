@@ -102,7 +102,77 @@ def test_menus_keep_only_name_price_and_category():
     plain = dish_facts.bare(menu())
     kp = plain.dish("kung_pao")
     assert (kp.name_en, kp.price, kp.category.value) == ("Kung Pao Chicken", 16.95, "stir_fry")
-    assert kp.is_vegetarian is None and kp.description_raw is None and not kp.allergens
+    assert kp.is_vegetarian is None and not kp.allergens
+    # The printed description stays (verbatim); it can only add risks, never clear them.
+    assert kp.description_raw == "secretly vegan"
+
+
+def test_printed_ingredients_are_never_ignored(fake):
+    """Test menus: Hunan Slurp prints "Soft Tofu: Pork and bean paste bolognese and soft
+    tofu"; the AI only saw the name and the plan offered it to a vegetarian and a no-pork
+    diner. Words the menu prints are facts, unioned on top of the AI's."""
+    tofu = {**VEG, "ingredients": [{"name": "tofu", "certainty": "likely"}]}
+    fake.facts = {**FACTS, "Soft Tofu": tofu, "Pork Siu Mai": FACTS["Kung Pao Chicken"]}
+    dishes = [
+        Dish(
+            id="t",
+            name_en="Soft Tofu",
+            price=19,
+            description_raw="湘味豆花米线 Soft Tofu Pork and bean paste bolognese and soft tofu",
+        ),
+        Dish(
+            id="s",
+            name_en="Pork Siu Mai",
+            price=6.35,
+            description_raw="Minced pork, mushrooms, and shrimp steamed in wonton wrappers",
+        ),
+        Dish(
+            id="c",
+            name_en="Yu Xiang",
+            price=18,
+            description_raw="Choice of Pork | Chicken | Beef +$2 | Shrimp +$4 | Tofu",
+        ),
+        Dish(id="p", name_en="Celery Salad", price=10, description_raw="no pork, peanuts"),
+    ]
+    out = dish_facts.prepare(_menu(*dishes))
+    t, s, c, p = (out.dish(i) for i in "tscp")
+    assert t.contains_pork is True and t.is_vegetarian is False
+    assert edible_by(t, [BEN]) == [] and edible_by(t, [PAT]) == []
+    assert any(f.allergen.value == "shellfish" and f.tier.value == "inferred" for f in s.allergens)
+    sam = DinerProfile(id="sam", name="Sam", allergies=["shellfish"])
+    assert edible_by(s, [sam]) == []
+    # A choice is a possibility: shellfish keeps Sam off, pork becomes a question.
+    assert edible_by(c, [sam]) == [] and c.contains_pork is not True
+    assert p.contains_pork is not True  # "no pork" is not pork
+    assert any(f.allergen.value == "peanut" for f in p.allergens)
+
+
+def test_the_dish_name_is_printed_too(fake):
+    """Test menus: Hwa Yuan's "Chinese Eggplant in Garlic Sauce with Pork" (魚香茄子) was
+    offered to a vegetarian and a no-pork diner because the AI only called the pork
+    "possible". What the name says is on the menu; fish-fragrant and 素鸡 are not meat."""
+    veg = {**VEG, "ingredients": [{"name": "minced pork", "certainty": "possible"}]}
+    fake.facts = {**FACTS, "Chinese Eggplant in Garlic Sauce with Pork": veg}
+    dishes = [
+        Dish(
+            id="e",
+            name_en="Chinese Eggplant in Garlic Sauce with Pork",
+            name_zh="魚香茄子",
+            price=17,
+        ),
+        Dish(id="f", name_en="Fish-Fragrant Eggplant", name_zh="鱼香茄子", price=15),
+        Dish(id="v", name_en="Vegetarian Duck", name_zh="素鸭", price=9),
+        Dish(id="g", name_en="Tomato and Egg", name_zh="番茄炒鸡蛋", price=12),
+        Dish(id="k", name_en="Kung Pao Chicken or Tofu", price=16),
+    ]
+    out = dish_facts.prepare(_menu(*dishes))
+    e, f, v, g, k = (out.dish(i) for i in "efvgk")
+    assert e.contains_pork is True and e.is_vegetarian is False
+    assert edible_by(e, [BEN]) == [] and edible_by(e, [PAT]) == []
+    for d in (f, v, g):
+        assert d.is_vegetarian is not False and d.contains_pork is not True, d.name_en
+    assert any(a.allergen.value == "egg" for a in g.allergens)
+    assert k.is_vegetarian is not False  # a choice: asked, not refused
 
 
 def test_one_call_per_menu_then_cached(fake):
@@ -136,7 +206,8 @@ def test_no_ai_means_unknown_and_conservative(monkeypatch):
         monkeypatch.delenv(name, raising=False)
     m = dish_facts.prepare(menu())
     kp = m.dish("kung_pao")
-    assert kp.is_vegetarian is None
+    # The name itself says chicken, so not vegetarian even without the AI.
+    assert kp.is_vegetarian is False
     # Only the code's floor: possible peanut, nothing cleared.
     assert {(f.allergen.value, f.tier.value) for f in kp.allergens} == {("peanut", "unknown")}
     assert edible_by(kp, [ALICE, BEN, CAI]) == []
@@ -149,7 +220,7 @@ def test_malformed_answers_stay_unknown(monkeypatch):
     bad = {"Kung Pao Chicken": {"allergens": [{"allergen": "plutonium", "certainty": "likely"}]}}
     monkeypatch.setattr(dish_facts, "_ask", Fake(bad))
     kp = dish_facts.prepare(menu()).dish("kung_pao")
-    assert kp.is_vegetarian is None and kp.contains_pork is None
+    assert kp.is_vegetarian is False and kp.contains_pork is None  # "Chicken" is printed
     assert "plutonium" not in str(kp.allergens)
 
 

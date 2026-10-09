@@ -18,9 +18,9 @@ import re
 import unicodedata
 
 from michelin import gemini, llm  # noqa: F401 - gemini is patched in tests
-from michelin.schemas import Dish
+from michelin.schemas import MAX_MENU_DISHES, Dish
 
-MAX_DISHES = 40
+MAX_DISHES = MAX_MENU_DISHES
 
 PROMPT = """Transcribe the dishes on this restaurant menu photo.
 
@@ -76,7 +76,7 @@ def slug(text: str, taken: set[str]) -> str:
 def rows_to_dishes(rows: list[dict]) -> list[Dish]:
     taken: set[str] = set()
     dishes = []
-    for row in rows[:MAX_DISHES]:
+    for row in rows:  # the API keeps the first MAX_DISHES and says how many it dropped
         name = str(row.get("name_en") or "").strip()
         price = row.get("price")
         if not name or not isinstance(price, int | float) or price < 0 or price > 1000:

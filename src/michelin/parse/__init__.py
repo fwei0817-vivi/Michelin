@@ -8,7 +8,7 @@ person reviews it.
 import re
 import uuid
 
-from michelin.schemas import Dish
+from michelin.schemas import MAX_MENU_DISHES, Dish
 
 
 def generic_question(name: str) -> str:
@@ -32,4 +32,4 @@ def parse_text(text: str) -> list[Dish]:
                 price=float(price),
             )
         )
-    return dishes[:40]
+    return dishes[:MAX_MENU_DISHES]

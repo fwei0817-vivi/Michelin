@@ -99,8 +99,7 @@ def cheapest_order(menu: Menu, request: TableRequest, deadline_s: float = 1.5):
     kept = [d for d in staples if d.id in locked]
     everyone = [d for d in staples if len(ok[d.id]) == n]
     base = kept or ([min(everyone, key=lambda d: d.price)] if everyone else [])
-    if request.include_staple and not base:
-        return None, True
+    # No staple everyone can eat (e.g. a dim sum menu without plain rice): none is required.
     if not request.include_staple and not kept:
         base = []
     forced = [d for d in available if d.id in locked and d.category.value != "staple"]

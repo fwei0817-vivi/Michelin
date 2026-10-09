@@ -88,7 +88,7 @@ Answer for every dish id given, in the same order. Do not invent dishes."""
 
 def bare(menu: Menu) -> Menu:
     """The menu as the user sees it printed: name, price and category, nothing inferred."""
-    keep = ("id", "name_zh", "name_en", "price", "category")
+    keep = ("id", "name_zh", "name_en", "price", "category", "description_raw")
     return menu.model_copy(
         update={"dishes": [Dish(**{k: getattr(d, k) for k in keep}) for d in menu.dishes]}
     )
@@ -189,6 +189,99 @@ _FLOOR: list[tuple[str, dict]] = [
         {"allergens": ["egg"]},
     ),
 ]
+
+
+# Ingredients the menu itself prints ("Pork and bean paste bolognese and soft tofu"). A dish
+# name can hide them; the printed words cannot be ignored (test menus: Hunan Slurp's "Soft
+# Tofu" was offered to a vegetarian although the menu says pork).
+_NOT = r"(?<!no )(?<!without )(?<!vegetarian )(?<!vegan )(?<!mock )(?<!faux )(?<!imitation )"
+_SU = r"(?<!素)"  # 素鸡 / 素鸭: tofu "chicken" and "duck"
+_PRINTED: list[tuple[str, str]] = [
+    (
+        _NOT + r"\b(?:pork|bacon|ham|lard|sausages?|spare ?ribs?|ribs?|char ?siu|pig'?s?|"
+        r"trotters?)\b|猪|豬|叉烧|叉燒|腊肉|臘肉|腊味|臘味|五花|排骨|火腿|腊肠|臘腸",
+        "pork",
+    ),
+    (_NOT + r"\b(?:beef|steak|oxtail|brisket|veal|tripe)\b|牛(?!奶)", "beef"),
+    (
+        _NOT
+        + r"\b(?:chicken|duck|lamb|mutton|goose|frog|quail|bone marrow)\b|"
+        + _SU
+        + r"(?:鸡|雞)(?!蛋)|"
+        + _SU
+        + r"(?:鸭|鴨)|羊|鹅|鵝",
+        "meat",
+    ),
+    (
+        (
+            r"\b(?:shrimps?|prawns?|crabs?|crabmeat|lobsters?|scallops?|clams?|oysters?|"
+            r"mussels?|conch)\b|虾|蝦|蟹|扇贝|扇貝|干贝|干貝|蚝|蠔|螺"
+        ),
+        "shellfish",
+    ),
+    (
+        (
+            r"\b(?:fish|fluke|sole|sea ?bass|salmon|cod|anchov\w*|dace|tilapia|flounder)\b"
+            r"(?![- ]?fragrant)|鱼(?!香)|魚(?!香)"
+        ),
+        "fish",
+    ),
+    (r"\bpeanuts?\b|花生", "peanut"),
+    (r"\b(?:walnuts?|cashews?|almonds?|pine ?nuts?|pecans?|pistachios?)\b|核桃|腰果", "tree_nut"),
+    (r"\bsesame\b|芝麻|香油|麻酱|麻醬", "sesame"),
+    (r"\b(?:eggs?|egg whites?|egg yolks?)\b(?! ?rolls?)|蛋", "egg"),
+    (r"\b(?:tofu|bean ?curd|soy|soya)\b|豆腐|腐竹|酱油|醬油", "soy"),
+    (r"(?<!coconut )(?<!soy )(?<!soybean )(?<!peanut )\b(?:milk|butter|cream|cheese)\b", "dairy"),
+]
+
+
+def _scan(text: str) -> dict:
+    """Ingredients a piece of menu text states: "likely", or "possible" when it offers a
+    choice ("Choice of Pork | Chicken | Tofu", "Sesame Chicken or Tofu", "鱼香肉丝 / 豆腐")."""
+    text = text.lower().strip()
+    out: dict = {"allergens": [], "ingredients": []}
+    if not text:
+        return out
+    choice = re.search(r"choice of|\bor\b|/|\+\s*\$", text) is not None
+    certainty = "possible" if choice else "likely"
+    diet = "possible" if choice else "no"
+    for pattern, what in _PRINTED:
+        m = re.search(pattern, text)
+        if not m:
+            continue
+        word = m.group(0).strip()
+        if what in ("pork", "beef", "meat"):
+            out["ingredients"].append({"name": word, "certainty": certainty})
+            if what != "meat":
+                out[what] = "possible" if choice else "yes"
+            out["vegetarian"] = out["vegan"] = diet
+        else:
+            out["allergens"].append(
+                {"allergen": what, "certainty": certainty, "why": f"the menu says {word}"}
+            )
+            if what in ("shellfish", "fish"):
+                out["vegetarian"] = out["vegan"] = diet
+            elif what in ("egg", "dairy") and out.get("vegan") is None:
+                out["vegan"] = diet
+    return out
+
+
+def printed(dish: Dish) -> dict:
+    """What the menu itself says: the dish's own name ("Chinese Eggplant in Garlic Sauce
+    with Pork", "Pork Siu Mai") and its printed description ("Minced pork, mushrooms, and
+    shrimp"). A dish name can hide an ingredient, but the words printed cannot be ignored.
+    Only adds risks; never clears one."""
+    description = dish.description_raw or ""
+    for name in (dish.name_zh, dish.name_en):
+        if name:
+            description = description.replace(name, " ")
+    name = f"{dish.name_en or ''} {dish.name_zh or ''}"
+    out = merge(_scan(name), _scan(description)) or {}
+    for part in (_scan(name), _scan(description)):
+        for k in ("vegetarian", "vegan"):
+            if part.get(k) == "no":
+                out[k] = "no"
+    return out if out.get("allergens") or out.get("ingredients") else {}
 
 
 def floor(dish: Dish) -> dict:
@@ -365,22 +458,46 @@ def apply(dish: Dish, facts: dict | None) -> Dish:
     rules read. Without AI facts the floor alone is not enough to clear anything: diets and
     the allergens it does not mention stay unknown."""
     base = floor(dish)
+    menu_says = printed(dish)
+    if menu_says:
+        if facts:
+            facts = merge(facts, menu_says)
+            for k in ("vegetarian", "vegan"):  # merge keeps the AI's answer if it has none
+                if menu_says.get(k) == "no":
+                    facts[k] = "no"
+        else:
+            base = merge(base, {**menu_says, "pork": menu_says.get("pork") or base.get("pork")})
     if not facts:
         flags = [
             AllergenFlag(
                 allergen=Allergen(a["allergen"]),
-                tier=EvidenceTier.UNKNOWN,
-                confidence=0.4,
+                tier=EvidenceTier.INFERRED
+                if a.get("certainty") == "likely"
+                else EvidenceTier.UNKNOWN,
+                confidence=0.8 if a.get("certainty") == "likely" else 0.4,
                 reason=f"may contain {a['allergen'].replace('_', ' ')} ({a['why']})",
             )
             for a in base["allergens"]
         ]
-        return dish.model_copy(update={"allergens": flags})
+        update: dict = {"allergens": flags}
+        if base.get("pork") == "yes":
+            update["contains_pork"] = True
+        if base.get("beef") == "yes":
+            update["contains_beef"] = True
+        if base.get("vegetarian") == "no":
+            update["is_vegetarian"] = update["is_vegan"] = False
+        return dish.model_copy(update=update)
     facts = _floor_merge(facts, base)
     label = dish.name_en or dish.name_zh or dish.id
     tier = {"likely": EvidenceTier.INFERRED, "possible": EvidenceTier.UNKNOWN}
     ingredients = [
-        IngredientClaim(name=i["name"], tier=tier[i["certainty"]], note="AI, from the dish name")
+        IngredientClaim(
+            name=i["name"],
+            tier=tier[i["certainty"]],
+            note="printed on the menu"
+            if any(i["name"] == j["name"] for j in menu_says.get("ingredients", []))
+            else "AI, from the dish name",
+        )
         for i in facts.get("ingredients", [])
     ]
     flags, seen = [], set()

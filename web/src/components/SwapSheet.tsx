@@ -36,7 +36,7 @@ interface Props {
   onSelectMenu: (id: string) => void;
 }
 
-const MAX_DISHES = 40;
+const MAX_DISHES = 60; // same as the server (MAX_MENU_DISHES)
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const SPICE = ["", "Mild", "Medium", "Hot"];
 // Animal products and allergens that a dish name often does not reveal.

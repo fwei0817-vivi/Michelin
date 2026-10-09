@@ -15,7 +15,7 @@ from typing import Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from michelin.schemas import Menu
+from michelin.schemas import MAX_MENU_DISHES, Menu
 
 PREPARED_DIR = Path(__file__).resolve().parents[2] / "data/prepared"
 
@@ -112,7 +112,7 @@ def extract(request: ExtractionRequest, provider: ExtractionProvider) -> Extract
         raise ValueError("Provider returned a different restaurant identity")
     if (
         not menu.dishes
-        or len(menu.dishes) > 40
+        or len(menu.dishes) > MAX_MENU_DISHES
         or len({d.id for d in menu.dishes}) != len(menu.dishes)
     ):
         raise ValueError("Provider returned too many dishes or duplicate IDs")

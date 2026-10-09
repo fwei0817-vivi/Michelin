@@ -12,6 +12,21 @@ from michelin.plan.edibility import assessment, edible_by, open_questions
 from michelin.schemas import Menu, PlanItem, TableRequest
 
 
+def staple_required(menu: Menu, request: TableRequest) -> bool:
+    """Rice is added only when the menu has a staple everyone can eat. Many real menus (dim
+    sum, a page of a longer menu) print no plain rice; then no staple is required."""
+    if not request.include_staple:
+        return False
+    excluded = set(request.excluded_dish_ids)
+    return any(
+        d.category.value == "staple"
+        and d.id not in excluded
+        and d.price is not None
+        and len(edible_by(d, request.diners)) == request.n_diners
+        for d in menu.dishes
+    )
+
+
 def validate_order(menu: Menu, request: TableRequest, items: list[PlanItem]) -> dict:
     reasons = []
 
@@ -46,6 +61,7 @@ def validate_order(menu: Menu, request: TableRequest, items: list[PlanItem]) -> 
     for d, _ in selected:
         if not edible_by(d, request.diners):
             issue("no_eligible_diner", f"{d.id}: no diner has validated eligibility.")
+    need_staple = staple_required(menu, request)
     for p in request.diners:
         coverage = sum(
             1 for d, _ in selected if d.category.value != "staple" and p.id in edible_by(d, [p])
@@ -55,7 +71,7 @@ def validate_order(menu: Menu, request: TableRequest, items: list[PlanItem]) -> 
         staples = sum(
             q for d, q in selected if d.category.value == "staple" and p.id in edible_by(d, [p])
         )
-        if request.include_staple and staples < request.n_diners:
+        if need_staple and staples < request.n_diners:
             issue("insufficient_staples", f"{p.id}: need a shared pool of one staple per diner.")
     return {
         "valid": not reasons,

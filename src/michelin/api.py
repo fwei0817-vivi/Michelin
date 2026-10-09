@@ -29,6 +29,7 @@ from michelin.plan.score import variety_score
 from michelin.plan.validation import validate_order
 from michelin.profiles import ProfileStore
 from michelin.schemas import (
+    MAX_MENU_DISHES,
     Check,
     Conflict,
     DinerProfile,
@@ -292,8 +293,8 @@ def _prepare(req: PlanRequest, x_profile_scope: str | None) -> tuple[Menu, Table
         raise HTTPException(422, "Only USD menus are supported.")
     if not menu.verified:
         raise HTTPException(422, "Review and verify the menu before planning.")
-    if len(menu.dishes) > 40 or len({d.id for d in menu.dishes}) != len(menu.dishes):
-        raise HTTPException(422, "Use up to 40 dishes with unique IDs.")
+    if len(menu.dishes) > MAX_MENU_DISHES or len({d.id for d in menu.dishes}) != len(menu.dishes):
+        raise HTTPException(422, f"Use up to {MAX_MENU_DISHES} dishes with unique IDs.")
     if any(d.price is None or d.price < 0 for d in menu.dishes):
         raise HTTPException(422, "Every dish needs a valid price before planning.")
     known = {d.id for d in menu.dishes}
@@ -583,6 +584,8 @@ def parse_menu(req: ParseRequest) -> dict:
                 "Gemini photo read failed: %s: %s", type(exc).__name__, str(exc)[:300]
             )
             dishes, printed_name, used_model, fallback = None, None, None, "failed"
+        dropped = max(0, len(dishes or []) - MAX_MENU_DISHES)
+        dishes = (dishes or [])[:MAX_MENU_DISHES] if dishes is not None else None
         if dishes:
             labeled, facts = _with_facts(dishes)
             return {
@@ -590,7 +593,13 @@ def parse_menu(req: ParseRequest) -> dict:
                 "text": "\n".join(f"{d.name_en} {d.price:.2f}" for d in dishes),
                 "restaurant_name": printed_name,
                 "mode": "gemini",
-                "notice": _parse_notice("gemini", facts, vision_model=used_model),
+                "notice": _parse_notice("gemini", facts, vision_model=used_model)
+                + (
+                    f" The photo lists {dropped + MAX_MENU_DISHES} dishes; only the first "
+                    f"{MAX_MENU_DISHES} were kept. Add any others by hand."
+                    if dropped
+                    else ""
+                ),
             }
         if dishes is not None:
             raise HTTPException(422, "No dishes with prices were found. Try a clearer photo.")
@@ -652,8 +661,8 @@ def parse_menu(req: ParseRequest) -> dict:
 @app.post("/api/menu/facts", response_model=Menu)
 def menu_facts(menu: Menu) -> Menu:
     """The menu as name/price/category plus the AI's dish facts, for display."""
-    if len(menu.dishes) > 40:
-        raise HTTPException(422, "Use up to 40 dishes.")
+    if len(menu.dishes) > MAX_MENU_DISHES:
+        raise HTTPException(422, f"Use up to {MAX_MENU_DISHES} dishes.")
     return menu.model_copy(update={"dishes": dish_facts.prepare(menu).dishes})
 
 
