@@ -158,6 +158,33 @@ def edible_by(dish: Dish, diners: list[DinerProfile]) -> list[str]:
     return [p.id for p in diners if can_eat(dish, p)]
 
 
+_DIET_ASK = {
+    "vegetarian": "Is it vegetarian, with no meat, seafood or meat broth?",
+    "vegan": "Is it vegan, with no meat, seafood, egg, dairy or meat broth?",
+    "no_pork": "Is there any pork or lard in it?",
+    "no_beef": "Is there any beef in it?",
+}
+
+
+def natural(reason: str) -> str:
+    """A rule's "Confirm …" note as a question a diner could ask the server (QA r6):
+    "Confirm peanut ingredient/preparation" -> "Is there any peanut in it?"."""
+    m = re.fullmatch(r"Confirm (.+?), including sauces and cross-contact", reason)
+    if m:
+        x = m.group(1).replace("_", " ")
+        return f"Is there any {x} in it, including the sauce, and is it kept apart from {x}?"
+    m = re.fullmatch(r"Confirm (.+?) ingredient/preparation", reason)
+    if m:
+        return f"Is there any {m.group(1).replace('_', ' ')} in it?"
+    m = re.fullmatch(r"Confirm (.+?) for (.+?) preparation", reason)
+    if m:
+        return f"Is there any {m.group(1).replace('_', ' ')} in it? It needs to be {m.group(2)}."
+    m = re.fullmatch(r"Confirm (.+?) preparation", reason)
+    if m:
+        return _DIET_ASK.get(m.group(1), f"Is it {m.group(1).replace('_', ' ')}?")
+    return reason
+
+
 def open_questions(dish: Dish, diners: list[DinerProfile]) -> list[str]:
     """Staff questions that matter for someone at this table: the dish's own questions plus
     any `unknown`-tier flag that matches a diner's allergy."""
@@ -174,14 +201,16 @@ def open_questions(dish: Dish, diners: list[DinerProfile]) -> list[str]:
         for r in assessment(dish, person)["reasons"]:
             if r.startswith("Confirm"):
                 who.setdefault(r, []).append(person.name or person.id)
-    questions.extend(
-        f"{dish.name_en or dish.id} (for {', '.join(names)}): {r}" for r, names in who.items()
-    )
-    table_allergies = {a for p in diners for a in p.allergies}
+    label = dish.name_en or dish.name_zh or dish.id
+    questions.extend(f"{label} (for {', '.join(names)}): {natural(r)}" for r, names in who.items())
     for f in dish.allergens:
-        if f.tier == EvidenceTier.UNKNOWN and f.allergen in table_allergies:
-            label = dish.name_en or dish.name_zh or dish.id
-            questions.append(f"{label}: {f.reason} (someone is allergic to {f.allergen.value})")
+        names = [p.name or p.id for p in diners if f.allergen in p.allergies]
+        if f.tier == EvidenceTier.UNKNOWN and names:
+            q = f"{label} (for {', '.join(names)}): " + natural(
+                f"Confirm {f.allergen.value}, including sauces and cross-contact"
+            )
+            if q not in questions:
+                questions.append(q)
     return questions
 
 
@@ -335,7 +364,9 @@ def risks(dish: Dish, diners: list[DinerProfile]) -> list[Risk]:
         words = _words(about)
         if any(set(r.words) & set(words) and set(names) <= set(r.names) for r in out):
             continue  # "uses lard" already asks Ben and Cai about pork
-        out.append(Risk(about, names, words, f"{label} (for {', '.join(names)}): {reason}"))
+        out.append(
+            Risk(about, names, words, f"{label} (for {', '.join(names)}): {natural(reason)}")
+        )
     table = {a for p in diners for a in p.allergies}
     for f in dish.allergens:
         if f.tier == EvidenceTier.UNKNOWN and f.allergen in table:
@@ -347,7 +378,8 @@ def risks(dish: Dish, diners: list[DinerProfile]) -> list[Risk]:
                     f.allergen.value,
                     names,
                     _words(f.allergen.value),
-                    f"{label}: {f.reason} (someone is allergic to {f.allergen.value})",
+                    f"{label} (for {', '.join(names)}): "
+                    + natural(f"Confirm {f.allergen.value}, including sauces and cross-contact"),
                 )
             )
     # Only people who may eat the dish are asked about; a "Not for Ben" dish asks nothing

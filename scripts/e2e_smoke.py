@@ -308,11 +308,58 @@ async def run(url: str, shots: Path) -> None:
                     not bar or ("kept ·" not in bar[0] and "won't be suggested again" in bar[0]),
                     f"choices bar is plain: {bar}",
                 )
+                # QA r6 S-3/Q-2: the swapped-out dish can be picked again, a refusal keeps
+                # Undo, and no message shows a raw id.
+                swapped_in = titles[before.index(second)]
+                swapped = titles
+
+                async def pick_back():
+                    await pg.get_by_role(
+                        "button", name=f"Pick from menu to replace {swapped_in}", exact=True
+                    ).click()
+                    await settle(pg)
+                    row = dialog(pg).locator(".menu-row", has=pg.locator("h3", has_text=second))
+                    await row.first.locator("button", has_text="Swap in").click()
+                    await settle(pg, 800)
+
+                async def refuse(route):
+                    body = {"kind": "failed", "message": "Test refusal from the server."}
+                    await route.fulfill(json=body)
+
+                await pg.route("**/api/plan/swap", refuse)
+                await pick_back()
+                failed = pg.locator(".swap-failed")
+                check(await failed.count() == 1, "a refused pick shows why")
+                await failed.locator(".dismiss-change").click()
+                await settle(pg)
+                check(
+                    await pg.locator(".change-notice").get_by_role("button", name="Undo").count()
+                    == 1
+                    and await pg.locator(".dish-card h2").all_inner_texts() == swapped,
+                    "a refused pick keeps the earlier change's Undo",
+                )
+                await pg.unroute("**/api/plan/swap", refuse)
+                await pick_back()
+                notice = await pg.locator(".change-notice, .swap-failed").all_inner_texts()
+                check(
+                    await pg.locator(".dish-card h2").all_inner_texts() == before,
+                    f"swapping the removed dish back in works: {notice}",
+                )
+                check(
+                    not any(re.search(r"\b[a-z0-9]+_[a-z0-9_]+\b", n) for n in notice),
+                    f"no raw ids in swap messages: {notice}",
+                )
+                await pg.screenshot(path=str(shots / "03b_swap_back.png"), full_page=True)
                 await pg.locator(".change-notice").get_by_role("button", name="Undo").click()
                 await settle(pg, 800)
                 check(
+                    await pg.locator(".dish-card h2").all_inner_texts() == swapped,
+                    "undo after swapping back returns to the swap",
+                )
+                await pick_back()  # Undo is one step; pick it back again
+                check(
                     await pg.locator(".dish-card h2").all_inner_texts() == before,
-                    "undo restores the plan before the swap",
+                    "the removed dish can be picked again after an undo",
                 )
             third = await pg.locator(".dish-card").nth(2).locator("h2").inner_text()
             await pg.get_by_role("button", name=f"Remove {third}").click()

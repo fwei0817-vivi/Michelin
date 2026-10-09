@@ -380,14 +380,25 @@ _COUNT = re.compile(
 )
 
 
-def _summary(text: object, n: int) -> str | None:
-    """The model's one-line summary, dropped if it states a dish count other than the plan's."""
-    text = str(text or "").strip()[:240]
+_SINGLE = re.compile(
+    r"\b(?:single|lone|sole|only)\s+(?:[a-z-]+\s+){0,2}(?:dish|plate|item|order)\b", re.IGNORECASE
+)
+
+
+def _count_ok(text: str, n: int) -> bool:
+    """No dish count in the text other than n ("two dishes", "this single dish")."""
     for m in _COUNT.finditer(text):
         word = m.group(1).lower()
         if (int(word) if word.isdigit() else _NUMBERS.index(word)) != n:
-            return None
-    return text or None
+            return False
+    return n == 1 or not _SINGLE.search(text)
+
+
+def _summary(text: object, n: int) -> str | None:
+    """The model's one-line summary, dropped if it states a dish count other than the plan's
+    (n is the number of order lines, rice included)."""
+    text = str(text or "").strip()[:240]
+    return text if text and _count_ok(text, n) else None
 
 
 def _noted(dish, notes: str | None) -> bool:
@@ -397,12 +408,12 @@ def _noted(dish, notes: str | None) -> bool:
     return any(w.rstrip("s") in low for w in words)
 
 
-def _fair_reason(text: str | None, dish, request: TableRequest) -> str | None:
+def _fair_reason(text: str | None, dish, request: TableRequest, n: int = 0) -> str | None:
     """The AI's one-line reason, unless it singles out a diner the rules flag for this dish
     ("Great for everyone, especially Cai" on a dish that may hide Cai's allergen). Then the
     rule-based reason is used instead."""
-    if not text:
-        return None
+    if not text or (n and not _count_ok(text, n)):
+        return None  # QA r6: "This single dish is chosen…" on a two-line order
     for person in request.diners:
         name = (person.name or "").strip()
         if not name or not re.search(rf"(?<!\w){re.escape(name)}(?!\w)", text, re.IGNORECASE):
@@ -444,7 +455,9 @@ def _to_plan(menu: Menu, request: TableRequest, answer: dict, items: list) -> Pl
     items = [
         i.model_copy(
             update={
-                "reason": _fair_reason(reasons.get(i.dish_id), known[i.dish_id], request)
+                "reason": _fair_reason(
+                    reasons.get(i.dish_id), known[i.dish_id], request, len(base.items)
+                )
                 or i.reason
             }
         )
@@ -782,8 +795,8 @@ def _conflict(menu: Menu, request: TableRequest, info: dict, problems: list[str]
     suggest = hint.suggest if hint is not None else None
     if suggest is not None and request.budget_per_person < suggest <= 500:
         relaxations.append(_raise_to(suggest))
-    ai_price = None
-    if info.get("change") == "budget":
+    ai_price = getattr(hint, "fuller", None)  # rules: TARGET dishes per diner
+    if ai_price is None and info.get("change") == "budget":
         ai_price = _budget_for(menu, request, info.get("dish_ids"))
         if ai_price is not None:
             ai_price = rules_hints.suggested_budget(ai_price - 0.5, ai_price)
@@ -797,7 +810,11 @@ def _conflict(menu: Menu, request: TableRequest, info: dict, problems: list[str]
     message = (
         f"At {cur}{request.budget_per_person:.2f} per person (about {cur}{cap:.2f} in menu "
         "prices for the table), no order gives everyone a dish they can eat within their "
-        "allergies, diets and the kept dishes."
+        + (
+            "allergies, diets and the kept dishes."
+            if request.locked_dish_ids
+            else "allergies and diets."
+        )
     )
     if hint is not None and hint.min_subtotal is not None and hint.min_per_person is not None:
         message += (
@@ -850,6 +867,15 @@ def plan(menu: Menu, request: TableRequest, client=None, cache_path: Path | None
                 "diners' settings.",
             ),
             "No dish fits anyone.",
+        )
+    if hint is not None and hint.feasible is False:
+        # The rules proved nothing fits (QA r6 #4): say what to change without a model call.
+        return Outcome(
+            None,
+            _conflict(menu, request, {}, [], hint),
+            "No order fits; the rules worked out what to change.",
+            0,
+            [],
         )
     staples = _staples(menu, request)
     model_id = llm.model("plan")

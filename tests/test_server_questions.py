@@ -8,7 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 from michelin.plan import llm_planner
-from michelin.schemas import DinerProfile, Menu, TableRequest
+from michelin.schemas import DinerProfile, Dish, Menu, TableRequest
 
 ROOT = Path(__file__).resolve().parents[1]
 MENU = Menu.model_validate_json((ROOT / "tests/data/sky_pavilion.json").read_text())
@@ -147,6 +147,21 @@ def test_summary_never_contradicts_the_dish_count():
     assert _summary("", 3) is None
 
 
+def test_single_dish_claims_need_a_one_line_order():
+    """QA r6: the $7 plan said "This single dish is chosen…" with Pancake + Rice (2 lines)."""
+    from michelin.plan.llm_planner import _fair_reason, _summary
+
+    assert _summary("This single dish is chosen so everyone can eat.", 2) is None
+    assert _summary("The only shared dish everyone can have.", 3) is None
+    assert _summary("This single dish is chosen so everyone can eat.", 1) is not None
+    request = TableRequest(
+        menu_id="m", diners=[DinerProfile(id="a", name="Ann")], budget_per_person=10
+    )
+    dish = Dish(id="p", name_en="Scallion Pancake", price=6.95)
+    assert _fair_reason("This single dish is chosen to fit the budget.", dish, request, 2) is None
+    assert _fair_reason("Crisp and shareable.", dish, request, 2) == "Crisp and shareable."
+
+
 def test_a_question_that_invents_an_allergy_falls_back_to_the_rules():
     """Live Atlas run: "Kevin has a peanut allergy" for a diner with none recorded."""
     from michelin.plan.llm_planner import _misstates
@@ -228,3 +243,33 @@ def test_q2_swap_path_drops_the_same_questions(tmp_path, monkeypatch):
     soup = next(i for i in swapped.plan.items if i.dish_id == "hot_and_sour_soup")
     assert soup.server_question is None
     assert not any("peanut" in q for q in swapped.plan.confirm_with_staff)
+
+
+def test_kitchen_questions_are_sentences_not_internal_notes():
+    """QA r6 #6: "Confirm peanut ingredient/preparation" read like an internal note."""
+    from michelin.plan.edibility import natural, open_questions, risks
+    from michelin.schemas import AllergenFlag, EvidenceTier, IngredientClaim
+
+    assert natural("Confirm peanut ingredient/preparation") == "Is there any peanut in it?"
+    assert natural("Confirm tree_nut, including sauces and cross-contact") == (
+        "Is there any tree nut in it, including the sauce, and is it kept apart from tree nut?"
+    )
+    assert natural("Confirm no_pork preparation") == "Is there any pork or lard in it?"
+    assert natural("Confirm vegetarian preparation").startswith("Is it vegetarian")
+    dish = Dish(
+        id="w",
+        name_en="Spicy Wonton (6 pcs)",
+        price=8,
+        ingredients=[IngredientClaim(name="peanut", tier=EvidenceTier.UNKNOWN)],
+        allergens=[
+            AllergenFlag(
+                allergen="peanut", tier=EvidenceTier.UNKNOWN, confidence=0.4, reason="may contain"
+            )
+        ],
+    )
+    alice = DinerProfile(id="a", name="Alice", allergies=["peanut"])
+    texts = open_questions(dish, [alice]) + [r.question for r in risks(dish, [alice])]
+    assert texts
+    for text in texts:
+        assert "Confirm" not in text and "ingredient/preparation" not in text, text
+        assert "?" in text and "Alice" in text, text

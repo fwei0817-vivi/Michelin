@@ -33,7 +33,9 @@ export function dishQuestions(dish: Dish, diners: DinerProfile[]): string[] {
   for (const flag of dish.allergens) {
     if (flag.tier !== "unknown") continue;
     const affected = diners.filter(p => p.allergies.includes(flag.allergen));
-    if (affected.length) questions.push(`Confirm ${ALLERGEN_LABEL[flag.allergen]} with the kitchen for ${affected.map(p => p.name).join(", ")}: ${flag.reason}`);
+    const what = ALLERGEN_LABEL[flag.allergen].toLowerCase();
+    // A sentence a diner could say to the server, not an internal note (QA r6).
+    if (affected.length) questions.push(`${dish.name_en || dish.name_zh || "This dish"} (for ${affected.map(p => p.name).join(", ")}): Is there any ${what} in it, including the sauce, and is it kept apart from ${what}?`);
   }
   return [...new Set(questions)];
 }

@@ -423,3 +423,22 @@ def test_ai_cannot_make_a_shared_dish_a_per_person_staple(monkeypatch):
         "Steamed Rice": "staple",
         "Vegetable Fried Rice": "other",
     }
+
+
+def test_hot_and_sour_soup_counts_as_pork(monkeypatch):
+    """QA r6: classic hot and sour soup has shredded pork; an AI 'possible' is raised."""
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+    soup = {
+        **VEG,
+        "ingredients": [{"name": "tofu", "certainty": "likely"}],
+        "pork": "possible",
+        "vegetarian": "possible",
+        "vegan": "possible",
+    }
+    monkeypatch.setattr(
+        dish_facts, "_ask", Fake({"Hot and Sour Soup": soup, "Hot & Sour Soup": soup})
+    )
+    for name, zh in (("Hot and Sour Soup", None), ("Hot & Sour Soup", "酸辣汤")):
+        dish = dish_facts.prepare(_menu(Dish(id="s", name_en=name, name_zh=zh, price=6))).dish("s")
+        assert dish.contains_pork is True and dish.is_vegetarian is False
+        assert assessment(dish, PAT)["status"] == "conflict"

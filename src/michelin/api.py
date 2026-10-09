@@ -351,6 +351,7 @@ def swap_dish(req: SwapRequest, x_profile_scope: str | None = Header(default=Non
         # The plan sent in must itself pass, so 'every other dish stays' keeps it valid.
         raise HTTPException(409, "The current plan no longer passes the checks; update it first.")
     if req.new_dish_id is not None:
+        request = ai_swap.picked(request, req.new_dish_id)  # an explicit pick un-removes it
         out = ai_swap.manual(menu, request, req.plan, req.dish_id, req.new_dish_id)
     else:
         out = ai_swap.swap(menu, request, req.plan, req.dish_id)

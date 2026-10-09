@@ -30,9 +30,52 @@ class Hints:
     suggest: float | None = None  # a budget to offer: the minimum plus ~$1.50-2.50 a person
     min_subtotal: float | None = None  # menu prices of the cheapest valid order
     min_per_person: float | None = None  # that order per person, with tax and tip
+    fuller: float | None = None  # a budget for TARGET dishes per diner (same from any budget)
 
 
 SLACK = 1.5  # headroom per person in a suggested budget, so a model's order has room
+TARGET = 2  # dishes each diner can eat in a "fuller meal"
+
+
+def fuller_budget(menu: Menu, request: TableRequest, order) -> float | None:
+    """The per-person budget for a fuller meal: the cheapest order plus the cheapest dishes
+    for whoever has fewest, until everyone has TARGET dishes they can eat (or the menu runs
+    out). It depends on the table and menu only, never on the budget the user started at."""
+    if not order:
+        return None
+    ids = {p.id for p in request.diners}
+    excluded = set(request.excluded_dish_ids)
+    chosen = list(order)
+    have = {d.id for d, _ in chosen}
+    count = {p: 0 for p in ids}
+    for d, _ in chosen:
+        if d.category.value != "staple":
+            for p in edible_by(d, request.diners):
+                count[p] += 1
+    pool = sorted(
+        (
+            d
+            for d in menu.dishes
+            if d.id not in excluded | have and d.price is not None and d.category.value != "staple"
+        ),
+        key=lambda d: d.price,
+    )
+    eats = {d.id: set(edible_by(d, request.diners)) for d in pool}
+    while count and min(count.values()) < TARGET:
+        low = min(count.values())
+        neediest = {p for p, c in count.items() if c == low}
+        pick = next((d for d in pool if eats[d.id] & neediest), None)
+        if pick is None:
+            break
+        pool.remove(pick)
+        chosen.append((pick, 1))
+        for p in eats[pick.id]:
+            count[p] += 1
+    if len(chosen) == len(order):
+        return None
+    subtotal = sum(cents(d.price) * q for d, q in chosen) / 100
+    t = totals(subtotal, request.n_diners, request.tax_rate, request.tip_rate)
+    return suggested_budget(t.total / request.n_diners, None)
 
 
 def suggested_budget(per_person: float, floor: float | None) -> float:
@@ -165,4 +208,5 @@ def analyse(menu: Menu, request: TableRequest) -> Hints:
         ]
         if len(options) == 1:
             must[p.id] = options
-    return Hints(feasible, floor, must, suggest, subtotal, per_person)
+    fuller = fuller_budget(menu, request, order) if feasible is False else None
+    return Hints(feasible, floor, must, suggest, subtotal, per_person, fuller)

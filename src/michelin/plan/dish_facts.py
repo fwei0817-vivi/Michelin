@@ -175,11 +175,13 @@ _FLOOR: list[tuple[str, dict]] = [
         (
             r"dumpling|wonton|won ton|\bbao\b|\bbuns?\b|potsticker|xiao ?long|shu ?mai|siu ?mai|"
             r"spring roll|egg roll|dan ?dan|fried rice|lo ?mein|chow ?mein|string bean|green bean|"
-            r"eggplant|ma ?po|cabbage|dry[ -]?pot|scallion pancake|chive pancake|hot and sour soup|"
-            r"饺|馄饨|包|抄手|麻婆|酸辣汤"
+            r"eggplant|ma ?po|cabbage|dry[ -]?pot|scallion pancake|chive pancake|"
+            r"饺|馄饨|包|抄手|麻婆"
         ),
         {"pork": "possible"},
     ),
+    # Classic hot and sour soup has shredded pork: treat it as likely, not just possible.
+    (r"hot (?:and|&) sour soup|酸辣汤", {"pork": "yes"}),
     (r"seafood|\bxo\b|oyster|海鲜", {"allergens": ["shellfish"]}),
     (r"fish[ -]?fragrant|yu[ -]?xiang|鱼香", {"allergens": ["fish"], "pork": "possible"}),
     (
@@ -198,7 +200,8 @@ def floor(dish: Dish) -> dict:
         if re.search(pattern, text):
             for a in adds.get("allergens", []):
                 allergens[a] = "commonly hidden in dishes like this"
-            pork = adds.get("pork", pork)
+            if adds.get("pork") and (pork is None or adds["pork"] == "yes"):
+                pork = adds["pork"]
     out: dict = {
         "allergens": [
             {"allergen": a, "certainty": "possible", "why": w} for a, w in allergens.items()
@@ -206,8 +209,9 @@ def floor(dish: Dish) -> dict:
         "ingredients": [],
     }
     if pork:
-        out["pork"] = "possible"
-        out["ingredients"].append({"name": "pork", "certainty": "possible"})
+        out["pork"] = pork
+        certainty = "likely" if pork == "yes" else "possible"
+        out["ingredients"].append({"name": "pork", "certainty": certainty})
     return out
 
 
@@ -443,7 +447,7 @@ def _sensitive(name: str) -> bool:
 
 def _floor_merge(facts: dict, base: dict) -> dict:
     """Union the floor into the AI's facts: never removes, only adds "possible"."""
-    if any(
+    if base.get("pork") != "yes" and any(
         re.search(r"pork|lard|bacon|ham\b", i["name"], re.IGNORECASE)
         for i in facts.get("ingredients", [])
     ):
@@ -459,6 +463,8 @@ def _floor_merge(facts: dict, base: dict) -> dict:
             "spice": facts.get("spice"),
         },
     )
+    if base.get("pork") == "yes":
+        out["vegetarian"] = out["vegan"] = "no"
     if base.get("pork") and out.get("vegetarian") == "yes":
         out["vegetarian"] = "possible"  # vegetarian if the kitchen skips the pork: ask
     if base.get("pork") and out.get("vegan") == "yes":

@@ -443,3 +443,62 @@ def test_swap_reason_never_singles_out_a_flagged_diner(table):
             assert "especially" not in line
             return
     pytest.skip("no dish with a confirmation-only diner")
+
+
+def test_picking_a_removed_dish_brings_it_back(table, monkeypatch):
+    """QA r6 S-3/Q-2: swap a dish out, then re-add it or swap it back in. It used to be
+    refused with "scallion_pancake was removed by the table"; an explicit pick un-removes it."""
+    import re
+
+    menu, request, plan = table
+    monkeypatch.setattr(ai_swap, "_ask", _no_model)
+    old, new, _ = _target_and_candidate(menu, request, plan)
+    swapped = ai_swap.manual(menu, request, plan, old, new)
+    assert swapped.plan is not None
+    after = ai_swap._swap_request(request, old)  # old is now excluded, as the app sends it
+    assert old in after.excluded_dish_ids
+    # Re-add it.
+    out = ai_swap.manual(menu, after, swapped.plan, None, old)
+    assert out.plan is not None and old in [i.dish_id for i in out.plan.items]
+    # Swap it back in for the dish that replaced it.
+    out = ai_swap.manual(menu, after, swapped.plan, new, old)
+    assert out.plan is not None
+    assert [i.dish_id for i in out.plan.items] == [i.dish_id for i in plan.items]
+    # Through the API, as the browser sends it.
+    body = {
+        "menu_id": "cafe_china",
+        "diners": [d.model_dump(mode="json") for d in request.diners],
+        "budget_per_person": 40,
+        "plan": swapped.plan.model_dump(mode="json"),
+        "excluded_dish_ids": [old],
+        "new_dish_id": old,
+    }
+    client = TestClient(api.app)
+    data = client.post("/api/plan/swap", json=body).json()
+    assert data["kind"] == "plan" and data["new_dish_id"] == old, data["message"]
+    data = client.post("/api/plan/swap", json={**body, "dish_id": new}).json()
+    assert data["kind"] == "plan" and data["new_dish_id"] == old, data["message"]
+    # Refusals name dishes, never ids.
+    taken = next(i.dish_id for i in swapped.plan.items if i.dish_id != new)
+    for dish_id in (None, new):
+        data = client.post(
+            "/api/plan/swap", json={**body, "dish_id": dish_id, "new_dish_id": taken}
+        ).json()
+        assert data["kind"] != "plan" and menu.dish(taken).name_en in data["message"]
+        assert not re.search(r"\b[a-z0-9]+_[a-z0-9_]+\b", data["message"]), data["message"]
+
+
+def test_swap_refusals_name_dishes_not_ids(table):
+    """ai_swap.check feeds both the AI retry and the user's refusal text."""
+    import re
+
+    menu, request, plan = table
+    old, new, _ = _target_and_candidate(menu, request, plan)
+    taken = next(i.dish_id for i in plan.items if i.dish_id != old)
+    rice = next(d.id for d in menu.dishes if d.category.value == "staple")
+    gone = request.model_copy(update={"excluded_dish_ids": [new]})
+    for req, pick in ((request, taken), (request, rice), (gone, new), (request, "no_such_dish")):
+        problems, _ = ai_swap.check(menu, req, plan, old, {"dish_id": pick})
+        assert problems
+        for text in problems:
+            assert not re.search(r"\b[a-z0-9]+_[a-z0-9_]+\b", text), text

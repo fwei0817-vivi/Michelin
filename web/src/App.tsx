@@ -217,7 +217,8 @@ export default function App() {
     setSwapSteps(pick
       ? [`Checking ${dishName(pick)} against everyone's allergies and diets…`, `Checking it fits $${s.budget.toFixed(2)} per person with tax and tip…`]
       : [`Asking the AI for a replacement for ${dishName(id ?? "")}…`, "Checking its pick against everyone's allergies and diets…", `Checking it fits $${s.budget.toFixed(2)} per person with tax and tip…`]);
-    setBrowser(null); setSwapping(id ?? ADDING); setSwapFailed(null); setUndo(null); setError(null);
+    // The earlier change's Undo stays until this one succeeds (a refusal must not drop it).
+    setBrowser(null); setSwapping(id ?? ADDING); setSwapFailed(null); setError(null);
     try {
       const out = await postSwap({ menu_id: mid, menu_override: m, diners: d,
         budget_per_person: s.budget, tax_rate: s.tax, tip_rate: s.tip, style_preference: s.style,
@@ -226,7 +227,9 @@ export default function App() {
       if (out.kind === "plan" && out.plan && out.new_dish_id) {
         setUndo({ locked: [...locked], excluded: [...excluded], result: current,
           message: `${pick ? "" : "AI: "}${out.message} Nothing else changed.` });
-        if (id) { setExcluded(prev => [...new Set([...prev, id])]); setLocked(prev => prev.filter(x => x !== id)); }
+        // An explicit pick brings back a dish removed earlier; the replaced one is removed.
+        setExcluded(prev => [...new Set([...prev.filter(x => x !== out.new_dish_id), ...(id ? [id] : [])])]);
+        if (id) setLocked(prev => prev.filter(x => x !== id));
         setResult({ ...current, response: { ...current.response, plan: out.plan, source_note: out.source_note ?? current.response.source_note } });
       } else setSwapFailed({ id, message: out.message, manual: !!pick });
     } catch (e) { if (seq === sequence.current) setSwapFailed({ id, message: `${errorText(e)} Pick a replacement from the menu instead.`, manual: !!pick }); }

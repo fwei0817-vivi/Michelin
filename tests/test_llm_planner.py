@@ -12,7 +12,7 @@ from michelin import api, gemini
 from michelin.plan import hints, llm_planner
 from michelin.plan.edibility import edible_by
 from michelin.plan.validation import validate_order
-from michelin.schemas import DinerProfile, Menu, PlanItem, TableRequest
+from michelin.schemas import DinerProfile, Menu, TableRequest
 
 ROOT = Path(__file__).resolve().parents[1]
 client = TestClient(api.app)
@@ -167,7 +167,8 @@ def test_model_no_fit_becomes_a_verified_change_one_thing(setup, tmp_path):
         "no_fit": {"reason": "Too little money for six.", "change": "budget", "dish_ids": order},
     }
     out, fake = run(menu, tight, no_fit, tmp_path=tmp_path)
-    assert out.plan is None and len(fake.calls) == 1
+    # QA r6 #4: the rules prove nothing fits, so the model is not asked at all.
+    assert out.plan is None and len(fake.calls) == 0
     assert out.conflict.code in ("no_solution", "missing_information")
     hint = hints.analyse(menu, tight)
     # QA r5 D-6: the offer has room above the rules minimum, so the AI can hit it.
@@ -175,12 +176,13 @@ def test_model_no_fit_becomes_a_verified_change_one_thing(setup, tmp_path):
     assert (low.kind, low.new_value) == ("budget", hint.suggest)
     assert hint.suggest >= hint.min_per_person + 1.5 and hint.suggest >= hint.min_budget
     assert change.new_value > 1.25 * low.new_value and "fuller meal" in change.description
-    # The AI's suggested order really passes at its (roomier) amount.
+    # QA r6 #3: the fuller amount comes from a fixed target, not the starting budget.
+    assert change.new_value == hint.fuller
+    assert hints.analyse(menu, request.model_copy(update={"budget_per_person": 3})).fuller == (
+        hint.fuller
+    )
     raised = tight.model_copy(update={"budget_per_person": change.new_value})
-    items = [PlanItem(dish_id=i, quantity=1) for i in order] + [
-        PlanItem(dish_id=d.id, quantity=6) for d in llm_planner._staples(menu, tight)
-    ]
-    assert validate_order(menu, raised, items)["valid"]
+    assert hints.fits(menu, raised)
     # The model's wording is never shown: only rules figures, always with $.
     assert "Too little money" not in out.conflict.message
     assert f"${hint.min_subtotal:.2f} in menu prices" in out.conflict.message
@@ -192,7 +194,11 @@ def test_model_no_fit_becomes_a_verified_change_one_thing(setup, tmp_path):
         "no_fit": {"reason": said, "change": "budget", "dish_ids": ["lobster"], "new_value": 1},
     }
     out, _ = run(menu, tight, bad, tmp_path=tmp_path)
-    assert [(r.kind, r.new_value) for r in out.conflict.relaxations] == [("budget", hint.suggest)]
+    assert [(r.kind, r.new_value) for r in out.conflict.relaxations] == [
+        ("budget", hint.suggest),
+        ("budget", hint.fuller),
+    ]
+    assert "kept dishes" not in out.conflict.message  # nothing is kept (QA r6 #8)
     assert "28.45" not in out.conflict.message and "safe" not in out.conflict.message
 
 
@@ -200,15 +206,15 @@ def test_no_fit_always_offers_a_budget_that_fits(setup, tmp_path):
     """Whatever the model says, a budget no-fit offers 'Raise to $X' and X fits."""
     menu, request, good = setup
     tight = request.model_copy(update={"budget_per_person": 3})
-    out, fake = run(menu, tight, good, tmp_path=tmp_path)  # over budget: no retries needed
-    assert out.plan is None and len(fake.calls) == 1
-    [change] = [r for r in out.conflict.relaxations if r.kind == "budget"]
+    out, fake = run(menu, tight, good, tmp_path=tmp_path)  # the rules prove no fit: no call
+    assert out.plan is None and len(fake.calls) == 0
+    change = next(r for r in out.conflict.relaxations if r.kind == "budget")
     assert "Raise the budget to $" in change.description
     price = change.new_value
     assert hints.fits(menu, tight.model_copy(update={"budget_per_person": price}))
     assert price == int(price)  # whole dollars
     out, _ = run(menu, tight, {"dishes": [], "server_questions": []}, tmp_path=tmp_path)
-    assert [r.new_value for r in out.conflict.relaxations if r.kind == "budget"] == [price]
+    assert next(r.new_value for r in out.conflict.relaxations if r.kind == "budget") == price
 
 
 def test_giving_up_when_an_order_exists_is_retried_with_hints(setup, tmp_path):
@@ -397,7 +403,7 @@ def test_raise_budget_from_3_then_apply_always_gives_a_plan(setup, tmp_path):
     menu, request, good = setup
     tight = request.model_copy(update={"budget_per_person": 3})
     out, _ = run(menu, tight, good, tmp_path=tmp_path)
-    [raise_to] = [r for r in out.conflict.relaxations if r.kind == "budget"]
+    raise_to = next(r for r in out.conflict.relaxations if r.kind == "budget")
     hint = hints.analyse(menu, tight)
     assert raise_to.new_value >= hint.min_per_person + 1.5
     assert "$" in out.conflict.message and "3.00" in out.conflict.message

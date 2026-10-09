@@ -60,6 +60,13 @@ def _name(d) -> str:
     return d.name_en or d.name_zh or d.id
 
 
+def picked(request: TableRequest, new_id: str) -> TableRequest:
+    """The user explicitly chose new_id: it is no longer excluded."""
+    return request.model_copy(
+        update={"excluded_dish_ids": [i for i in request.excluded_dish_ids if i != new_id]}
+    )
+
+
 def _swap_request(request: TableRequest, old_id: str) -> TableRequest:
     """The replaced dish counts as removed; it is no longer kept."""
     return request.model_copy(
@@ -167,14 +174,16 @@ def check(
     old_id None adds the dish (before the rice) instead of replacing one."""
     known = {d.id: d for d in menu.dishes}
     new_id = answer.get("dish_id") if isinstance(answer, dict) else None
+    # Messages name dishes, never ids: the user sees them when a swap is refused.
     if new_id not in known:
-        return [f"{new_id!r} is not a dish id on this menu."], []
+        return ["that dish is not on this menu; pick one from the candidates."], []
+    label = _name(known[new_id])
     if new_id == old_id or new_id in {i.dish_id for i in plan.items}:
-        return [f"{new_id} is already in the order; pick a dish that is not."], []
+        return [f"{label} is already in the order; pick a dish that is not."], []
     if known[new_id].category.value == "staple":
-        return [f"{new_id} is rice/staple; pick a shared dish."], []
+        return [f"{label} is rice, which is added automatically; pick a shared dish."], []
     if new_id in request.excluded_dish_ids:
-        return [f"{new_id} was removed by the table; pick another dish."], []
+        return [f"{label} was taken out of this order earlier; pick another dish."], []
     items = [
         PlanItem(dish_id=new_id, quantity=1)
         if i.dish_id == old_id
@@ -201,8 +210,17 @@ def check(
             detail = f"it would put the table ${over:.2f} over budget (with tax and tip)."
         elif reason["code"] == "no_eligible_diner":
             detail = "nobody at the table can eat it."
-        problems.append(detail)
+        problems.append(_named(detail, known, names))
     return list(dict.fromkeys(problems)), items
+
+
+def _named(text: str, known: dict, names: dict) -> str:
+    """Dish and diner ids in a rule's detail replaced by their names (QA r6 Q-2)."""
+    for i in sorted([*known, *names], key=len, reverse=True):
+        if i in text:
+            name = _name(known[i]) if i in known else (names[i] or i)
+            text = re.sub(rf"(?<![\w]){re.escape(i)}(?![\w])", name, text)
+    return text
 
 
 def _price_note(menu: Menu, old_id: str | None, new_id: str) -> str:
@@ -292,7 +310,9 @@ def manual(
     menu: Menu, request: TableRequest, plan: Plan, old_id: str | None, new_id: str
 ) -> SwapOutcome:
     """The user's own pick: no model call, same hard checks, only that dish changes.
-    old_id None adds the dish; nothing else in the order moves."""
+    old_id None adds the dish; nothing else in the order moves. Picking a dish that was
+    removed or swapped out earlier brings it back (QA r6 S-3)."""
+    request = picked(request, new_id)
     if old_id is not None:
         request = _swap_request(request, old_id)
     problems, items = check(menu, request, plan, old_id, {"dish_id": new_id})
