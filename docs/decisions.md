@@ -289,3 +289,9 @@ one line per dish. Safety labels, budget arithmetic, conflict titles and the bud
 deterministic. Menu photos and the name matcher use OpenRouter whenever `OPENROUTER_API_KEY` is
 set (`MICHELIN_OPENROUTER_VISION_MODEL` overrides the photo model); the free Gemini key is the
 fallback.
+
+**2026-10-09: swaps change one dish only.** "AI swap" asks the planner's model once (one retry)
+for a replacement; picking from the menu makes no model call. Both keep every other dish exactly
+as it is and run the whole order through the plan checks; a pick that breaks the budget or
+someone's diet is refused with the reason instead of rebalancing the table. Undo restores the
+previous plan. Why: users asked to change one dish without the rest of the table moving.

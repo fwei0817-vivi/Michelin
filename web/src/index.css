@@ -217,10 +217,15 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
 .dish-more.has-check { color: var(--color-attention); }
 .dish-more > svg:last-child { transition: transform 0.15s; }
 .dish-more[aria-expanded="true"] > svg:last-child { transform: rotate(180deg); }
+.dish-more { white-space: nowrap; }
+.dish-foot .dish-action { min-width: 28px; padding: 0 6px; }
 .dish-action { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 32px; min-height: 32px; padding: 0 8px; border: 1px solid transparent; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--color-fg-2); }
 .dish-action:hover { background: var(--color-muted); color: var(--color-fg); }
 .dish-action.kept { background: var(--color-brand-soft); color: var(--color-brand); }
 .swap-action { border-color: var(--color-line-strong); color: var(--color-fg); }
+.ai-swap-action { color: var(--color-brand); white-space: nowrap; }
+.ai-swap-inline { margin-top: 10px; }
+.swap-failed { border-color: var(--color-warn, #c58b2a); }
 .dish-panel { display: grid; gap: 8px; padding: 2px 0 4px; font-size: 12px; line-height: 1.55; color: var(--color-fg-2); }
 .dish-panel[hidden] { display: none; }
 .dish-question { display: flex; align-items: flex-start; gap: 6px; font-size: 13px; line-height: 1.5; color: var(--color-attention); }

@@ -144,6 +144,16 @@ three restaurant menus are kept in `data/menus/review_answers.xlsx`; to rebuild 
 `label_menu` and then this import. Setting `verified: true` stays a manual step. The bad-case evaluation lives in
 `eval/` (see `eval/README.md`).
 
+**Swapping one dish.** Each recommended dish has "AI swap" (one model call, same provider and
+model as the planner) and a menu-pick button. Either way only that dish changes; every other
+dish, quantity and reason stays. `POST /api/plan/swap` takes the plan request fields plus the
+current `plan` and `dish_id`; add `new_dish_id` for the user's own pick (no model call). The
+whole new order goes through the same hard checks as a plan (menu, not already ordered, not
+removed, allergies and diets, budget with tax and tip, everyone still has a dish). A failing AI
+answer is retried once with the reason; a failing pick is refused with the reason. The UI shows
+"Swapped to X, …, $3.00 cheaper" (the price part is computed) and Undo restores the previous
+plan without a model call.
+
 Additional API fields on `POST /api/plan`: `menu_override` and `style_preference` (`balanced`, `lighter`, `favorites`).
 `POST /api/menu/evaluate` takes `{menu, diners}` and returns per-dish eligibility and questions.
 `POST /api/menu/parse` takes `{text}` or `{image_base64}` and returns extracted text and dishes.

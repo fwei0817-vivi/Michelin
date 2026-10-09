@@ -18,10 +18,11 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from michelin import llm
 from michelin.explain import explain
 from michelin.meal import PeopleAction, apply_people_action
 from michelin.model import ExtractionRequest, ExtractionResponse
-from michelin.plan import llm_planner
+from michelin.plan import ai_swap, llm_planner
 from michelin.plan.budget import subtotal_cap, totals
 from michelin.plan.edibility import assessment, edible_by, open_questions
 from michelin.plan.score import variety_score
@@ -146,7 +147,6 @@ class PlanResponse(BaseModel):
 def health() -> dict:
     import shutil
 
-    from michelin import llm
     from michelin.parse import vision
 
     # How a menu photo is read: OpenRouter, the free Gemini key, local OCR, or not at all.
@@ -269,8 +269,8 @@ def _resolve_diners(req: PlanRequest, scope: str | None = None) -> list[DinerPro
     return out
 
 
-@app.post("/api/plan", response_model=PlanResponse)
-def plan(req: PlanRequest, x_profile_scope: str | None = Header(default=None)) -> PlanResponse:
+def _prepare(req: PlanRequest, x_profile_scope: str | None) -> tuple[Menu, TableRequest, float]:
+    """Menu, table request and menu-price cap for a plan or swap request (422/404 if unusable)."""
     menus = load_menus()
     if req.menu_override is None and req.menu_id not in menus:
         raise HTTPException(404, f"unknown menu {req.menu_id!r}")
@@ -299,7 +299,62 @@ def plan(req: PlanRequest, x_profile_scope: str | None = Header(default=None)) -
         excluded_dish_ids=req.excluded_dish_ids,
         style_preference=req.style_preference,
     )
-    cap = subtotal_cap(request.all_in_budget, 1, req.tax_rate, req.tip_rate)
+    return menu, request, subtotal_cap(request.all_in_budget, 1, req.tax_rate, req.tip_rate)
+
+
+class SwapRequest(PlanRequest):
+    plan: Plan  # the current, checked plan; every dish but dish_id stays as is
+    dish_id: str  # the dish to replace
+    new_dish_id: str | None = None  # the user's own pick: no model call, same checks
+
+
+class SwapResponse(BaseModel):
+    kind: str  # "plan" | "failed"
+    plan: Plan | None = None
+    new_dish_id: str | None = None
+    message: str  # the AI's reason, or why no swap passed (offer the manual pick)
+    source_note: str | None = None
+
+
+@app.post("/api/plan/swap", response_model=SwapResponse)
+def swap_dish(req: SwapRequest, x_profile_scope: str | None = Header(default=None)) -> SwapResponse:
+    """Single-dish swap: the AI's pick (one call, one retry) or the user's own pick (no call).
+    Either way only that dish changes and the whole order goes through the plan checks."""
+    menu, request, _ = _prepare(req, x_profile_scope)
+    ids = [i.dish_id for i in req.plan.items]
+    if req.dish_id not in ids:
+        raise HTTPException(404, f"{req.dish_id!r} is not in the plan")
+    if menu.dish(req.dish_id).category.value == "staple":
+        raise HTTPException(422, "Rice and other staples are added automatically.")
+    if not validate_order(menu, request, req.plan.items)["valid"]:
+        # The plan sent in must itself pass, so 'every other dish stays' keeps it valid.
+        raise HTTPException(409, "The current plan no longer passes the checks; update it first.")
+    if req.new_dish_id is not None:
+        out = ai_swap.manual(menu, request, req.plan, req.dish_id, req.new_dish_id)
+    else:
+        out = ai_swap.swap(menu, request, req.plan, req.dish_id)
+    if out.plan is None:
+        return SwapResponse(kind="failed", message=out.message)
+    report = validate_order(menu, ai_swap._swap_request(request, req.dish_id), out.plan.items)
+    if not report["valid"] or any(
+        getattr(out.plan, k) != v for k, v in report["totals"].items()
+    ):  # belt and braces: never return an order the rules reject
+        return SwapResponse(kind="failed", message="The swap did not pass the final check.")
+    retried = " after 1 correction" if out.attempts > 1 else ""
+    return SwapResponse(
+        kind="plan",
+        plan=out.plan,
+        new_dish_id=out.new_dish_id,
+        message=out.message,
+        source_note=f"Swap by {llm.label(out.model)}, checked by the rules{retried}."
+        if out.model
+        else "Your pick, checked by the rules.",
+    )
+
+
+@app.post("/api/plan", response_model=PlanResponse)
+def plan(req: PlanRequest, x_profile_scope: str | None = Header(default=None)) -> PlanResponse:
+    menu, request, cap = _prepare(req, x_profile_scope)
 
     # Recommendations come from the LLM only; the rules below validate, never choose.
     source, source_note = "mock" if MOCK else "ai", None

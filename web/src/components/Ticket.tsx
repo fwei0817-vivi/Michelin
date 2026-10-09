@@ -18,6 +18,8 @@ interface Props {
   loading: boolean;
   onLock: (id: string) => void;
   onSwap: (id: string) => void;
+  onAiSwap: (id: string) => void;
+  swapping: string | null;
   onRemove: (id: string) => void;
   onAdd: () => void;
   onPlan: () => void;
@@ -28,7 +30,7 @@ interface Props {
 
 const SPICE = ["", "Mild", "Medium", "Hot"];
 
-export function Ticket({ menu, plan, diners, settings, source, sourceNote, locked, stale, loading, onLock, onSwap, onRemove, onAdd, onPlan, onOrder, canOrder, onParty }: Props) {
+export function Ticket({ menu, plan, diners, settings, source, sourceNote, locked, stale, loading, onLock, onSwap, onAiSwap, swapping, onRemove, onAdd, onPlan, onOrder, canOrder, onParty }: Props) {
   const [filter, setFilter] = useState("all");
   const [open, setOpen] = useState<string[]>([]);
   const byId: Record<string, Dish> = Object.fromEntries(menu.dishes.map((d) => [d.id, d]));
@@ -38,7 +40,7 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
   const over = remaining < 0;
   const questions = plan.confirm_with_staff.length;
   const failed = plan.checks.filter((c) => !c.passed);
-  const disabled = loading || stale;
+  const disabled = loading || stale || swapping !== null;
   const categories = [...new Set(items.map((i) => byId[i.dish_id].category))];
   const actualFilter = filter === "all" || categories.includes(filter) ? filter : "all";
   const visible = items.filter((i) => actualFilter === "all" || byId[i.dish_id].category === actualFilter);
@@ -108,6 +110,8 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
                   onToggle={toggleOpen}
                   onLock={onLock}
                   onSwap={onSwap}
+                  onAiSwap={onAiSwap}
+                  swapping={swapping === item.dish_id}
                   onRemove={onRemove}
                 />
               ))}
@@ -225,7 +229,7 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
   );
 }
 
-function DishCard({ item, dish, diners, cur, kept, ai, expanded, disabled, onToggle, onLock, onSwap, onRemove }: {
+function DishCard({ item, dish, diners, cur, kept, ai, expanded, disabled, onToggle, onLock, onSwap, onAiSwap, swapping, onRemove }: {
   item: PlanItem;
   dish: Dish;
   diners: DinerProfile[];
@@ -237,6 +241,8 @@ function DishCard({ item, dish, diners, cur, kept, ai, expanded, disabled, onTog
   onToggle: (id: string) => void;
   onLock: (id: string) => void;
   onSwap: (id: string) => void;
+  onAiSwap: (id: string) => void;
+  swapping: boolean;
   onRemove: (id: string) => void;
 }) {
   const name = dishName(dish);
@@ -349,10 +355,17 @@ function DishCard({ item, dish, diners, cur, kept, ai, expanded, disabled, onTog
         >
           {kept ? <LockKeyhole size={15} /> : <UnlockKeyhole size={15} />}
         </button>
-        <button className="dish-action swap-action" aria-label={`Swap ${name}`} onClick={() => onSwap(dish.id)} disabled={disabled}>
-          <ArrowLeftRight size={14} />
-          Swap
-        </button>
+        {dish.category !== "staple" && (
+          <button className="dish-action swap-action ai-swap-action" aria-label={`Let AI replace ${name}`} title="Let AI swap this: only this dish changes" onClick={() => onAiSwap(dish.id)} disabled={disabled}>
+            {swapping ? <RefreshCw size={14} className="spin" /> : <Sparkles size={14} />}
+            {swapping ? "Swapping…" : "AI swap"}
+          </button>
+        )}
+        {dish.category !== "staple" && (
+          <button className="dish-action" aria-label={`Swap ${name}`} title="Pick a replacement from the menu" onClick={() => onSwap(dish.id)} disabled={disabled}>
+            <ArrowLeftRight size={15} />
+          </button>
+        )}
         <button className="dish-action remove-action" aria-label={`Remove ${name}`} title={`Remove ${name}`} onClick={() => onRemove(dish.id)} disabled={disabled}>
           <Trash2 size={15} />
         </button>

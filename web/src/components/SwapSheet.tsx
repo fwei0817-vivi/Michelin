@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeftRight, Check, CheckCircle2, CircleHelp, FileImage, Flame, Leaf, Pencil, Plus, Search, TriangleAlert, Upload, UserX, Users } from "lucide-react";
+import { ArrowLeftRight, Check, CheckCircle2, CircleHelp, FileImage, Flame, Leaf, Pencil, Plus, Search, Sparkles, TriangleAlert, Upload, UserX, Users } from "lucide-react";
 import { evaluateMenu, parseMenu, getPreparedInputs, extractMenu } from "../api";
 import { CATEGORY_LABEL, currencySymbol, dishName, flagWording, money } from "../lib/format";
 import { photoFor } from "../lib/dishPhotos";
@@ -25,6 +25,8 @@ interface Props {
   tax: number;
   tip: number;
   onPick: (id: string) => void;
+  /** Replacing a dish: let the AI pick instead (only that dish changes). */
+  onAiSwap?: (id: string) => void;
   onClose: () => void;
   onUpdate: (menu: Menu) => void;
   /** Add an imported menu as a separate restaurant; returns its id. Does not switch to it. */
@@ -49,7 +51,7 @@ function hiddenIngredients(d: Dish): string | null {
 }
 
 /** The restaurant menu drawer: browse and edit the menu, import one, or pick a dish to add or swap in. */
-export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mode, initialTab = "browse", initialPhoto = null, openAfterImport = false, tax, tip, onPick, onClose, onUpdate, onCreate, onSelectMenu }: Props) {
+export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mode, initialTab = "browse", initialPhoto = null, openAfterImport = false, tax, tip, onPick, onAiSwap, onClose, onUpdate, onCreate, onSelectMenu }: Props) {
   const [created, setCreated] = useState<{ id: string; name: string } | null>(null);
   const [prepared, setPrepared] = useState<PreparedInput[]>([]);
   const [preparedId, setPreparedId] = useState("");
@@ -163,7 +165,13 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
             <ArrowLeftRight size={19} />
             <div>
               <strong>{oldDish ? `Replacing ${dishName(oldDish)}` : "Adding to your order"}</strong>
-              <p>Your choice is kept. Dishes you have not kept may change to stay within budget and everyone's needs. The price difference shown is for this dish only.</p>
+              <p>{oldDish ? "Only this dish changes. The rules check your pick against the budget, allergies and diets, and say why if it doesn't fit." : "Your choice is kept. Dishes you have not kept may change to stay within budget and everyone's needs."} The price difference shown is for this dish only.</p>
+              {oldDish && onAiSwap && plan && (
+                <button className="btn btn-outline btn-small ai-swap-inline" onClick={() => onAiSwap(oldDish.id)}>
+                  <Sparkles size={14} />
+                  Let AI swap this instead (only this dish changes)
+                </button>
+              )}
             </div>
           </div>
         )}

@@ -1,0 +1,323 @@
+"""AI single-dish swap: replace one dish in a checked plan, keep every other dish as is.
+
+One model call (same provider and model as the planner; OpenRouter `google/gemini-2.5-flash`
+when `OPENROUTER_API_KEY` is set) gets the current order, the dish to replace, the diners'
+allergies and diets, the money left (menu prices and all-in, tax and tip included) and the
+removed dishes. It answers one replacement dish id and a short reason. The rules then check
+the whole new order exactly like a plan: dish on the menu, not already ordered, not removed,
+allergies and diets, budget with tax and tip, every diner still able to eat a non-staple
+dish. A failing answer is retried once with the reason; after that the caller offers the
+manual pick from the menu.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import re
+from dataclasses import dataclass, field
+
+from michelin import llm
+from michelin.plan import llm_planner
+from michelin.plan.budget import cents, subtotal_cap, totals
+from michelin.plan.edibility import edible_by, risks
+from michelin.plan.validation import validate_order
+from michelin.schemas import Menu, Plan, PlanItem, TableRequest
+
+log = logging.getLogger(__name__)
+MAX_RETRIES = 1
+
+SYSTEM = """You replace ONE dish in a shared, family-style order at a Chinese restaurant.
+Every other dish stays exactly as it is. Pick one replacement from "candidates" (dish ids
+only, never one already ordered or removed). Hard rules: it must fit the money left
+("menu_price_left" is the most its menu price can be; tax and tip are added on top), and
+it should suit the diners' allergies and diets ("ok_for" lists who can eat it; never pick a
+dish nobody can eat). After the swap every diner must still have at least one non-rice dish
+they can eat. Prefer, in order: a dish every diner can eat (all ids in "ok_for"), a price
+close to the replaced dish, and a dish that does not repeat the main ingredient, category
+or cooking method of the dishes that stay. Respect heat limits ("max_spice" 0 means no heat),
+dislikes and likes. Return "dish_id", "reason": a short clause (under 15 words) on who can
+eat it and why it fits, e.g. "Kevin can eat it and it adds a vegetable", and "server_question": one concise question
+for the server covering the dish's "risks" (name the diners it matters for), or "" if none.
+State only the allergies and diets the brief lists for each diner."""
+
+
+@dataclass
+class SwapOutcome:
+    plan: Plan | None
+    message: str  # shown to the user: the reason, or why no swap passed the checks
+    new_dish_id: str | None = None
+    reason: str | None = None
+    attempts: int = 0
+    history: list[list[str]] = field(default_factory=list)
+    model: str | None = None
+
+
+def _name(d) -> str:
+    return d.name_en or d.name_zh or d.id
+
+
+def _swap_request(request: TableRequest, old_id: str) -> TableRequest:
+    """The replaced dish counts as removed; it is no longer kept."""
+    return request.model_copy(
+        update={
+            "locked_dish_ids": [i for i in request.locked_dish_ids if i != old_id],
+            "excluded_dish_ids": list(dict.fromkeys([*request.excluded_dish_ids, old_id])),
+        }
+    )
+
+
+def brief(menu: Menu, request: TableRequest, plan: Plan, old_id: str) -> dict:
+    known = {d.id: d for d in menu.dishes}
+    others = [i for i in plan.items if i.dish_id != old_id]
+    ordered = {i.dish_id for i in plan.items}
+    excluded = set(request.excluded_dish_ids)
+    spent = sum(cents(known[i.dish_id].price) * i.quantity for i in others) / 100
+    cap = subtotal_cap(request.all_in_budget, 1, request.tax_rate, request.tip_rate)
+    now = totals(spent, request.n_diners, request.tax_rate, request.tip_rate)
+    old = known[old_id]
+    candidates = []
+    for d in menu.dishes:
+        if d.id in ordered or d.id in excluded or d.category.value == "staple" or d.price is None:
+            continue
+        ok = edible_by(d, request.diners)
+        if not ok:
+            continue
+        row = {"id": d.id, "name": _name(d), "price": d.price, "category": d.category.value}
+        row["ok_for"] = ok
+        if d.spice_level is not None:
+            row["spice"] = d.spice_level
+        if d.cooking_method:
+            row["method"] = d.cooking_method
+        main = [i.name for i in d.main_ingredients if i.tier.value == "menu"]
+        if main:
+            row["ingredients"] = main[:6]
+        flagged = risks(d, request.diners)
+        if flagged:
+            row["risks"] = [
+                r.about + (f" (matters for {', '.join(r.names)})" if r.names else "")
+                for r in flagged
+            ][:5]
+        candidates.append(row)
+    diners = []
+    for p in request.diners:
+        row = {"id": p.id, "name": p.name}
+        for key in ("allergies", "diets", "dislikes", "likes"):
+            if getattr(p, key):
+                row[key] = [getattr(x, "value", x) for x in getattr(p, key)]
+        if p.max_spice is not None:
+            row["max_spice"] = p.max_spice
+        diners.append(row)
+    return {
+        "replace": {
+            "id": old_id,
+            "name": _name(old),
+            "price": old.price,
+            "category": old.category.value,
+            "ok_for": edible_by(old, request.diners),
+        },
+        "order_stays": [
+            {
+                "id": i.dish_id,
+                "name": _name(known[i.dish_id]),
+                "quantity": i.quantity,
+                "price": known[i.dish_id].price,
+                "category": known[i.dish_id].category.value,
+                "ok_for": edible_by(known[i.dish_id], request.diners),
+            }
+            for i in others
+        ],
+        "diners": diners,
+        "removed": sorted(excluded),
+        "budget_per_person_all_in": request.budget_per_person,
+        "tax_rate": request.tax_rate,
+        "tip_rate": request.tip_rate,
+        "menu_price_left": round(cap - spent, 2),
+        "all_in_left_for_table": round(request.all_in_budget - now.total, 2),
+        "candidates": candidates,
+    }
+
+
+def _schema(ids: list[str]) -> dict:
+    return {
+        "type": "object",
+        "properties": {
+            "dish_id": {"type": "string", "enum": ids},
+            "reason": {"type": "string"},
+            "server_question": {"type": "string"},
+        },
+        "required": ["dish_id", "reason", "server_question"],
+    }
+
+
+def check(menu: Menu, request: TableRequest, plan: Plan, old_id: str, answer) -> tuple[list, list]:
+    """(problems, items): the whole new order through the same hard checks as a plan."""
+    known = {d.id: d for d in menu.dishes}
+    new_id = answer.get("dish_id") if isinstance(answer, dict) else None
+    if new_id not in known:
+        return [f"{new_id!r} is not a dish id on this menu."], []
+    if new_id == old_id or new_id in {i.dish_id for i in plan.items}:
+        return [f"{new_id} is already in the order; pick a dish that is not."], []
+    if known[new_id].category.value == "staple":
+        return [f"{new_id} is rice/staple; pick a shared dish."], []
+    if new_id in request.excluded_dish_ids:
+        return [f"{new_id} was removed by the table; pick another dish."], []
+    items = [
+        PlanItem(dish_id=new_id, quantity=1)
+        if i.dish_id == old_id
+        else PlanItem(dish_id=i.dish_id, quantity=i.quantity)
+        for i in plan.items
+    ]
+    names = {p.id: p.name for p in request.diners}
+    problems = []
+    for reason in validate_order(menu, request, items)["reasons"]:
+        detail = reason["detail"]
+        if reason["code"] == "insufficient_coverage":
+            pid = detail.split(":")[0]
+            detail = f"{names.get(pid, pid)} ({pid}) could no longer eat any dish in the order."
+        elif reason["code"] == "over_budget":
+            subtotal = sum(cents(known[i.dish_id].price) * i.quantity for i in items) / 100
+            cap = subtotal_cap(request.all_in_budget, 1, request.tax_rate, request.tip_rate)
+            detail = f"With {new_id} menu prices add up to ${subtotal:.2f}; the cap is ${cap:.2f}."
+        elif reason["code"] == "no_eligible_diner":
+            detail = f"{new_id}: nobody at the table can eat it under their allergies and diets."
+        problems.append(detail)
+    return list(dict.fromkeys(problems)), items
+
+
+def _price_note(menu: Menu, old_id: str, new_id: str) -> str:
+    diff = (cents(menu.dish(new_id).price) - cents(menu.dish(old_id).price)) / 100
+    if abs(diff) < 0.005:
+        return "same price"
+    return f"${abs(diff):.2f} {'cheaper' if diff < 0 else 'more'}"
+
+
+def _line(menu: Menu, request: TableRequest, old_id: str, new_id: str, why: str | None) -> str:
+    """'Swapped to X, Kevin can eat it, $3.00 cheaper.' The price part is always computed."""
+    new = menu.dish(new_id)
+    ok = set(edible_by(new, request.diners))
+    everyone = re.compile(r"\b(everyone|everybody|all (?:diners|diets|of you)|whole table)\b", re.IGNORECASE)
+    if why and len(ok) < len(request.diners) and everyone.search(why):
+        why = None  # the model claimed a dish suits everyone when the rules say it does not
+    if not why:
+        who = [p.name for p in request.diners if p.id in ok]
+        why = "everyone can eat it" if len(who) == len(request.diners) else f"for {', '.join(who)}"
+    why = why.strip().rstrip(".")
+    first = why.split(" ", 1)[0]
+    if first not in {p.name for p in request.diners}:  # keep names capitalised
+        why = why[:1].lower() + why[1:]
+    return f"Swapped to {_name(new)}, {why}, {_price_note(menu, old_id, new_id)}."
+
+
+def manual(menu: Menu, request: TableRequest, plan: Plan, old_id: str, new_id: str) -> SwapOutcome:
+    """The user's own pick: no model call, same hard checks, only that dish changes."""
+    request = _swap_request(request, old_id)
+    problems, items = check(menu, request, plan, old_id, {"dish_id": new_id})
+    if problems:
+        name = _name(menu.dish(new_id)) if new_id in {d.id for d in menu.dishes} else new_id
+        return SwapOutcome(
+            None, f"{name} can't replace {_name(menu.dish(old_id))}: " + " ".join(problems)
+        )
+    line = _line(menu, request, old_id, new_id, None)
+    answer = {"dish_id": new_id, "reason": line, "server_question": ""}
+    new_plan = _to_plan(menu, request, plan, old_id, answer, items)
+    return SwapOutcome(new_plan, line, new_id, line, 0)
+
+
+def _to_plan(menu: Menu, request: TableRequest, plan: Plan, old_id: str, answer, items) -> Plan:
+    """The new plan: other dishes keep their reasons and questions; totals are recomputed."""
+    new_id = answer["dish_id"]
+    rows = []
+    for i in plan.items:
+        if i.dish_id == old_id:
+            rows.append(
+                {
+                    "dish_id": new_id,
+                    "reason": str(answer.get("reason") or "")[:200],
+                    "server_question": str(answer.get("server_question") or ""),
+                }
+            )
+        elif menu.dish(i.dish_id).category.value != "staple":
+            rows.append(
+                {
+                    "dish_id": i.dish_id,
+                    "reason": i.reason or "",
+                    "server_question": i.server_question or "",
+                }
+            )
+    out = llm_planner._to_plan(menu, request, {"dishes": rows, "summary": plan.summary}, items)
+    kept_reasons = {i.dish_id: i.reason for i in plan.items if i.dish_id != old_id}
+    return out.model_copy(
+        update={
+            "items": [
+                i.model_copy(update={"reason": kept_reasons.get(i.dish_id) or i.reason})
+                for i in out.items
+            ],
+            "summary": None,  # the old summary described the old order
+        }
+    )
+
+
+def _ask(turns: list, schema: dict, client):
+    """One model call -> (JSON text, model used). Tests replace this with a fake."""
+    return llm.generate_json("plan", system=SYSTEM, turns=turns, schema=schema, client=client)
+
+
+def swap(menu: Menu, request: TableRequest, plan: Plan, old_id: str, client=None) -> SwapOutcome:
+    request = _swap_request(request, old_id)
+    payload = brief(menu, request, plan, old_id)
+    old_name = payload["replace"]["name"]
+    manual = "Pick a replacement from the menu instead."
+    if not llm_planner.enabled() and client is None:
+        return SwapOutcome(None, f"No AI model is configured on this server. {manual}")
+    if not payload["candidates"]:
+        return SwapOutcome(None, f"No other dish on this menu can replace {old_name}. {manual}")
+    schema = _schema([c["id"] for c in payload["candidates"]])
+    turns = [llm.Turn("user", "Brief:\n" + json.dumps(payload, ensure_ascii=False))]
+    history: list[list[str]] = []
+    used = None
+    for attempt in range(1 + MAX_RETRIES):
+        try:
+            text, used = _ask(turns, schema, client)
+        except Exception as exc:  # noqa: BLE001 - network, quota, provider errors
+            log.warning("AI swap failed: %s: %s", type(exc).__name__, str(exc)[:300])
+            return SwapOutcome(
+                None, f"The AI did not answer. {manual}", attempts=attempt, history=history
+            )
+        try:
+            answer = json.loads(text or "")
+        except ValueError:
+            answer = {}
+        problems, items = check(menu, request, plan, old_id, answer)
+        history.append(problems)
+        if not problems:
+            new_id = answer["dish_id"]
+            reason = _line(menu, request, old_id, new_id, str(answer.get("reason") or "")[:120])
+            answer = {**answer, "reason": reason}
+            new_plan = _to_plan(menu, request, plan, old_id, answer, items)
+            return SwapOutcome(
+                new_plan,
+                reason,
+                new_id,
+                reason,
+                attempt + 1,
+                history,
+                used,
+            )
+        turns += [
+            llm.Turn("model", text or ""),
+            llm.Turn(
+                "user",
+                "That swap breaks these rules:\n- "
+                + "\n- ".join(problems)
+                + "\nPick a different replacement in the same format.",
+            ),
+        ]
+    return SwapOutcome(
+        None,
+        f"The AI could not find a replacement for {old_name} that passes the checks "
+        f"({'; '.join(history[-1][:2])}). {manual}",
+        attempts=1 + MAX_RETRIES,
+        history=history,
+        model=used,
+    )

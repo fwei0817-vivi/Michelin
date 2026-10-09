@@ -131,6 +131,15 @@ export interface PlanRequest {
   explain?: boolean;
 }
 
+/** AI single-dish swap: only that dish changes; "failed" offers the manual pick. */
+export interface SwapResponse {
+  kind: "plan" | "failed";
+  plan?: Plan | null;
+  new_dish_id?: string | null;
+  message: string;
+  source_note?: string | null;
+}
+
 export interface PlanResponse {
   kind: "plan" | "conflict";
   plan?: Plan | null;

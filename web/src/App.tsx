@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AlertCircle, BookOpen, LoaderCircle, RefreshCw, Users, UtensilsCrossed, ArrowLeft } from "lucide-react";
-import { applyPeopleAction, deletePerson, getHealth, getMenu, getMenus, getProfiles, getSavedPeople, postPlan, savePerson } from "./api";
+import { applyPeopleAction, deletePerson, getHealth, getMenu, getMenus, getProfiles, getSavedPeople, postPlan, postSwap, savePerson } from "./api";
 import { ConflictNote } from "./components/ConflictNote";
 import { SetupFlow } from "./components/SetupFlow";
 import { Stepper } from "./components/Stepper";
@@ -40,7 +40,10 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [mock, setMock] = useState(false);
   const [step, setStep] = useState<"menu" | "table" | "plan">("menu");
-  const [undo, setUndo] = useState<{ locked: string[]; excluded: string[]; message: string } | null>(null);
+  // Undo after an AI swap restores the previous plan itself (no new model call).
+  const [undo, setUndo] = useState<{ locked: string[]; excluded: string[]; message: string; result?: Result } | null>(null);
+  const [swapping, setSwapping] = useState<string | null>(null);
+  const [swapFailed, setSwapFailed] = useState<{ id: string; message: string; manual: boolean } | null>(null);
   const [party, setParty] = useState(false);
   const [editing, setEditing] = useState<DinerProfile | "new" | null>(null);
   const [browser, setBrowser] = useState<{ mode: "browse" | "pick"; old: string | null; initialTab?: "browse" | "import"; photo?: File; fromStart?: boolean } | null>(null);
@@ -63,7 +66,7 @@ export default function App() {
     focusedStep.current = step;
   }, [step, starting, loading]);
   const editSettings = (s: DiningSettings) => { invalidate(); setSettings(s); };
-  const invalidate = () => { sequence.current++; setLoading(false); setError(null); setWaiter(false); setUndo(null); setNeedsReplan(true); };
+  const invalidate = () => { sequence.current++; setLoading(false); setError(null); setWaiter(false); setUndo(null); setSwapping(null); setSwapFailed(null); setNeedsReplan(true); };
 
   const generate = async (over: Partial<Context> & { locked?: string[]; excluded?: string[] } = {}) => {
     const m = over.menu ?? menu;
@@ -163,11 +166,35 @@ export default function App() {
   };
   const pickDish = (newId: string) => {
     const old = browser?.old;
-    setUndo({ locked: [...locked], excluded: [...excluded], message: old ? "Dish swapped. The table has been rebalanced." : "Dish added. The table has been rebalanced." });
+    if (old) { void swapDish(old, newId); return; }  // a swap changes only that dish
+    setUndo({ locked: [...locked], excluded: [...excluded], message: "Dish added. The table has been rebalanced." });
     const ex = [...new Set([...excluded.filter(x => x !== newId), ...(old ? [old] : [])])];
     const lk = [...locked.filter(x => x !== old && x !== newId), newId];
     setExcluded(ex); setLocked(lk); setBrowser(null);
     void generate({ locked: lk, excluded: ex });
+  };
+  /** Replace one dish; every other dish stays exactly as it is. With `pick` the user's own
+   *  choice is checked by the rules (no model call); without it the AI picks (one call). */
+  const swapDish = async (id: string, pick?: string) => {
+    const current = result;
+    const p = current?.response.plan;
+    if (!current || !p || stale) return;
+    const { menu: m, menuId: mid, diners: d, settings: s } = current.context;
+    const seq = ++sequence.current;
+    setBrowser(null); setSwapping(id); setSwapFailed(null); setUndo(null); setError(null);
+    try {
+      const out = await postSwap({ menu_id: mid, menu_override: m, diners: d,
+        budget_per_person: s.budget, tax_rate: s.tax, tip_rate: s.tip, style_preference: s.style,
+        locked_dish_ids: locked, excluded_dish_ids: excluded, plan: p, dish_id: id, new_dish_id: pick ?? null });
+      if (seq !== sequence.current) return;
+      if (out.kind === "plan" && out.plan && out.new_dish_id) {
+        setUndo({ locked: [...locked], excluded: [...excluded], result: current,
+          message: `${pick ? "" : "AI: "}${out.message} Nothing else changed.` });
+        setExcluded(prev => [...new Set([...prev, id])]); setLocked(prev => prev.filter(x => x !== id));
+        setResult({ ...current, response: { ...current.response, plan: out.plan, source_note: out.source_note ?? current.response.source_note } });
+      } else setSwapFailed({ id, message: out.message, manual: !!pick });
+    } catch (e) { if (seq === sequence.current) setSwapFailed({ id, message: `${errorText(e)} Pick a replacement from the menu instead.`, manual: !!pick }); }
+    finally { if (seq === sequence.current) setSwapping(null); }
   };
   const removeDish = (id: string) => {
     setUndo({ locked: [...locked], excluded: [...excluded], message: "Dish removed from suggestions. The table has been rebalanced." });
@@ -204,14 +231,16 @@ export default function App() {
       {error && <div className="notice error-notice" role="alert"><AlertCircle size={17}/><span>{error}</span>{menu && <button className="btn btn-quiet btn-small" onClick={() => void generate()} disabled={loading}>Try again</button>}</div>}
       {stale && <div className="notice" role="status"><RefreshCw size={17} className={loading ? "spin" : ""}/><span>{loading ? "Updating the dishes. Kept dishes stay in place…" : "Your table or budget changed. Update the dishes to match."}</span>{!loading && <button className="btn btn-quiet btn-small" onClick={() => void generate()} disabled={!menu?.verified}>Update dishes</button>}</div>}
       {menu && !menu.verified && <div className="notice"><BookOpen size={17}/><span>Menu changes need review before a new plan can be generated.</span><button className="btn btn-quiet btn-small" onClick={() => setBrowser({ mode: "browse", old: null })}>Review menu</button></div>}
-      {undo && !loading && <div className="change-notice" role="status"><span>{error || result?.response.kind === "conflict" ? "That change could not produce a new plan." : undo.message}</span><button className="text-button" onClick={() => { const previous = undo; setLocked(previous.locked); setExcluded(previous.excluded); setUndo(null); void generate({ locked: previous.locked, excluded: previous.excluded }); }}>Undo</button><button className="dismiss-change" aria-label="Dismiss update" onClick={() => setUndo(null)}>×</button></div>}
+      {undo && !loading && <div className="change-notice" role="status"><span>{error || result?.response.kind === "conflict" ? "That change could not produce a new plan." : undo.message}</span><button className="text-button" onClick={() => { const previous = undo; setLocked(previous.locked); setExcluded(previous.excluded); setUndo(null); if (previous.result) setResult(previous.result); else void generate({ locked: previous.locked, excluded: previous.excluded }); }}>Undo</button><button className="dismiss-change" aria-label="Dismiss update" onClick={() => setUndo(null)}>×</button></div>}
+      {swapFailed && !swapping && <div className="change-notice swap-failed" role="alert"><span>{swapFailed.message}</span><button className="text-button" onClick={() => { const id = swapFailed.id; setSwapFailed(null); setBrowser({ mode: "pick", old: id }); }}>{swapFailed.manual ? "Pick another dish" : "Pick from the menu"}</button><button className="dismiss-change" aria-label="Dismiss" onClick={() => setSwapFailed(null)}>×</button></div>}
+      {swapping && <div className="change-notice" role="status"><span>Swapping this one dish. Everything else stays.</span></div>}
       {(starting || (loading && !result)) ? <div className="empty-state" role="status"><LoaderCircle size={30} className="spin mx-auto"/><h2>{starting ? "Setting the table…" : "Finding a table that works…"}</h2><p>{starting || mock ? "Considering the menu, budget, and everyone's requirements." : "The AI picks dishes, then the rules check every allergy, diet and the budget. This can take up to about 30 seconds."}</p></div> : step !== "plan" && menu ? <SetupFlow step={step} onStep={s => s === "plan" ? (result && !stale ? setStep("plan") : void generate()) : setStep(s)} canPlan={!!result && diners.length > 0} photoReader={photoReader} onPhoto={f => setBrowser({ mode: "browse", old: null, initialTab: "import", photo: f, fromStart: true })} onPaste={() => setBrowser({ mode: "browse", old: null, initialTab: "import", fromStart: true })} menu={menu} diners={diners} saved={saved} onPick={pickSaved} onRemove={removeDiner} settings={settings} onMenu={() => setBrowser({ mode: "browse", old: null })} onSample={() => void startSample()} onChange={editSettings} onEdit={setEditing} onAdd={() => setEditing("new")} onPreset={choosePreset} onPlan={() => result && !stale ? setStep("plan") : void generate()} loading={loading} current={!!result && !stale && diners.length > 0} onApprove={() => { if (menu) { updateMenu({ ...menu, verified: true }); setStep("table"); } }}/> : stale && !loading ? <div className="empty-state"><h2>Update your meal</h2><p>The previous recommendation is no longer current.</p><button className="btn btn-primary" onClick={() => void generate()}>Update dishes</button></div> : plan && snapshot && diners.length ? <>
-        <Ticket key={result?.key + JSON.stringify(plan.items)} menu={snapshot.menu} plan={plan} diners={snapshot.diners.filter(d => diners.some(c => c.id === d.id))} settings={snapshot.settings} source={result?.response.source ?? "ai"} sourceNote={result?.response.source_note ?? null} locked={locked} stale={stale} loading={loading} onLock={id => { setUndo(null); setLocked(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]); }} onSwap={id => setBrowser({ mode: "pick", old: id })} onRemove={removeDish} onAdd={() => setBrowser({ mode: "pick", old: null })} onPlan={() => { setUndo(null); void generate(); }} onOrder={() => setWaiter(true)} canOrder={canOrder} onParty={() => setParty(true)}/>
+        <Ticket key={result?.key + JSON.stringify(plan.items)} menu={snapshot.menu} plan={plan} diners={snapshot.diners.filter(d => diners.some(c => c.id === d.id))} settings={snapshot.settings} source={result?.response.source ?? "ai"} sourceNote={result?.response.source_note ?? null} locked={locked} stale={stale} loading={loading} onLock={id => { setUndo(null); setLocked(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]); }} onSwap={id => setBrowser({ mode: "pick", old: id })} onAiSwap={id => void swapDish(id)} swapping={swapping} onRemove={removeDish} onAdd={() => setBrowser({ mode: "pick", old: null })} onPlan={() => { setUndo(null); void generate(); }} onOrder={() => setWaiter(true)} canOrder={canOrder} onParty={() => setParty(true)}/>
       </> : result?.response.conflict ? <><ConflictNote conflict={result.response.conflict} menu={result.context.menu} diners={result.context.diners} settings={result.context.settings} onRelax={applyRelaxation}/><div className="conflict-actions">{result.response.conflict.code?.startsWith("ai_") && <button className="btn btn-primary" onClick={() => void generate()} disabled={loading}><RefreshCw size={16} className={loading ? "spin" : ""}/>Try again</button>}<button className="btn btn-quiet" onClick={() => setParty(true)}><Users size={16}/>Edit people and budget</button><button className="btn btn-quiet" onClick={() => { setLocked([]); setExcluded([]); void generate({ locked: [], excluded: [] }); }} disabled={loading}><RefreshCw size={16}/>Reset dish choices</button><button className="btn btn-quiet" onClick={() => setBrowser({ mode: "browse", old: null })}><BookOpen size={16}/>Browse menu</button></div></> : <div className="empty-state"><UtensilsCrossed size={30} className="mx-auto"/><h2>{diners.length ? "Your next meal starts here" : "Who's joining the table?"}</h2><p>{diners.length ? "Review your group and choose a menu to plan a shared meal." : "Add diners and their dietary requirements to get started."}</p><button className="btn btn-primary" onClick={() => setParty(true)}><Users size={16}/>Set up the table</button>{!!diners.length && menu && <button className="btn btn-quiet ml-3" onClick={() => void generate()}>Plan the table</button>}</div>}
       {(locked.length > 0 || excluded.length > 0) && <div className="choices-summary"><span>{locked.length} kept · {excluded.length} removed from recommendations</span><button className="btn btn-outline btn-small" disabled={loading} onClick={() => { setLocked([]); setExcluded([]); void generate({ locked: [], excluded: [] }); }}>Reset dish choices</button></div>}
     </main>
     {party && <Sheet title="Your table" onClose={() => setParty(false)}><TableSetup diners={diners} saved={saved} onPick={pickSaved} onRemove={removeDiner} settings={settings} currency={menu?.currency ?? "USD"} onChange={editSettings} onEdit={setEditing} onAdd={() => setEditing("new")} onPreset={choosePreset} onPlan={() => { setParty(false); if (!result || stale) void generate(); }} loading={loading} current={!!result && !stale && diners.length > 0}/></Sheet>}
-    {browser && menu && <SwapSheet key={menuId} menu={menu} menus={menus} menuId={menuId} plan={stale ? null : plan} diners={diners} excluded={excluded} old={browser.old} mode={browser.mode} initialTab={browser.initialTab} initialPhoto={browser.photo ?? null} openAfterImport={!!browser.fromStart} tax={settings.tax} tip={settings.tip} onPick={pickDish} onClose={() => setBrowser(null)} onUpdate={updateMenu} onCreate={addMenu} onSelectMenu={selectMenu}/>}
+    {browser && menu && <SwapSheet key={menuId} menu={menu} menus={menus} menuId={menuId} plan={stale ? null : plan} diners={diners} excluded={excluded} old={browser.old} mode={browser.mode} initialTab={browser.initialTab} initialPhoto={browser.photo ?? null} openAfterImport={!!browser.fromStart} tax={settings.tax} tip={settings.tip} onPick={pickDish} onAiSwap={id => void swapDish(id)} onClose={() => setBrowser(null)} onUpdate={updateMenu} onCreate={addMenu} onSelectMenu={selectMenu}/>}
     {editing && <DinerSheet diner={editing === "new" ? null : editing} existingIds={[...new Set([...diners, ...saved].map(d => d.id))]} saved={[...diners, ...saved.filter(s => !diners.some(d => d.id === s.id))]} tonight={diners.map(d => d.id)} atTable={editing !== "new" && diners.some(d => d.id === editing.id)} onSave={saveDiner} onPick={p => { pickSaved(p); setEditing(null); }} onRemove={removeDiner} onForget={id => void forgetPerson(id)} onClose={() => setEditing(null)}/>}
     {waiter && canOrder && snapshot && plan && <WaiterView menu={snapshot.menu} plan={plan} diners={snapshot.diners} onClose={() => setWaiter(false)}/>}
   </div>;

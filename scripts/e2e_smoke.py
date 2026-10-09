@@ -243,15 +243,31 @@ async def run(url: str, shots: Path) -> None:
                 f"keep {name}",
             )
             second = await pg.locator(".dish-card").nth(1).locator("h2").inner_text()
-            await pg.get_by_role("button", name=f"Swap {second}").click()
+            before = await pg.locator(".dish-card h2").all_inner_texts()
+            await pg.get_by_role("button", name=f"Swap {second}", exact=True).click()
             await settle(pg)
-            await dialog(pg).locator("button:enabled", has_text="Swap in").first.click()
+            await dialog(pg).locator("button:enabled", has_text="Swap in").last.click()
             await settle(pg, 800)
             titles = await pg.locator(".dish-card h2").all_inner_texts()
-            check(
-                second not in titles and name in titles,
-                "swap replaces the dish and keeps the kept one",
-            )
+            if await pg.locator(".swap-failed").count():
+                check(
+                    "can't replace" in await pg.locator(".swap-failed").inner_text()
+                    and titles == before,
+                    "a pick that breaks a rule says why and changes nothing",
+                )
+                await pg.locator(".swap-failed .dismiss-change").click()
+            else:
+                others = [t for t in titles if t != titles[before.index(second)]]
+                check(
+                    second not in titles and others == [t for t in before if t != second],
+                    "manual swap changes only that dish and keeps the kept one",
+                )
+                await pg.locator(".change-notice").get_by_role("button", name="Undo").click()
+                await settle(pg, 800)
+                check(
+                    await pg.locator(".dish-card h2").all_inner_texts() == before,
+                    "undo restores the plan before the swap",
+                )
             third = await pg.locator(".dish-card").nth(2).locator("h2").inner_text()
             await pg.get_by_role("button", name=f"Remove {third}").click()
             await settle(pg, 800)

@@ -1,4 +1,4 @@
-import type { DinerProfile, Eligibility, Menu, MenuSummary, PlanRequest, PlanResponse, PreparedInput, ExtractionResponse, ProfileSnapshot } from "./types";
+import type { DinerProfile, Eligibility, Menu, MenuSummary, Plan, PlanRequest, PlanResponse, SwapResponse, PreparedInput, ExtractionResponse, ProfileSnapshot } from "./types";
 
 // Same origin by default. Set window.MICHELIN_API when the page is hosted elsewhere.
 const API: string = (window as unknown as { MICHELIN_API?: string }).MICHELIN_API ?? "";
@@ -24,6 +24,14 @@ export const getMenu = (slug: string) => request<Menu>(`/api/menus/${encodeURICo
 export const getProfiles = () => request<DinerProfile[]>("/api/profiles");
 export const postPlan = (body: PlanRequest) =>
   request<PlanResponse>("/api/plan", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+/** Let the AI replace one dish; every other dish in `plan` stays as it is. */
+export const postSwap = (body: PlanRequest & { plan: Plan; dish_id: string; new_dish_id?: string | null }) =>
+  request<SwapResponse>("/api/plan/swap", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
