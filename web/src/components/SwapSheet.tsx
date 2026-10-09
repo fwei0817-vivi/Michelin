@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import { ArrowLeftRight, Check, CheckCircle2, CircleHelp, FileImage, Flame, Leaf, Pencil, Plus, Search, Upload, UserX, Users } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowLeftRight, Check, CheckCircle2, CircleHelp, FileImage, Flame, Leaf, Pencil, Plus, Search, TriangleAlert, Upload, UserX, Users } from "lucide-react";
 import { evaluateMenu, parseMenu, getPreparedInputs, extractMenu } from "../api";
 import { CATEGORY_LABEL, currencySymbol, dishName, flagWording, money } from "../lib/format";
-import { DISH_PHOTOS } from "../lib/dishPhotos";
+import { photoFor } from "../lib/dishPhotos";
 import type { DinerProfile, Dish, Eligibility, Menu, MenuSummary, Plan, PreparedInput } from "../types";
 import { DishEditor } from "./DishEditor";
 import { Sheet } from "./Sheet";
@@ -17,6 +17,10 @@ interface Props {
   old: string | null;
   mode: "browse" | "pick";
   initialTab?: "browse" | "import";
+  /** A photo picked on the menu step: read it straight away. */
+  initialPhoto?: File | null;
+  /** Started from "Have the menu in front of you?": importing opens the new restaurant. */
+  openAfterImport?: boolean;
   tax: number;
   tip: number;
   onPick: (id: string) => void;
@@ -30,9 +34,21 @@ interface Props {
 const MAX_DISHES = 40;
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const SPICE = ["", "Mild", "Medium", "Hot"];
+// Animal products and allergens that a dish name often does not reveal.
+const HIDDEN = /pork|lard|beef|chicken|duck|lamb|meat|broth|stock|shrimp|prawn|crab|oyster|fish|anchov|scallop|egg|milk|butter|cream|cheese|peanut|sesame|nut/i;
+
+/** Ingredients the knowledge base expects but the menu does not print, in plain words. */
+function hiddenIngredients(d: Dish): string | null {
+  const name = `${d.name_en ?? ""} ${d.description_raw ?? ""}`.toLowerCase();
+  const printed = (ingredient: string) => ingredient.toLowerCase().split(/\W+/).some((w) => w.length >= 4 && name.includes(w));
+  const notes = d.main_ingredients
+    .filter((i) => i.tier !== "menu" && HIDDEN.test(i.name) && !printed(i.name))
+    .map((i) => (i.tier === "inferred" ? `usually made with ${i.name}` : `may hide ${i.name}, ask`));
+  return notes.length ? notes.join("; ") : null;
+}
 
 /** The restaurant menu drawer: browse and edit the menu, import one, or pick a dish to add or swap in. */
-export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mode, initialTab = "browse", tax, tip, onPick, onClose, onUpdate, onCreate, onSelectMenu }: Props) {
+export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mode, initialTab = "browse", initialPhoto = null, openAfterImport = false, tax, tip, onPick, onClose, onUpdate, onCreate, onSelectMenu }: Props) {
   const [created, setCreated] = useState<{ id: string; name: string } | null>(null);
   const [prepared, setPrepared] = useState<PreparedInput[]>([]);
   const [preparedId, setPreparedId] = useState("");
@@ -58,7 +74,8 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"browse" | "import">(initialTab);
   const [text, setText] = useState("");
-  const [photo, setPhoto] = useState<File | null>(null);
+  const [photo, setPhoto] = useState<File | null>(initialPhoto);
+  const [readNotice, setReadNotice] = useState("");
   const [parsing, setParsing] = useState(false);
   const [imported, setImported] = useState<Dish[]>([]);
   const [editor, setEditor] = useState<Dish | "new" | null>(null);
@@ -95,11 +112,13 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
   const hiddenByCategory = sameCategory && oldDish ? menu.dishes.filter((d) => !onSlip.has(d.id) && d.category !== oldDish.category).length : 0;
 
   const update = (next: Menu) => { setVerified(false); onUpdate(next); };
+  const autoRead = useRef(!!initialPhoto);
+  useEffect(() => { if (autoRead.current) { autoRead.current = false; void importRows(); } });
 
   const importRows = async () => {
     setParsing(true);
     setError("");
-    setImported([]); setExtractedMenu(null); setExtractionNotice(""); setCreated(null);
+    setImported([]); setExtractedMenu(null); setExtractionNotice(""); setCreated(null); setReadNotice("");
     try {
       let image_base64: string | undefined;
       if (photo) {
@@ -110,9 +129,11 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
           reader.readAsDataURL(photo);
         });
       }
-      const result = await parseMenu({ text, image_base64 });
+      const result = await parseMenu(photo ? { image_base64 } : { text });
       setImported(result.dishes);
       setText(result.text);
+      setReadNotice(result.notice ?? "");
+      if (result.restaurant_name && !restaurantName.trim()) setRestaurantName(result.restaurant_name);
       if (!result.dishes.length) setError("No name-and-price rows found. Put one dish per line, with the price at the end, then try again.");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -166,50 +187,12 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
 
         {tab === "import" ? (
           <div className="import-panel">
-            <section aria-label="Prepared model responses" className="import-review">
-              <h3>Use an assistant-prepared model response</h3>
-              <p className="helper">Exact-input replay from official-menu facts. No live model, OCR, or image recognition. New inputs need a prepared response or a future provider.</p>
-              <label className="field-label">Prepared menu<select aria-label="Prepared menu" className="field" value={preparedId} disabled={parsing} onChange={e => setPreparedId(e.target.value)}>
-                <option value="">Choose a prepared input…</option>
-                {prepared.map(p => <option key={p.menu_id} value={p.menu_id}>{p.menu_id} · {p.retrieved_at}</option>)}
-              </select></label>
-              <button className="btn btn-outline" disabled={parsing || !preparedId} onClick={() => void replay()}>Replay prepared response</button>
-              {extractionNotice && <p role="status">{extractionNotice}</p>}
-            </section>
             {created && (
               <div className="notice" role="status">
                 <span>Added “{created.name}” as a new restaurant. {menu.restaurant_name} is still selected.</span>
                 <button className="btn btn-outline btn-small" onClick={() => onSelectMenu(created.id)}>Switch to {created.name}</button>
               </div>
             )}
-            <p className="helper">Paste your menu below, one dish and price per line. After importing, review ingredients and dietary details before getting suggestions.</p>
-            <details className="photo-import">
-              <summary>Use a menu photo instead</summary>
-              <p className="helper">This separate path uses genuine local Tesseract OCR when installed, not prepared-response replay. It has not been evaluated on these restaurant images.</p>
-              <label className="upload-area">
-                <FileImage size={24} />
-                <strong>{photo?.name ?? "Choose a menu photo"}</strong>
-                <span>PNG, JPEG or WebP, up to 8 MB</span>
-                <input
-                  aria-label="Menu image"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f && f.size > MAX_IMAGE_BYTES) {
-                      setError("Choose an image smaller than 8 MB.");
-                      e.target.value = "";
-                      setPhoto(null);
-                    } else {
-                      setPhoto(f ?? null);
-                      setError("");
-                      setImported([]);
-                    }
-                  }}
-                />
-              </label>
-            </details>
-            {photo && <button className="btn btn-outline btn-small" onClick={() => setPhoto(null)}>Use text instead</button>}
             <div className="field-grid">
               <label className="field-label">
                 Use imported dishes
@@ -221,18 +204,57 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
               {importMode === "replace" && (
                 <label className="field-label">
                   New restaurant name
-                  <input className="field" value={restaurantName} onChange={(e) => setRestaurantName(e.target.value)} placeholder="Your restaurant" />
+                  <input className="field" value={restaurantName} onChange={(e) => setRestaurantName(e.target.value)} placeholder="Restaurant name" />
                 </label>
               )}
             </div>
-            <label className="field-label">
-              Menu text
-              <textarea className="field" rows={6} value={text} onChange={(e) => { setText(e.target.value); setImported([]); }} placeholder={"Garlic greens $12.95\nSteamed rice $2.00"} />
+            <label className="upload-area">
+              <FileImage size={24} />
+              <strong>{photo?.name ?? "Choose a menu photo"}</strong>
+              <span>PNG, JPEG or WebP, up to 8 MB. Names and prices are read from the photo; ingredients come from our reviewed knowledge base.</span>
+              <input
+                aria-label="Menu image"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f && f.size > MAX_IMAGE_BYTES) {
+                    setError("Choose an image smaller than 8 MB.");
+                    e.target.value = "";
+                    setPhoto(null);
+                  } else {
+                    setPhoto(f ?? null);
+                    setError("");
+                    setImported([]);
+                  }
+                }}
+              />
             </label>
+            {photo ? (
+              <button className="btn btn-outline btn-small" onClick={() => setPhoto(null)}>Paste text instead</button>
+            ) : (
+              <label className="field-label">
+                Or paste the menu text, one dish and price per line
+                <textarea aria-label="Menu text" className="field" rows={6} value={text} onChange={(e) => { setText(e.target.value); setImported([]); }} placeholder={"Garlic greens $12.95\nSteamed rice $2.00"} />
+              </label>
+            )}
             <button className="btn btn-primary" disabled={parsing || (!text.trim() && !photo)} onClick={() => void importRows()}>
               <Upload size={15} />
-              {parsing ? "Reading menu…" : "Extract dishes"}
+              {parsing ? "Reading menu…" : photo ? "Read the menu" : "Extract dishes"}
             </button>
+            {readNotice && <p className="helper" role="status">{readNotice}</p>}
+            <details className="photo-import">
+              <summary>Use an assistant-prepared model response</summary>
+              <section aria-label="Prepared model responses" className="import-review">
+                <p className="helper">Exact-input replay from official-menu facts. No live model, OCR, or image recognition.</p>
+                <label className="field-label">Prepared menu<select aria-label="Prepared menu" className="field" value={preparedId} disabled={parsing} onChange={e => setPreparedId(e.target.value)}>
+                  <option value="">Choose a prepared input…</option>
+                  {prepared.map(p => <option key={p.menu_id} value={p.menu_id}>{p.menu_id} · {p.retrieved_at}</option>)}
+                </select></label>
+                <button className="btn btn-outline" disabled={parsing || !preparedId} onClick={() => void replay()}>Replay prepared response</button>
+                {extractionNotice && <p role="status">{extractionNotice}</p>}
+              </section>
+            </details>
             {imported.length > 0 && (
               <div className="import-review">
                 <h3>{imported.length} dishes found</h3>
@@ -252,7 +274,9 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                       const fresh: Menu = extractedMenu
                         ? { ...extractedMenu, restaurant_name: name, verified: false }
                         : { restaurant_id: "", restaurant_name: name, cuisine: "custom", source: "User-imported menu", currency: menu.currency, verified: false, dishes: imported };
-                      setCreated({ id: onCreate(fresh), name });
+                      const id = onCreate(fresh);
+                      if (openAfterImport) onSelectMenu(id); // the button says so: an explicit switch
+                      else setCreated({ id, name });
                     } else {
                       update({ ...menu, verified: false, dishes: [...menu.dishes, ...imported] });
                       setTab("browse");
@@ -261,7 +285,9 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                   }}
                 >
                   <Check size={15} />
-                  {importMode === "replace" || extractedMenu ? "Add restaurant for review" : `Add to ${menu.restaurant_name} for review`}
+                  {importMode === "replace" || extractedMenu
+                    ? openAfterImport ? `Import and open ${restaurantName.trim() || extractedMenu?.restaurant_name || "this menu"}` : "Add restaurant for review"
+                    : `Add to ${menu.restaurant_name} for review`}
                 </button>
                 {importedCount > MAX_DISHES && <p className="helper">Use up to {MAX_DISHES} dishes in one menu.</p>}
               </div>
@@ -288,9 +314,9 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                   Same category only
                 </label>
               )}
-              <label>
-                <input type="checkbox" checked={allDiners} onChange={(e) => setAllDiners(e.target.checked)} />
-                Fits every diner's recorded needs
+              <label className="fit-switch">
+                <input type="checkbox" role="switch" checked={allDiners} disabled={!diners.length} onChange={(e) => setAllDiners(e.target.checked)} />
+                Only dishes that fit every diner
               </label>
               <span>
                 {candidates.length} {candidates.length === 1 ? "dish" : "dishes"}
@@ -321,7 +347,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                 const e = eligibility?.[d.id];
                 const qty = d.category === "staple" ? diners.length : 1;
                 const delta = ((d.price ?? 0) * qty - (oldDish?.price ?? 0) * oldQuantity) * (1 + tax + tip);
-                const photo = DISH_PHOTOS[d.id];
+                const photo = photoFor(d);
                 const notFor = e ? diners.filter((p) => !e.edible_by.includes(p.id)) : [];
                 const canPick = !!e && e.edible_by.length > 0 && d.price != null && menu.verified && diners.length > 0;
                 return (
@@ -337,7 +363,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                           <span>{CATEGORY_LABEL[d.category] ?? d.category}</span>
                           {d.is_vegetarian === true && <span><Leaf size={12} />{d.is_vegan ? "Vegan" : "Vegetarian"}</span>}
                           {d.spice_level != null && d.spice_level > 0 && <span><Flame size={12} />{SPICE[d.spice_level]}</span>}
-                          {e && notFor.length === 0 && <span title="Matches every diner's recorded requirements"><Users size={12} />Matches all {diners.length}</span>}
+                          {e && diners.length > 0 && notFor.length === 0 && <span title="Matches every diner's recorded requirements"><Users size={12} />Matches all {diners.length}</span>}
                         </div>
                         {!e ? (
                           <p className="helper">Checking diner requirements…</p>
@@ -348,6 +374,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                             </div>
                           )
                         )}
+                        {hiddenIngredients(d) && <p className="hidden-flag"><TriangleAlert size={13} /><span>Hidden ingredient: {hiddenIngredients(d)}</span></p>}
                         {e && e.questions.length > 0 && <p className="dish-question"><CircleHelp size={13} /><span>{e.questions[0]}</span></p>}
                         {d.allergens.length > 0 && (
                           <details className="dish-flags">
@@ -382,7 +409,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                 );
               })}
             </ul>
-            {candidates.some((d) => DISH_PHOTOS[d.id]) && <p className="photo-note">Photos show similar dishes, for illustration.</p>}
+            {candidates.some((d) => photoFor(d)) && <p className="photo-note">Photos show similar dishes, for illustration.</p>}
             {!candidates.length && (
               <div className="empty-state">
                 <h2>No matching dishes</h2>

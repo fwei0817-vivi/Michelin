@@ -429,3 +429,23 @@ details[open] > summary .who-count svg { transform: rotate(180deg); }
   .overlay, .dialog { position: static; display: block; height: auto; max-height: none; margin: 0; padding: 0; overflow: visible; background: transparent; box-shadow: none; }
   .topbar, .mobile-bar { display: none !important; }
 }
+
+/* Photo-first menu step and the stepper on every step (reference demo). */
+.step-link { display: inline-flex; align-items: center; gap: 8px; color: inherit; font: inherit; }
+.step-link:hover { color: var(--color-fg); text-decoration: underline; text-underline-offset: 4px; }
+.plan-steps { max-width: 1200px; margin: 0 auto; }
+.photo-first { padding: 22px; margin-bottom: 28px; border: 1px solid var(--color-line); border-radius: 12px; background: var(--color-brand-soft); }
+.photo-first h2 { font-size: 18px; font-weight: 650; }
+.photo-first > p { margin-top: 6px; max-width: 560px; font-size: 14px; line-height: 1.55; color: var(--color-fg-2); }
+.photo-first .setup-actions { margin-top: 16px; }
+.photo-first .helper { margin-top: 10px; }
+.setup-subhead { margin: 0 0 12px; font-size: 15px; font-weight: 650; color: var(--color-fg-2); }
+.menu-preview { display: flex; grid-template-columns: none; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
+.menu-preview li { flex: 0 0 120px; scroll-snap-align: start; }
+.hidden-flag { display: flex; align-items: flex-start; gap: 6px; margin-top: 6px; padding: 6px 8px; border-radius: 6px; background: var(--color-attention-soft); border: 1px solid var(--color-attention-line); color: var(--color-attention); font-size: 12.5px; line-height: 1.4; }
+.hidden-flag svg { flex-shrink: 0; margin-top: 1px; }
+.fit-switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.fit-switch input { appearance: none; width: 34px; height: 20px; border-radius: 10px; background: var(--color-line-strong); position: relative; transition: background .15s; cursor: pointer; }
+.fit-switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.fit-switch input:checked { background: var(--color-brand); }
+.fit-switch input:checked::after { transform: translateX(14px); }

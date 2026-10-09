@@ -51,7 +51,7 @@ export function WaiterView({ menu, plan, diners, onClose }: Props) {
         <div>
           <h2 className="text-[24px] font-semibold leading-tight">{menu.restaurant_name}</h2>
           <p className="mt-1 text-fg-2">Table of {n} · {plan.items.length} dishes to share</p>
-          <p className="mt-2 text-xs text-fg-3 print:hidden">Show this list to your server. This preview does not place an order.</p>
+          <p className="mt-2 text-xs text-fg-3 print:hidden">Show this to your server. This preview does not place an order.</p>
         </div>
 
         <ol className="mt-6 divide-y divide-line border-y border-line">

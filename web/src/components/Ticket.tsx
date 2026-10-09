@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ArrowLeftRight, Check, ChevronDown, CircleHelp, Flame, Leaf, LockKeyhole, Plus, RefreshCw, Trash2, UnlockKeyhole, UserX, Users, X } from "lucide-react";
 import { CATEGORY_LABEL, checkLabel, currencySymbol, dishName, flagWording, listNames, money } from "../lib/format";
 import { dishQuestions, heatNote } from "../lib/dietary";
-import { DISH_PHOTOS } from "../lib/dishPhotos";
+import { photoFor } from "../lib/dishPhotos";
 import { Coverage } from "./Coverage";
 import type { DinerProfile, DiningSettings, Dish, Menu, Plan, PlanItem } from "../types";
 
@@ -32,7 +32,7 @@ export function Ticket({ menu, plan, diners, settings, locked, stale, loading, o
   const byId: Record<string, Dish> = Object.fromEntries(menu.dishes.map((d) => [d.id, d]));
   const items = plan.items.filter((i) => byId[i.dish_id]);
   const cur = currencySymbol(menu.currency);
-  const remaining = settings.budget - plan.total;
+  const remaining = settings.budget - plan.per_person;
   const over = remaining < 0;
   const questions = plan.confirm_with_staff.length;
   const failed = plan.checks.filter((c) => !c.passed);
@@ -118,7 +118,7 @@ export function Ticket({ menu, plan, diners, settings, locked, stale, loading, o
                 <small>Find another dish on the menu</small>
               </button>
             </div>
-            {visible.some((i) => DISH_PHOTOS[i.dish_id]) && (
+            {visible.some((i) => photoFor(byId[i.dish_id])) && (
               <p className="photo-note">
                 Photos show similar dishes from Wikimedia Commons, for illustration. They are not this restaurant's food and say nothing about ingredients.
               </p>
@@ -162,14 +162,14 @@ export function Ticket({ menu, plan, diners, settings, locked, stale, loading, o
             <strong>{money(plan.per_person, cur)}</strong>
             <span>per person</span>
           </p>
-          <p className="bill-table">{money(plan.total, cur)} for the table, using selected tax and tip</p>
+          <p className="bill-table">{money(plan.total, cur)} for the table, including tax and tip</p>
           <div className={`bill-budget ${over ? "over" : ""}`}>
             <div className="bill-track">
-              <span style={{ width: `${Math.max(0, Math.min(100, (100 * plan.total) / settings.budget))}%` }} />
+              <span style={{ width: `${Math.max(0, Math.min(100, (100 * plan.per_person) / settings.budget))}%` }} />
             </div>
             {over
-              ? `${money(-remaining, cur)} over your ${money(settings.budget, cur)} table budget`
-              : `${money(remaining, cur)} under your ${money(settings.budget, cur)} table budget`}
+              ? `${money(-remaining, cur)} a person over your ${money(settings.budget, cur)} budget`
+              : `${money(remaining, cur)} a person under your ${money(settings.budget, cur)} budget`}
           </div>
           <ul className="bill-checks" aria-label="Plan checks">
             {plan.checks.map((c) => (
@@ -237,7 +237,7 @@ function DishCard({ item, dish, diners, cur, kept, expanded, disabled, onToggle,
   const notFor = diners.filter((p) => !item.edible_by.includes(p.id));
   const heat = heatNote(dish, diners.filter((p) => item.edible_by.includes(p.id)));
   const questions = dishQuestions(dish, diners);
-  const photo = DISH_PHOTOS[dish.id];
+  const photo = photoFor(dish);
   const panelId = `dish-panel-${dish.id}`;
   return (
     <article className={`dish-card ${kept ? "dish-kept" : ""} ${photo ? "has-photo" : ""}`} aria-label={name}>

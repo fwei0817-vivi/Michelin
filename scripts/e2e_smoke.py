@@ -77,14 +77,19 @@ async def run(url: str, shots: Path) -> None:
         pg.set_default_timeout(15000)
         errors: list[str] = []
         pg.on(
-            "console", lambda m: errors.append(f"console: {m.text}") if m.type == "error" else None
+            "console",
+            lambda m: (
+                errors.append(f"console: {m.text}")
+                if m.type == "error" and "503" not in m.text
+                else None
+            ),
         )
         pg.on("pageerror", lambda e: errors.append(f"pageerror: {e}"))
         pg.on(
             "response",
             lambda r: (
                 errors.append(f"HTTP {r.status} {r.request.method} {r.url}")
-                if r.status >= 500
+                if r.status >= 500 and not (r.status == 503 and "/api/menu/parse" in r.url)
                 else None
             ),
         )
@@ -154,6 +159,7 @@ async def run(url: str, shots: Path) -> None:
                 "Café China keeps its 40 dishes",
             )
             await dialog(pg).get_by_role("button", name="Import menu").click()
+            await dialog(pg).locator("summary", has_text="assistant-prepared").click()
             prepared = dialog(pg).get_by_label("Prepared menu")
             opts = await prepared.locator("option").evaluate_all(
                 "o => o.map(x => x.value).filter(Boolean)"
@@ -197,6 +203,12 @@ async def run(url: str, shots: Path) -> None:
             )
             h1, bill, cards = await plan_counts(pg)
             check(h1 == bill == cards, f"counts agree: heading {h1}, bill {bill}, cards {cards}")
+            steps = await pg.locator(".steps li").all_inner_texts()
+            current = await pg.locator(".steps li[aria-current=step]").inner_text()
+            check(
+                len(steps) == 3 and current.strip().endswith("Dishes"),
+                f"stepper on the plan: {steps}",
+            )
             await pg.get_by_role("button", name="Your table").click()
             target = int(await dialog(pg).locator("input").nth(1).input_value())
             await close_dialog(pg)
@@ -267,7 +279,7 @@ async def run(url: str, shots: Path) -> None:
             )
             check(any("Tom" in p and "dairy" in p for p in people), "edit Tom adds dairy")
             budget = dialog(pg).locator("input").first
-            await budget.fill("250")
+            await budget.fill("40")
             await budget.press("Tab")
             await dialog(pg).get_by_role("button", name="Update dishes").click()
             await settle(pg, 1000)
@@ -277,7 +289,9 @@ async def run(url: str, shots: Path) -> None:
             )
             notes = " ".join(await pg.locator(".not-for").all_inner_texts())
             check("Kevin" not in notes, "removed diner never appears in notes")
-            check("$250.00" in await pg.locator(".bill-budget").inner_text(), "budget shown")
+            check(
+                "$40.00" in await pg.locator(".bill-budget").inner_text(), "per-person budget shown"
+            )
 
         async def remember():
             await pg.locator("summary", has_text="Remember people").click()
@@ -320,7 +334,7 @@ async def run(url: str, shots: Path) -> None:
             check(await heading(pg) != "No order fits yet", "applying the suggestion gives a plan")
 
         async def switch_and_empty():
-            await pg.get_by_role("button", name="Menu", exact=True).click()
+            await pg.locator(".topbar").get_by_role("button", name="Menu", exact=True).click()
             await dialog(pg).locator("select").first.select_option("chili")
             await settle(pg)
             await close_dialog(pg)
@@ -349,9 +363,144 @@ async def run(url: str, shots: Path) -> None:
             while await pg.locator("[role=dialog]").count():
                 await close_dialog(pg)
 
+        await step("demo flow", demo(browser, url, shots, errors))
         for e in errors:
             check(False, e)
         await browser.close()
+
+
+SKY = """Eggplant with Garlic Sauce $15.50
+Mapo Tofu $14.95
+Kung Pao Chicken $16.95
+Dry Fried String Beans $14.50
+Sauteed Pea Shoots with Garlic $15.95
+Di San Xian $13.95
+Hot and Sour Soup $6.50
+Dan Dan Noodles $11.95
+Fish Fillet in Hot Chili Oil $24.95
+Twice Cooked Pork $17.95
+Cumin Lamb $19.95
+Smashed Cucumber Salad $7.95
+Scallion Pancake $6.95
+Vegetable Lo Mein $12.95
+Steamed Rice $2.00"""
+
+PNG = bytes.fromhex(
+    "89504e470d0a1a0a0000000d4948445200000001000000010806000000"
+    "1f15c4890000000d49444154789c6360f8cf00000301010018dd8db00000000049454e44ae426082"
+)
+
+
+async def demo(browser, url: str, shots: Path, errors: list[str]) -> None:
+    """The reference demo, step by step: photo-first menu, table of six, dishes, no-fit, ticket."""
+    pg = await browser.new_page(viewport={"width": 1280, "height": 900})
+    pg.set_default_timeout(15000)
+    pg.on("pageerror", lambda e: errors.append(f"pageerror: {e}"))
+    await pg.goto(url)
+    await pg.wait_for_selector("main h1")
+    await settle(pg)
+    text = await pg.locator("main").inner_text()
+    check(
+        "Have the menu in front of you?" in text and "Or use a saved menu" in text,
+        "photo-first menu step",
+    )
+    check(await pg.get_by_role("button", name="Take a photo").count() == 1, "Take a photo button")
+    await pg.screenshot(path=str(shots / "step1_choose_menu.png"), full_page=True)
+
+    # A photo with no reader configured: a clear message, not a crash.
+    await pg.get_by_label("Upload a menu photo").set_input_files(
+        {"name": "menu.png", "mimeType": "image/png", "buffer": PNG}
+    )
+    await settle(pg)
+    alert = await dialog(pg).get_by_role("alert").all_inner_texts()
+    check(bool(alert), f"photo without a reader explains itself: {alert}")
+    await close_dialog(pg)
+
+    await pg.get_by_role("button", name="Or paste the menu text").click()
+    await dialog(pg).get_by_label("New restaurant name").fill("Sky Pavilion")
+    await dialog(pg).get_by_label("Menu text").fill(SKY)
+    await dialog(pg).get_by_role("button", name="Extract dishes").click()
+    await settle(pg)
+    await pg.screenshot(path=str(shots / "step1b_import_review.png"), full_page=True)
+    await dialog(pg).get_by_role("button", name="Import and open Sky Pavilion").click()
+    await settle(pg)
+    check((await selected(pg)).startswith("Sky Pavilion"), "import from step 1 opens Sky Pavilion")
+    eggplant = dialog(pg).locator(".menu-row", has_text="Eggplant with Garlic Sauce")
+    flag = await eggplant.locator(".hidden-flag").all_inner_texts()
+    check(any("minced pork" in f for f in flag), f"eggplant flagged for hidden minced pork: {flag}")
+    await pg.screenshot(path=str(shots / "step1c_browse_hidden_flags.png"), full_page=True)
+    await dialog(pg).get_by_label("I have reviewed this menu against the source.").check()
+    await dialog(pg).get_by_role("button", name="Mark reviewed").click()
+    await dialog(pg).get_by_role("button", name="Use this menu").click()
+    await settle(pg)
+    check(
+        await pg.locator(".menu-choice h2").first.inner_text() == "Sky Pavilion",
+        "Sky Pavilion is the menu",
+    )
+
+    await pg.get_by_role("button", name="Continue with this menu").click()
+    people = [
+        ("Ana", ["vegetarian"], []),
+        ("Ben", [], ["shellfish"]),
+        ("Chen", ["no pork"], []),
+        ("Kevin", [], []),
+        ("Dana", [], []),
+        ("Eli", [], []),
+    ]
+    for name, diets, allergies in people:
+        await pg.get_by_role("button", name="Add a person").click()
+        await dialog(pg).get_by_label("Name").fill(name)
+        for d in diets:
+            await dialog(pg).get_by_role("button", name=d, exact=True).click()
+        for a in allergies:
+            await dialog(pg).get_by_role("button", name=a, exact=True).click()
+        if name == "Kevin":
+            await dialog(pg).get_by_role("button", name="no heat", exact=True).click()
+        await dialog(pg).get_by_role("button", name="Use for this meal").click()
+        await settle(pg)
+    budget = pg.locator(".setup-table input").first
+    await budget.fill("25")
+    await budget.press("Tab")
+    await pg.screenshot(path=str(shots / "step2_table.png"), full_page=True)
+    await pg.get_by_role("button", name="Find dishes").click()
+    await settle(pg, 1000)
+    check(
+        await heading(pg) != "No order fits yet",
+        f"Sky Pavilion plan for six at $25: {await heading(pg)}",
+    )
+    per = await pg.locator(".bill-total").inner_text()
+    check("per person" in per, f"bill: {per.splitlines()[0]}")
+    await pg.screenshot(path=str(shots / "step3_dishes.png"), full_page=True)
+    await pg.get_by_role("button", name="View order ticket").click()
+    await settle(pg)
+    ticket = await dialog(pg).inner_text()
+    check(
+        "Order ticket" in ticket
+        and "Table of 6" in ticket
+        and "Show this to your server" in ticket,
+        "order ticket",
+    )
+    await pg.screenshot(path=str(shots / "step3b_order_ticket.png"))
+    await close_dialog(pg)
+    await pg.get_by_role("button", name="Your table").click()
+    budget = dialog(pg).locator("input").first
+    await budget.fill("15")
+    await budget.press("Tab")
+    await dialog(pg).get_by_role("button", name="Update dishes").click()
+    await settle(pg, 1000)
+    text = await pg.locator("main").inner_text()
+    check(
+        "No order fits yet" in text and "$15.00 each with tax and tip" in text,
+        "no-fit names the per-person budget",
+    )
+    check(
+        "Raise the budget to" in text and "per person" in text, "no-fit offers a per-person raise"
+    )
+    await pg.screenshot(path=str(shots / "step3c_no_fit.png"), full_page=True)
+    await pg.get_by_role("button", name=re.compile("Apply")).first.click()
+    await settle(pg, 1000)
+    check(await heading(pg) != "No order fits yet", "Apply gives a plan")
+    await pg.close()
 
 
 def main() -> None:

@@ -161,15 +161,17 @@ def open_questions(dish: Dish, diners: list[DinerProfile]) -> list[str]:
         questions.append(
             f"{dish.name_en or dish.id}: portion unknown; planning estimates 1 unit per non-staple order, not people fed. Confirm size."
         )
-    if dish.spice_level is None:
+    if dish.spice_level is None and (not diners or any(p.max_spice is not None for p in diners)):
         questions.append(f"{dish.name_en or dish.id}: spice level unknown. Confirm heat.")
+    # One question per dish and concern, naming everyone it matters for (names, not ids).
+    who: dict[str, list[str]] = {}
     for person in diners:
-        result = assessment(dish, person)
-        questions.extend(
-            f"{dish.name_en or dish.id} / {person.id}: {r}"
-            for r in result["reasons"]
-            if r.startswith("Confirm")
-        )
+        for r in assessment(dish, person)["reasons"]:
+            if r.startswith("Confirm"):
+                who.setdefault(r, []).append(person.name or person.id)
+    questions.extend(
+        f"{dish.name_en or dish.id} (for {', '.join(names)}): {r}" for r, names in who.items()
+    )
     table_allergies = {a for p in diners for a in p.allergies}
     for f in dish.allergens:
         if f.tier == EvidenceTier.UNKNOWN and f.allergen in table_allergies:

@@ -103,3 +103,19 @@ def test_diets_ask_for_possible_ingredients():
     assert any("shellfish" in r for r in result["reasons"])
     # Without a positive vegetarian label it stays unresolved.
     assert not can_eat(dish.model_copy(update={"is_vegetarian": None}), david)
+
+
+def test_staff_questions_name_people_once():
+    from michelin.plan.edibility import open_questions
+
+    diners = [
+        DinerProfile(id="diner_1f3a", name="Ana", diets=[Diet.VEGETARIAN]),
+        DinerProfile(id="diner_9c2b", name="Chen", diets=[Diet.NO_PORK]),
+    ]
+    dish = Dish(id="eggplant", name_en="Eggplant", is_vegetarian=True, contains_pork=False,
+                spice_level=1, reviewed_allergens=list(Allergen),
+                main_ingredients=[{"name": "minced pork", "tier": "unknown"}])  # fmt: skip
+    qs = open_questions(dish, diners)
+    assert not any("diner_" in q for q in qs)
+    pork = [q for q in qs if "pork" in q]
+    assert len(pork) == 1 and "Ana" in pork[0] and "Chen" in pork[0]

@@ -4,7 +4,7 @@ import { ALLERGEN_LABEL, listNames } from "./format";
 /** Open questions are not confirmations. Keep them visible alongside eligibility. */
 export function dishQuestions(dish: Dish, diners: DinerProfile[]): string[] {
   const questions = [...dish.confirm_with_staff];
-  if (dish.spice_level == null) questions.push("Spice level unknown; confirm with staff.");
+  if (dish.spice_level == null && diners.some(p => p.max_spice != null)) questions.push("Spice level unknown; confirm with staff.");
   if (dish.portion == null) questions.push("Portion unknown; planning uses an estimate, not a people-fed guarantee.");
   for (const flag of dish.allergens) {
     if (flag.tier !== "unknown") continue;
@@ -14,7 +14,13 @@ export function dishQuestions(dish: Dish, diners: DinerProfile[]): string[] {
   return [...new Set(questions)];
 }
 
+// Names that usually mean heat, for imported dishes with no recorded spice level.
+const HOT_NAME = /chil(i|li)|spicy|hot (?!and sour)|sichuan|szechuan|kung ?pao|ma ?po|dan ?dan|ma ?la|numbing|麻辣|辣/i;
+
 export function heatNote(dish: Dish, diners: DinerProfile[]): string | null {
-  const affected = diners.filter(p => p.max_spice != null && dish.spice_level != null && dish.spice_level > p.max_spice);
-  return affected.length ? `Spicier than ${listNames(affected.map(p => p.name))} ${affected.length === 1 ? "prefers" : "prefer"}` : null;
+  const likelyHot = dish.spice_level == null && HOT_NAME.test(`${dish.name_en ?? ""} ${dish.name_zh ?? ""} ${dish.description_raw ?? ""}`);
+  const affected = diners.filter(p => p.max_spice != null && (dish.spice_level != null ? dish.spice_level > p.max_spice : likelyHot && p.max_spice < 2));
+  if (!affected.length) return null;
+  const names = listNames(affected.map(p => p.name));
+  return dish.spice_level != null ? `Spicier than ${names} ${affected.length === 1 ? "prefers" : "prefer"}` : `Likely spicier than ${names} ${affected.length === 1 ? "prefers" : "prefer"}`;
 }

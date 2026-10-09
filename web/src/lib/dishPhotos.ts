@@ -20,3 +20,26 @@ export const DISH_PHOTOS: Record<string, DishPhoto> = {
   dan_dan_noodles: photo("dan_dan_noodles", "Daderot", "CC0", "https://commons.wikimedia.org/wiki/File:Dan_dan_noodles_-_Pasadena,_CA.jpg"),
   steamed_rice: photo("steamed_rice", "Douglas Perkins", "CC0", "https://commons.wikimedia.org/wiki/File:A_bowl_of_rice.jpg"),
 };
+
+/** Same-style dishes on other menus share an illustration, matched on the printed name. */
+const BY_NAME: [RegExp, string][] = [
+  [/ma ?po|麻婆/i, "mapo_tofu"],
+  [/kung ?pao|gong ?bao|宫保/i, "kung_pao_chicken"],
+  [/dan ?dan|担担/i, "dan_dan_noodles"],
+  [/(string|green) beans?|四季豆|干煸豆角/i, "dry_fried_string_beans"],
+  [/hot (and|&) sour soup|酸辣汤/i, "hot_and_sour_soup"],
+  [/di ?san ?xian|地三鲜/i, "di_san_xian"],
+  [/cauliflower|花菜|菜花/i, "dry_pot_cauliflower"],
+  [/(fish|tilapia).*(chili|chilli|hot|spicy|sichuan)|boiled fish|水煮鱼/i, "boiled_fish_chili_oil"],
+  [/pork belly.*garlic|garlic.*pork belly|蒜泥白肉/i, "garlic_pork_belly"],
+  [/yu ?xiang|fish[- ]fragrant|鱼香肉丝/i, "yuxiang_shredded_pork"],
+  [/(white|steamed) rice|米饭/i, "steamed_rice"],
+  [/garlic.*(greens|choy|broccoli|pea shoots?|spinach|gai ?lan)|(greens|bok choy|pea shoots?).*garlic/i, "garlic_seasonal_greens"],
+];
+
+export function photoFor(dish: { id: string; name_en?: string | null; name_zh?: string | null }): DishPhoto | undefined {
+  if (DISH_PHOTOS[dish.id]) return DISH_PHOTOS[dish.id];
+  const text = `${dish.name_en ?? ""} ${dish.name_zh ?? ""}`;
+  const hit = BY_NAME.find(([re]) => re.test(text));
+  return hit ? DISH_PHOTOS[hit[1]] : undefined;
+}

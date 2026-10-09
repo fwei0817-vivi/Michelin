@@ -142,7 +142,13 @@ class PlanResponse(BaseModel):
 
 @app.get("/api/health")
 def health() -> dict:
-    return {"ok": True, "mock": MOCK}
+    import shutil
+
+    from michelin.parse import vision
+
+    # How a menu photo would be read: Gemini, local OCR, or not at all (paste text instead).
+    photo = "gemini" if vision.configured() else "ocr" if shutil.which("tesseract") else None
+    return {"ok": True, "mock": MOCK, "photo": photo}
 
 
 @app.get("/api/menus", response_model=list[MenuSummary])
@@ -381,6 +387,16 @@ class ParseRequest(BaseModel):
     image_base64: str | None = Field(default=None, max_length=12000000)
 
 
+def _image_mime(image: bytes) -> str | None:
+    if image.startswith(b"\x89PNG"):
+        return "image/png"
+    if image.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if image.startswith(b"RIFF") and image[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
 @app.post("/api/menu/parse")
 def parse_menu(req: ParseRequest) -> dict:
     import base64
@@ -389,9 +405,36 @@ def parse_menu(req: ParseRequest) -> dict:
     import subprocess
     import tempfile
 
-    from michelin.parse import label_imported, parse_text
+    from michelin.parse import label_imported, parse_text, vision
 
     text = req.text
+    if req.image_base64 and vision.configured():
+        try:
+            image = base64.b64decode(req.image_base64, validate=True)
+        except (ValueError, binascii.Error):
+            raise HTTPException(422, "The image could not be read.")
+        mime = _image_mime(image)
+        if mime is None:
+            raise HTTPException(422, "Use a PNG, JPEG, or WebP menu image.")
+        try:
+            dishes, printed_name = vision.read_menu_photo(image, mime)
+        except Exception:  # noqa: BLE001 - any provider failure falls back below
+            dishes, printed_name = None, None
+        if dishes:
+            return {
+                "dishes": [d.model_dump() for d in label_imported(dishes)],
+                "text": "\n".join(f"{d.name_en} {d.price:.2f}" for d in dishes),
+                "restaurant_name": printed_name,
+                "mode": "gemini",
+                "notice": "Gemini read the dish names and prices; ingredient labels come from "
+                "the reviewed knowledge base. Check every row against the photo.",
+            }
+        if dishes is not None:
+            raise HTTPException(422, "No dishes with prices were found. Try a clearer photo.")
+        if not shutil.which("tesseract"):
+            raise HTTPException(
+                502, "Gemini could not read this photo. Try again, or paste the menu text."
+            )
     if req.image_base64:
         binary = shutil.which("tesseract")
         if not binary:
