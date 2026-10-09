@@ -775,7 +775,7 @@ def evaluate_menu(req: EvaluateRequest) -> dict:
         d.id: {
             "edible_by": edible_by(d, req.diners),
             "blocked_for": {
-                p.id: assessment(d, p)["reasons"]
+                p.id: assessment(d, p)["blocking"]
                 for p in req.diners
                 if p.id not in edible_by(d, [p])
             },

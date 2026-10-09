@@ -219,3 +219,22 @@ def test_taste_chips_reach_the_planner_brief_and_never_exclude(sample_menu):
     )
     assert assessment(hot, zoe)["eligible"]  # tastes are soft: the rules never exclude for them
     assert "avoid spice 2-3 unless nothing else fits" in llm_planner.SYSTEM
+
+
+def test_cards_show_only_what_blocks_an_excluded_dish():
+    mia = DinerProfile(
+        id="mia", name="Mia", other_allergies=["cilantro"], other_diets=["no alcohol"]
+    )
+    soup = dish("Hot Soup", flag("cilantro", "allergy", "possible"))  # alcohol never answered
+    a = assessment(soup, mia)
+    assert not a["eligible"] and a["blocking"] == ["Confirm no_alcohol preparation"]
+    assert "Confirm cilantro, can it be left out" in a["reasons"]
+    greens = dish(
+        "Greens", flag("cilantro", "allergy", "possible"), flag("no alcohol", "diet", "no")
+    )
+    b = assessment(greens, mia)
+    assert (
+        b["eligible"]
+        and b["blocking"] == []
+        and b["reasons"] == ["Confirm cilantro, can it be left out"]
+    )

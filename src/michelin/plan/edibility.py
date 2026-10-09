@@ -169,6 +169,9 @@ def assessment(dish: Dish, diner: DinerProfile) -> dict:
         if unknown or ask
         else "validated_under_known_data",
         "reasons": conflicts + unknown + [q for q in ask if q not in unknown],
+        # What keeps the dish off this diner's list (empty when eligible): cards show only
+        # these for an excluded dish, not the questions that would merely be asked.
+        "blocking": conflicts + unknown,
         "eligible": not conflicts and not unknown,
     }
 
