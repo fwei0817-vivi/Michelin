@@ -76,16 +76,17 @@ def test_a_menu_without_plain_rice_can_still_be_planned():
     ]
 
 
-def test_photo_keeps_up_to_60_dishes_and_says_what_it_dropped(monkeypatch):
-    """Real menus run 45-55 dishes; the first 40 were kept silently."""
-    rows = [{"name_en": f"Dish {i}", "price": 5 + i % 7} for i in range(65)]
+def test_photo_keeps_up_to_80_dishes_and_says_what_it_dropped(monkeypatch):
+    """Real menus run 45-55 lines (more once choices become versions); the first 40 were
+    kept silently."""
+    rows = [{"name_en": f"Dish {i}", "price": 5 + i % 7} for i in range(85)]
     dishes = vision.rows_to_dishes(rows)
-    assert len(dishes) == 65
+    assert len(dishes) == 85
     monkeypatch.setattr(vision, "configured", lambda: True)
     monkeypatch.setattr(vision, "read_menu_photo", lambda *_a, **_k: (dishes, "Big", "m"))
     r = TestClient(api.app).post(
         "/api/menu/parse", json={"image_base64": base64.b64encode(PNG).decode()}
     )
     body = r.json()
-    assert r.status_code == 200 and len(body["dishes"]) == 60
-    assert "lists 65 dishes; only the first 60 were kept" in body["notice"]
+    assert r.status_code == 200 and len(body["dishes"]) == 80
+    assert "lists 85 dishes; only the first 80 were kept" in body["notice"]

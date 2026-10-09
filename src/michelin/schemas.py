@@ -11,7 +11,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-MAX_MENU_DISHES = 60  # real menus run 25-60 dishes; more than this is cut, with a notice
+MAX_MENU_DISHES = 80  # real menus run 25-60 lines, more once choices become versions; then cut
 
 
 class EvidenceTier(str, Enum):
@@ -50,6 +50,16 @@ class DishCategory(str, Enum):
     DESSERT = "dessert"
     DRINK = "drink"
     OTHER = "other"
+
+
+class MenuMark(str, Enum):
+    """A symbol the menu itself prints next to a dish, as its legend explains it."""
+
+    VEGETARIAN = "vegetarian"  # "V": menu-stated, stronger than the AI's guess
+    VEGAN = "vegan"
+    VEGETARIAN_POSSIBLE = "vegetarian_possible"  # "VP": only if ordered vegetarian; ask
+    GLUTEN_FREE = "gluten_free"  # stored and shown; never clears a wheat allergy
+    GLUTEN_FREE_POSSIBLE = "gluten_free_possible"
 
 
 class PortionClass(str, Enum):
@@ -111,6 +121,13 @@ class Dish(BaseModel):
     contains_pork: bool | None = None
     contains_beef: bool | None = None
     confirm_with_staff: list[str] = Field(default_factory=list)  # questions to ask the waiter
+    # As printed on the menu (photo import). One line with a choice of protein becomes one
+    # dish per choice ("Kung Pao (Tofu)", own price) sharing a family_id.
+    family_id: str | None = None
+    family_name: str | None = None  # "Kung Pao"
+    variant: str | None = None  # "Tofu"
+    menu_marks: list[MenuMark] = Field(default_factory=list)
+    menu_spice: int | None = Field(default=None, ge=0, le=3)  # pepper icons, capped at 3
 
 
 class Menu(BaseModel):

@@ -1,6 +1,6 @@
 """AI single-dish swap: replace one dish in a checked plan, keep every other dish as is.
 
-One model call (same provider and model as the planner; OpenRouter `google/gemini-2.5-flash`
+One model call (same provider and model as the planner; OpenRouter `google/gemini-3.5-flash-lite`
 when `OPENROUTER_API_KEY` is set) gets the current order, the dish to replace, the diners'
 allergies and diets, the money left (menu prices and all-in, tax and tip included) and the
 removed dishes. It answers one replacement dish id and a short reason. The rules then check
@@ -21,7 +21,7 @@ from michelin import llm
 from michelin.plan import llm_planner
 from michelin.plan.budget import cents, subtotal_cap, totals
 from michelin.plan.edibility import assessment, edible_by, risks
-from michelin.plan.validation import validate_order
+from michelin.plan.validation import family_repeats, validate_order
 from michelin.schemas import Menu, Plan, PlanItem, TableRequest
 
 log = logging.getLogger(__name__)
@@ -93,6 +93,8 @@ def brief(menu: Menu, request: TableRequest, plan: Plan, old_id: str) -> dict:
         ok = edible_by(d, request.diners)
         if not ok:
             continue
+        if family_repeats(menu, request, [*(i.dish_id for i in others), d.id]):
+            continue  # a second version of a dish that stays, feeding nobody new
         row = {"id": d.id, "name": _name(d), "price": d.price, "category": d.category.value}
         row["ok_for"] = ok
         if d.spice_level is not None:
@@ -168,10 +170,11 @@ def _schema(ids: list[str]) -> dict:
 
 
 def check(
-    menu: Menu, request: TableRequest, plan: Plan, old_id: str | None, answer
+    menu: Menu, request: TableRequest, plan: Plan, old_id: str | None, answer, family=True
 ) -> tuple[list, list]:
     """(problems, items): the whole new order through the same hard checks as a plan.
-    old_id None adds the dish (before the rice) instead of replacing one."""
+    old_id None adds the dish (before the rice) instead of replacing one. family=False for
+    the user's own pick: they may want two versions of one dish."""
     known = {d.id: d for d in menu.dishes}
     new_id = answer.get("dish_id") if isinstance(answer, dict) else None
     # Messages name dishes, never ids: the user sees them when a swap is refused.
@@ -197,7 +200,7 @@ def check(
         )
         items.insert(at, PlanItem(dish_id=new_id, quantity=1))
     names = {p.id: p.name for p in request.diners}
-    problems = []
+    problems = family_repeats(menu, request, [i.dish_id for i in items]) if family else []
     for reason in validate_order(menu, request, items)["reasons"]:
         detail = reason["detail"]
         if reason["code"] == "insufficient_coverage":
@@ -315,7 +318,7 @@ def manual(
     request = picked(request, new_id)
     if old_id is not None:
         request = _swap_request(request, old_id)
-    problems, items = check(menu, request, plan, old_id, {"dish_id": new_id})
+    problems, items = check(menu, request, plan, old_id, {"dish_id": new_id}, family=False)
     if problems:
         name = _name(menu.dish(new_id)) if new_id in {d.id for d in menu.dishes} else new_id
         what = "be added" if old_id is None else f"replace {_name(menu.dish(old_id))}"

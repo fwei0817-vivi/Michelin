@@ -45,7 +45,15 @@ export interface Dish {
   contains_pork: boolean | null;
   contains_beef: boolean | null;
   confirm_with_staff: string[];
+  /** One printed line with a choice of protein: one dish per choice, sharing a family. */
+  family_id?: string | null;
+  family_name?: string | null;
+  variant?: string | null;
+  menu_marks?: MenuMark[];
+  menu_spice?: number | null;
 }
+
+export type MenuMark = "vegetarian" | "vegan" | "vegetarian_possible" | "gluten_free" | "gluten_free_possible";
 
 export interface Menu {
   restaurant_id: string;

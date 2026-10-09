@@ -1,8 +1,10 @@
 """Read dish names and prices from a menu photo with Gemini.
 
-Gemini only transcribes what is printed: names (English and Chinese), prices, and the
-printed description. It never labels ingredients or diets; the AI dish facts (plan/dish_facts.py) do that from
-the name, and every row still needs human review before planning.
+Gemini only transcribes what is printed: names (English and Chinese), prices, the printed
+description, the menu's own marks (V, VP, GF, peppers) and choices ("Chicken | Beef +$2"),
+which become one orderable dish per choice. It never guesses ingredients or diets; the AI
+dish facts (plan/dish_facts.py) do that from the name, and every row still needs human
+review before planning.
 
 Configuration lives in `michelin.llm`: OPENROUTER_API_KEY (preferred), else GEMINI_API_KEY
 (free Google AI Studio key) or MICHELIN_GEMINI_BACKEND=vertex. MICHELIN_VISION=off never calls a model; MICHELIN_VISION_MODEL
@@ -22,19 +24,37 @@ from michelin.schemas import MAX_MENU_DISHES, Dish
 
 MAX_DISHES = MAX_MENU_DISHES
 
-PROMPT = """Transcribe the dishes on this restaurant menu photo.
+PROMPT = """Transcribe this restaurant menu photo into orderable dishes.
 
 For every dish with a readable price, return its English name as printed, its Chinese name \
-if printed, the price as a number (no currency sign), and any printed description. Copy what \
-is printed; do not translate, guess ingredients, or add dishes that are not on the photo. \
-Skip section headings, drinks and lines without a price. If nothing is readable, return an \
-empty list. Also return the restaurant's name as printed on the menu (usually at the top), \
-or an empty string if no name is printed."""
+if printed, the price as a number (no currency sign), and the printed description (the \
+ingredient line under the name). Copy what is printed; do not translate, guess ingredients, \
+or add dishes that are not on the photo. Skip section headings, drinks and lines without a \
+price. If nothing is readable, return an empty list.
+
+Choices: when one line offers a choice of protein or version ("Kung Pao Chicken / Beef / \
+Shrimp / Tofu", "Choice of Chicken | Beef +$2 | Shrimp +$4 | Tofu", "Sesame Chicken or \
+Tofu"), return it ONCE with "choices": one entry per option, each with its own name as \
+printed ("Chicken", "Beef", "Tofu"), its Chinese if printed (鸡, 牛, 豆腐), and its full \
+price (the dish price plus any printed surcharge: $18 and "Beef +$2" is 20). Then "name_en" \
+and "name_zh" are the dish name WITHOUT the options ("Kung Pao", "宫保"), and "description" \
+leaves out the choice list. Sizes or piece counts are not choices.
+
+Marks: read the menu's legend (often at the bottom: e.g. a pepper = spicy, V = vegetarian, \
+VG or a different V = vegan, VP = vegetarian possible, GF = gluten free, GP = gluten-free \
+possible). For each dish return "marks" (what its printed symbols mean, using that legend) \
+and "spicy": how many pepper/chili icons it has (0 if none). Return "legend" as printed.
+
+Also return the restaurant's name as printed on the menu (usually at the top), or an empty \
+string if no name is printed."""
+
+MARKS = ["vegetarian", "vegan", "vegetarian_possible", "gluten_free", "gluten_free_possible"]
 
 SCHEMA = {
     "type": "object",
     "properties": {
         "restaurant_name": {"type": "string"},
+        "legend": {"type": "string"},
         "dishes": {
             "type": "array",
             "items": {
@@ -44,6 +64,20 @@ SCHEMA = {
                     "name_zh": {"type": "string"},
                     "price": {"type": "number"},
                     "description": {"type": "string"},
+                    "marks": {"type": "array", "items": {"type": "string", "enum": MARKS}},
+                    "spicy": {"type": "integer"},
+                    "choices": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name_en": {"type": "string"},
+                                "name_zh": {"type": "string"},
+                                "price": {"type": "number"},
+                            },
+                            "required": ["name_en"],
+                        },
+                    },
                 },
                 "required": ["name_en", "price"],
             },
@@ -73,26 +107,134 @@ def slug(text: str, taken: set[str]) -> str:
     return out
 
 
+def _price(value) -> float | None:
+    if not isinstance(value, int | float) or isinstance(value, bool) or not 0 <= value <= 1000:
+        return None
+    return round(float(value), 2)
+
+
+def _marks(row: dict) -> list[str]:
+    marks = row.get("marks") if isinstance(row.get("marks"), list) else []
+    return list(dict.fromkeys(m for m in marks if m in MARKS))
+
+
+def _spicy(row: dict) -> int | None:
+    n = row.get("spicy")
+    if not isinstance(n, int) or isinstance(n, bool) or n <= 0:
+        return None
+    return min(n, 3)
+
+
+_SEP = re.compile(r"\s*[/|｜]\s*")
+_CHOICE_LINE = re.compile(r"\bchoice of\b.*$", re.IGNORECASE | re.DOTALL)
+
+
+def _base_zh(zh: str | None, options: list[str]) -> str | None:
+    """'宫保鸡 / 牛 / 虾 / 豆腐' with options 鸡, 牛, 虾, 豆腐 -> '宫保': one option's Chinese
+    never leaks into another version (the tofu version is not 宫保鸡)."""
+    if not zh:
+        return None
+    split = _SEP.split(zh)
+    base = split[0].strip()
+    for option in sorted(options, key=len, reverse=True):
+        if option and base.endswith(option) and base != option:
+            return base[: -len(option)].strip() or None
+    if len(split) > 1 or any(o and o in base for o in options):
+        return None  # options we cannot separate: no Chinese name beats a wrong one
+    return base or None
+
+
+def _stem(name: str, options: list[str]) -> str:
+    """'Sesame Chicken or Tofu' -> 'Sesame', 'Yu Xiang Pork' -> 'Yu Xiang' (options Pork,
+    Chicken, ...): the tofu version must not be called 'Yu Xiang Pork (Tofu)', or its name
+    would say pork (live run, Cafe Mandarin)."""
+    words = sorted({re.escape(o) for o in options if o}, key=len, reverse=True)
+    if not words:
+        return name
+    alt = "|".join(words)
+    pattern = rf"\b(?:{alt})\b(?:\s*(?:\bor\b|/|,|&|\band\b)\s*\b(?:{alt})\b)*"
+    stem = re.sub(pattern, " ", name, flags=re.IGNORECASE)
+    stem = re.sub(r"\s+", " ", stem).strip(" -/,&")
+    stem = re.sub(r"\s+(?:or|and|with|w/)$", "", stem, flags=re.IGNORECASE).strip()
+    return stem or name
+
+
 def rows_to_dishes(rows: list[dict]) -> list[Dish]:
+    """The model's rows as orderable dishes. A line with choices becomes one dish per choice
+    ("Kung Pao (Tofu)", its own price), grouped by family_id so the app shows them as one
+    dish and the planner picks a version. Printed marks and peppers are kept as printed."""
     taken: set[str] = set()
+    families: set[str] = set()
     dishes = []
     for row in rows:  # the API keeps the first MAX_DISHES and says how many it dropped
-        name = str(row.get("name_en") or "").strip()
-        price = row.get("price")
-        if not name or not isinstance(price, int | float) or price < 0 or price > 1000:
+        if not isinstance(row, dict):
             continue
+        name = str(row.get("name_en") or "").strip()
+        price = _price(row.get("price"))
         zh = str(row.get("name_zh") or "").strip() or None
         desc = str(row.get("description") or "").strip()
-        dishes.append(
-            Dish(
-                id=slug(name, taken),
-                name_en=name,
-                name_zh=zh,
-                price=round(float(price), 2),
-                description_raw=" ".join(x for x in (zh, name, desc) if x),
-                confirm_with_staff=[f"Confirm ingredients, allergens, and preparation for {name}."],
+        marks, spicy = _marks(row), _spicy(row)
+        choices = [
+            c
+            for c in (row.get("choices") if isinstance(row.get("choices"), list) else [])
+            if isinstance(c, dict) and str(c.get("name_en") or "").strip()
+        ]
+        if not name:
+            continue
+        if len(choices) < 2:
+            if price is None:
+                continue
+            dishes.append(
+                Dish(
+                    id=slug(name, taken),
+                    name_en=name,
+                    name_zh=zh,
+                    price=price,
+                    description_raw=" ".join(x for x in (zh, name, desc) if x),
+                    menu_marks=marks,
+                    menu_spice=spicy,
+                    confirm_with_staff=[
+                        f"Confirm ingredients, allergens, and preparation for {name}."
+                    ],
+                )
             )
-        )
+            continue
+        family = slug(name, families)
+        stem = _stem(name, [str(c["name_en"]).strip() for c in choices])
+        base_zh = _base_zh(zh, [str(c.get("name_zh") or "").strip() for c in choices])
+        desc = _CHOICE_LINE.sub("", desc).strip(" |,;")
+        for c in choices:
+            option = str(c["name_en"]).strip()
+            option_zh = str(c.get("name_zh") or "").strip() or None
+            cost = _price(c.get("price"))
+            if cost is not None and price is not None and cost < price / 2:
+                cost = round(price + cost, 2)  # the model gave the surcharge ("+$2"), not the price
+            cost = cost if cost is not None else price
+            if cost is None:
+                continue
+            label = f"{stem} ({option})"
+            label_zh = (
+                f"{base_zh}（{option_zh}）"
+                if base_zh and option_zh and option_zh not in base_zh
+                else base_zh or option_zh
+            )
+            dishes.append(
+                Dish(
+                    id=slug(label, taken),
+                    name_en=label,
+                    name_zh=label_zh,
+                    price=cost,
+                    description_raw=" ".join(x for x in (label_zh, label, desc) if x),
+                    family_id=family,
+                    family_name=name,
+                    variant=option,
+                    menu_marks=marks,
+                    menu_spice=spicy,
+                    confirm_with_staff=[
+                        f"Confirm ingredients, allergens, and preparation for {label}."
+                    ],
+                )
+            )
     return dishes
 
 
@@ -111,12 +253,15 @@ def nice_name(name: str) -> str:
     )
 
 
-def read_menu_photo(image: bytes, mime: str, client=None) -> tuple[list[Dish], str | None, str]:
-    """(dishes, restaurant name if printed, model used). Raises gemini.RateLimited on 429,
+def read_menu_photo(
+    image: bytes, mime: str, client=None
+) -> tuple[list[Dish], str | None, str, str]:
+    """(dishes, restaurant name if printed, model used, printed legend). Raises gemini.RateLimited on 429,
     and other errors on transport or malformed output."""
     text, used = llm.generate_json(
         "vision", turns=[llm.Turn("user", PROMPT, image, mime)], schema=SCHEMA, client=client
     )
     body = json.loads(text)
     name = nice_name(str(body.get("restaurant_name") or "").strip()) or None
-    return rows_to_dishes(body.get("dishes") or []), name, used
+    legend = str(body.get("legend") or "").strip()[:300]
+    return rows_to_dishes(body.get("dishes") or []), name, used, legend

@@ -88,7 +88,19 @@ Answer for every dish id given, in the same order. Do not invent dishes."""
 
 def bare(menu: Menu) -> Menu:
     """The menu as the user sees it printed: name, price and category, nothing inferred."""
-    keep = ("id", "name_zh", "name_en", "price", "category", "description_raw")
+    keep = (
+        "id",
+        "name_zh",
+        "name_en",
+        "price",
+        "category",
+        "description_raw",
+        "family_id",
+        "family_name",
+        "variant",
+        "menu_marks",
+        "menu_spice",
+    )
     return menu.model_copy(
         update={"dishes": [Dish(**{k: getattr(d, k) for k in keep}) for d in menu.dishes]}
     )
@@ -183,6 +195,17 @@ _FLOOR: list[tuple[str, dict]] = [
     # Classic hot and sour soup has shredded pork: treat it as likely, not just possible.
     (r"hot (?:and|&) sour soup|酸辣汤", {"pork": "yes"}),
     (r"seafood|\bxo\b|oyster|海鲜", {"allergens": ["shellfish"]}),
+    # Shrimp in wontons, spring rolls, siu mai and stuffed dim sum; oyster sauce on greens and
+    # broccoli. gemini-3.5-flash-lite left these out where 2.5 Flash said "possible" (test
+    # menus, 2026-10-09): the floor keeps the shellfish question whatever the model.
+    (
+        (
+            r"(?<!vegetable )(?<!vegetarian )(?:spring|egg) rolls?|春卷|wontons?|won tons?|馄饨|"
+            r"餛飩|抄手|siu ?mai|shu ?mai|烧卖|燒賣|stuffed (?:eggplant|peppers?|tofu|bean curd)|"
+            r"chinese broccoli|gai ?lan|芥兰|芥蘭|bok ?choy|choy ?sum|菜心|\bbroccoli\b"
+        ),
+        {"allergens": ["shellfish"]},
+    ),
     (r"fish[ -]?fragrant|yu[ -]?xiang|鱼香", {"allergens": ["fish"], "pork": "possible"}),
     (
         r"noodle|lo ?mein|chow ?mein|fried rice|dumpling|wonton|pancake|batter|tempura|面|饺",
@@ -194,7 +217,9 @@ _FLOOR: list[tuple[str, dict]] = [
 # Ingredients the menu itself prints ("Pork and bean paste bolognese and soft tofu"). A dish
 # name can hide them; the printed words cannot be ignored (test menus: Hunan Slurp's "Soft
 # Tofu" was offered to a vegetarian although the menu says pork).
-_NOT = r"(?<!no )(?<!without )(?<!vegetarian )(?<!vegan )(?<!mock )(?<!faux )(?<!imitation )"
+_NOT = (
+    r"(?<!no )(?<!w/o )(?<!without )(?<!vegetarian )(?<!vegan )(?<!mock )(?<!faux )(?<!imitation )"
+)
 _SU = r"(?<!素)"  # 素鸡 / 素鸭: tofu "chicken" and "duck"
 _PRINTED: list[tuple[str, str]] = [
     (
@@ -242,7 +267,8 @@ def _scan(text: str) -> dict:
     out: dict = {"allergens": [], "ingredients": []}
     if not text:
         return out
-    choice = re.search(r"choice of|\bor\b|/|\+\s*\$", text) is not None
+    # "w/ Pork Belly" is "with", not a choice; "w/o" is "without".
+    choice = re.search(r"choice of|\bor\b|(?<!\bw)/|\+\s*\$", text) is not None
     certainty = "possible" if choice else "likely"
     diet = "possible" if choice else "no"
     for pattern, what in _PRINTED:
@@ -282,6 +308,69 @@ def printed(dish: Dish) -> dict:
             if part.get(k) == "no":
                 out[k] = "no"
     return out if out.get("allergens") or out.get("ingredients") else {}
+
+
+_ANIMAL = re.compile(
+    r"pork|lard|bacon|\bham\b|beef|chicken|duck|lamb|mutton|meat|broth|stock|fish|anchov|"
+    r"shrimp|prawn|crab|oyster|scallop|clam|mussel|squid|gelatin",
+    re.IGNORECASE,
+)
+VEG_ON_REQUEST = "meat or meat stock unless ordered vegetarian"
+
+
+def _marks(dish: Dish) -> set[str]:
+    return {getattr(m, "value", m) for m in dish.menu_marks}
+
+
+def marked(facts: dict, dish: Dish, menu_says: dict) -> dict:
+    """The menu's own marks on top of the AI's guess and the code's floor.
+
+    - "V" / vegan: menu-stated, so stronger than a guess: vegetarian (and vegan) "yes", no
+      pork or beef. What the AI or the floor only guessed (chicken stock, oyster sauce, lard)
+      stays as a "possible" ingredient: a question for the server, not a refusal.
+    - "VP": vegetarian only if ordered that way: "possible", with that question.
+    - Words printed in the dish's own name or description always win: "V" next to "Pork
+      Belly" is not vegetarian (safety first). Allergies are never cleared by a mark.
+    """
+    marks = _marks(dish)
+    vegan = "vegan" in marks
+    veg = vegan or "vegetarian" in marks
+    vp = "vegetarian_possible" in marks and not veg
+    if not (veg or vp) or menu_says.get("vegetarian") == "no":
+        return facts
+    printed_names = {i["name"].lower() for i in menu_says.get("ingredients", [])}
+    printed_allergens = {a["allergen"] for a in menu_says.get("allergens", [])}
+    soften = {"fish", "shellfish"} | ({"egg", "dairy"} if vegan else set())
+    out = dict(facts)
+    out["ingredients"] = [
+        {**i, "certainty": "possible"}
+        if _ANIMAL.search(i["name"]) and i["name"].lower() not in printed_names
+        else i
+        for i in facts.get("ingredients", [])
+    ]
+    out["allergens"] = [
+        {**a, "certainty": "possible"}
+        if a["allergen"] in soften and a["allergen"] not in printed_allergens
+        else a
+        for a in facts.get("allergens", [])
+    ]
+    for k in ("pork", "beef"):
+        if menu_says.get(k):
+            continue  # printed (e.g. a choice that may be pork): keep it
+        if veg:
+            out[k] = "no"
+        elif out.get(k) == "yes":
+            out[k] = "possible"
+    if veg:
+        out["vegetarian"] = "yes"
+        if vegan:
+            out["vegan"] = "yes"
+    else:
+        out["vegetarian"] = "possible"
+        if out.get("vegan") == "yes":
+            out["vegan"] = "possible"
+        out["ingredients"].append({"name": VEG_ON_REQUEST, "certainty": "possible"})
+    return out
 
 
 def floor(dish: Dish) -> dict:
@@ -486,8 +575,19 @@ def apply(dish: Dish, facts: dict | None) -> Dish:
             update["contains_beef"] = True
         if base.get("vegetarian") == "no":
             update["is_vegetarian"] = update["is_vegan"] = False
+        marks = _marks(dish)
+        if marks & {"vegetarian", "vegan"} and base.get("vegetarian") != "no":
+            # Menu-stated, without the AI: the diet is known, the allergens are not.
+            update |= {"is_vegetarian": True, "contains_pork": base.get("pork") == "yes"}
+            update |= {"contains_beef": base.get("beef") == "yes"}
+            if "vegan" in marks:
+                update["is_vegan"] = True
+            if base.get("pork") == "possible":
+                update["contains_pork"] = None
+        if dish.menu_spice is not None:
+            update["spice_level"] = dish.menu_spice
         return dish.model_copy(update=update)
-    facts = _floor_merge(facts, base)
+    facts = marked(_floor_merge(facts, base), dish, menu_says)
     label = dish.name_en or dish.name_zh or dish.id
     tier = {"likely": EvidenceTier.INFERRED, "possible": EvidenceTier.UNKNOWN}
     ingredients = [
@@ -496,6 +596,8 @@ def apply(dish: Dish, facts: dict | None) -> Dish:
             tier=tier[i["certainty"]],
             note="printed on the menu"
             if any(i["name"] == j["name"] for j in menu_says.get("ingredients", []))
+            else "the menu marks it vegetarian on request"
+            if i["name"] == VEG_ON_REQUEST
             else "AI, from the dish name",
         )
         for i in facts.get("ingredients", [])
@@ -523,7 +625,9 @@ def apply(dish: Dish, facts: dict | None) -> Dish:
     # A "possible" diet risk becomes a server question about the ingredient the AI named.
     # Only ingredients that can touch an allergy or diet ("bamboo shoots" asks nothing).
     questions = [
-        f"{label}: ask whether it uses {i['name']}."
+        f"{label}: order it vegetarian and ask whether it uses meat or meat stock."
+        if i["name"] == VEG_ON_REQUEST
+        else f"{label}: ask whether it uses {i['name']}."
         for i in facts.get("ingredients", [])
         if i["certainty"] == "possible" and _sensitive(i["name"])
     ]
@@ -540,7 +644,7 @@ def apply(dish: Dish, facts: dict | None) -> Dish:
             "contains_beef": None if beef is None else beef == "yes",
             "is_vegetarian": is_veg,
             "is_vegan": is_vegan,
-            "spice_level": facts.get("spice"),
+            "spice_level": dish.menu_spice if dish.menu_spice is not None else facts.get("spice"),
             "confirm_with_staff": list(dict.fromkeys(questions))[:6],
             # The printed category wins; the AI only fills in "other" (e.g. imported rice).
             "category": _category(dish, facts.get("category")),

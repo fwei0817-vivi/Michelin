@@ -27,6 +27,35 @@ def staple_required(menu: Menu, request: TableRequest) -> bool:
     )
 
 
+def family_repeats(menu: Menu, request: TableRequest, dish_ids) -> list[str]:
+    """Versions of one menu line ("Kung Pao (Chicken)", "Kung Pao (Tofu)") are one dish: the
+    AI orders a second version only when each feeds someone the other cannot (tofu for the
+    vegetarian, chicken for the shellfish-allergic friend), and never three. The user's own
+    picks are not limited by this."""
+    known = {d.id: d for d in menu.dishes}
+    groups: dict[str, list] = {}
+    for i in dict.fromkeys(dish_ids):
+        d = known.get(i)
+        if d is not None and d.family_id:
+            groups.setdefault(d.family_id, []).append(d)
+    out = []
+    for family, dishes in groups.items():
+        if len(dishes) < 2:
+            continue
+        name = dishes[0].family_name or family
+        both = " and ".join(d.name_en or d.id for d in dishes)
+        if len(dishes) > 2:
+            out.append(f"{both} are {len(dishes)} versions of {name}; order at most two.")
+            continue
+        a, b = (set(edible_by(d, request.diners)) for d in dishes)
+        if a <= b or b <= a:
+            out.append(
+                f"{both} are two versions of {name}, and one feeds nobody the other doesn't; "
+                "order just one of them."
+            )
+    return out
+
+
 def validate_order(menu: Menu, request: TableRequest, items: list[PlanItem]) -> dict:
     reasons = []
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeftRight, Check, CheckCircle2, CircleHelp, FileImage, Flame, Leaf, Pencil, Plus, Search, Sparkles, TriangleAlert, Upload, UserX, Users } from "lucide-react";
 import { evaluateMenu, parseMenu, getPreparedInputs, extractMenu } from "../api";
-import { CATEGORY_LABEL, currencySymbol, dishName, flagWording, listNames, money, niceName } from "../lib/format";
+import { CATEGORY_LABEL, MARK_LABEL, currencySymbol, dishName, flagWording, groupFamilies, listNames, markWording, money, niceName, siblings } from "../lib/format";
 import { photoFor } from "../lib/dishPhotos";
 import { concernedBy, mayHideMeat } from "../lib/dietary";
 import type { DinerProfile, Dish, Eligibility, Menu, MenuSummary, Plan, PreparedInput } from "../types";
@@ -36,7 +36,7 @@ interface Props {
   onSelectMenu: (id: string) => void;
 }
 
-const MAX_DISHES = 60; // same as the server (MAX_MENU_DISHES)
+const MAX_DISHES = 80; // same as the server (MAX_MENU_DISHES)
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const SPICE = ["", "Mild", "Medium", "Hot"];
 // Animal products and allergens that a dish name often does not reveal.
@@ -161,6 +161,9 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
   candidates.sort((a, b) =>
     (eligibility?.[b.id]?.edible_by.length ?? 0) - (eligibility?.[a.id]?.edible_by.length ?? 0) || (a.price ?? Infinity) - (b.price ?? Infinity),
   );
+  // Versions of one printed line stay together; when swapping a version, its siblings first.
+  const listed = groupFamilies(candidates);
+  if (oldDish?.family_id) listed.sort((a, b) => Number(b.family_id === oldDish.family_id) - Number(a.family_id === oldDish.family_id));
   const hiddenByCategory = sameCategory && oldDish ? menu.dishes.filter((d) => !onSlip.has(d.id) && d.category !== oldDish.category).length : 0;
 
   const update = (next: Menu) => { setVerified(false); onUpdate(next); };
@@ -315,11 +318,20 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
             </details>
             {imported.length > 0 && (
               <div className="import-review">
-                <h3>{imported.length} dishes found</h3>
+                <h3>{imported.length} dishes found{imported.some((d) => d.family_id) ? ` (${new Set(imported.filter((d) => d.family_id).map((d) => d.family_id)).size} with a choice, one dish per choice)` : ""}</h3>
                 <ul>
-                  {imported.map((d) => (
-                    <li key={d.id}><span>{dishName(d)}</span><strong>{money(d.price, cur)}</strong></li>
-                  ))}
+                  {groupFamilies(imported).map((d, k, all) => {
+                    if (d.family_id && all[k - 1]?.family_id === d.family_id) return null;
+                    const mark = markWording(d);
+                    if (!d.family_id) return <li key={d.id}><span>{dishName(d)}{mark && <small className="menu-mark"> {mark}</small>}</span><strong>{money(d.price, cur)}</strong></li>;
+                    const versions = all.filter((x) => x.family_id === d.family_id);
+                    return (
+                      <li key={d.family_id} className="family-row">
+                        <span>{d.family_name ?? dishName(d)}{mark && <small className="menu-mark"> {mark}</small>}<small className="family-choices">Choice of {versions.map((x) => `${x.variant} ${money(x.price, cur)}`).join(" · ")}</small></span>
+                        <strong>{versions.length} choices</strong>
+                      </li>
+                    );
+                  })}
                 </ul>
                 <button
                   className="btn btn-outline"
@@ -401,8 +413,10 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
             )}
             {!eligibility && !error && <p role="status" className="helper">Checking diner requirements…</p>}
             <ul className="menu-list">
-              {candidates.map((d) => {
+              {listed.map((d) => {
                 const e = eligibility?.[d.id];
+                const others = siblings(d, menu.dishes);
+                const versionOnSlip = others.filter((x) => onSlip.has(x.id) && x.id !== old);
                 const qty = d.category === "staple" ? diners.length : 1;
                 const delta = ((d.price ?? 0) * qty - (oldDish?.price ?? 0) * oldQuantity) * (1 + tax + tip);
                 const photo = photoFor(d);
@@ -422,6 +436,8 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                         </div>
                         <div className="dish-tags">
                           <span>{CATEGORY_LABEL[d.category] ?? d.category}</span>
+                          {d.family_id && <span className="tag-family" title={`One of ${others.length + 1} choices on the menu line ${d.family_name ?? ""}`}>{others.length + 1} choices of {d.family_name}</span>}
+                          {(d.menu_marks ?? []).map((m) => <span key={m} className="tag-mark" title={MARK_LABEL[m]?.title}>Menu: {MARK_LABEL[m]?.short ?? m}</span>)}
                           {d.is_vegetarian === true && <span className={mayHideMeat(d) ? "tag-ask" : ""}><Leaf size={12} />{d.is_vegan ? "Vegan" : "Vegetarian"}{mayHideMeat(d) ? "? ask" : ""}</span>}
                           {d.spice_level != null && d.spice_level > 0 && <span><Flame size={12} />{SPICE[d.spice_level]}</span>}
                           {e && diners.length > 0 && notFor.length === 0 && <span title="Matches every diner's recorded requirements"><Users size={12} />Matches all {diners.length}{mayHideMeat(d) ? " if confirmed" : ""}</span>}
@@ -444,6 +460,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                             <p>{d.allergens.map(flagWording).join("; ")}</p>
                           </details>
                         )}
+                        {versionOnSlip.length > 0 && <small className="menu-restore">Another version is on this order: {versionOnSlip.map(dishName).join(", ")}. Usually one version is enough.</small>}
                         {excluded.includes(d.id) && <small className="menu-restore">Removed earlier. Choosing it brings it back.</small>}
                       </div>
                       <div className="menu-row-side">

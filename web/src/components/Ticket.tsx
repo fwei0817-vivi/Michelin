@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowLeftRight, Check, ChevronDown, CircleHelp, Flame, Leaf, ListChecks, LockKeyhole, Plus, RefreshCw, Sparkles, Trash2, UnlockKeyhole, UserX, Users, X } from "lucide-react";
-import { CATEGORY_LABEL, checkLabel, currencySymbol, dishName, flagWording, listNames, money } from "../lib/format";
+import { CATEGORY_LABEL, MARK_LABEL, checkLabel, currencySymbol, dishName, flagWording, listNames, money } from "../lib/format";
 import { dishQuestions, heatNote, mayHideMeat } from "../lib/dietary";
 import { photoFor } from "../lib/dishPhotos";
 import { Coverage } from "./Coverage";
@@ -290,6 +290,7 @@ function DishCard({ item, dish, diners, cur, kept, ai, expanded, disabled, onTog
             {SPICE[dish.spice_level]}
           </span>
         )}
+        {(dish.menu_marks ?? []).map((m) => <span key={m} className="tag-mark" title={MARK_LABEL[m]?.title}>Menu: {MARK_LABEL[m]?.short ?? m}</span>)}
         {dish.cooking_method && <span>{dish.cooking_method.replaceAll("_", " ")}</span>}
         {notFor.length === 0 && (
           <span title="Matches every diner's recorded requirements" className={unsure ? "tag-ask" : ""}>

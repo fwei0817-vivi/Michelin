@@ -79,6 +79,39 @@ export function listNames(names: string[]): string {
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 
+export const MARK_LABEL: Record<string, { short: string; title: string }> = {
+  vegetarian: { short: "V", title: "The menu marks it vegetarian" },
+  vegan: { short: "Vegan", title: "The menu marks it vegan" },
+  vegetarian_possible: { short: "VP", title: "The menu says it can be made vegetarian: order it that way and ask" },
+  gluten_free: { short: "GF", title: "The menu marks it gluten free (shown only; a wheat allergy still asks)" },
+  gluten_free_possible: { short: "GP", title: "The menu says it can be made gluten free" },
+};
+
+/** "Menu: VP, GF": the marks printed next to the dish. */
+export function markWording(d: Dish): string | null {
+  const marks = (d.menu_marks ?? []).map((m) => MARK_LABEL[m]?.short ?? m);
+  return marks.length ? `Menu: ${marks.join(", ")}` : null;
+}
+
+/** Versions of one printed line ("Kung Pao (Chicken)", "Kung Pao (Tofu)") side by side,
+ * where the first of them falls; everything else keeps its order. */
+export function groupFamilies<T extends Dish>(dishes: T[]): T[] {
+  const out: T[] = [];
+  const done = new Set<string>();
+  for (const d of dishes) {
+    if (!d.family_id) { out.push(d); continue; }
+    if (done.has(d.family_id)) continue;
+    done.add(d.family_id);
+    out.push(...dishes.filter((x) => x.family_id === d.family_id));
+  }
+  return out;
+}
+
+/** "Kung Pao (Tofu)" and its siblings on this menu. */
+export function siblings(d: Dish, dishes: Dish[]): Dish[] {
+  return d.family_id ? dishes.filter((x) => x.family_id === d.family_id && x.id !== d.id) : [];
+}
+
 export function dishName(d: Dish): string {
   return d.name_en || d.id.replaceAll("_", " ");
 }

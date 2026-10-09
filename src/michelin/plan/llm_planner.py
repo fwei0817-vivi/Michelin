@@ -44,7 +44,7 @@ from michelin.plan.edibility import (
     risks,
 )
 from michelin.plan.score import variety_score
-from michelin.plan.validation import validate_order
+from michelin.plan.validation import family_repeats, validate_order
 from michelin.schemas import Check, Conflict, Menu, Plan, PlanItem, Relaxation, TableRequest
 
 log = logging.getLogger("michelin")
@@ -74,6 +74,10 @@ large or money is tight; make sure each diner has a fair share they can eat. The
 vary the main ingredients and cooking methods, and follow each diner's "notes" (their tastes \
 in their own words, e.g. "no spicy food, loves tofu": do not recommend a hot dish to someone \
 who avoids heat, in "for" or in the reason).
+Dishes with the same "family" are one menu line in different versions (e.g. Kung Pao \
+with chicken, beef, shrimp or tofu, each with its own price and "ok_for"): choose the \
+version that suits the table. Order a second version of the same family only if each \
+version feeds someone the other cannot; never three.
 For each dish give one short, specific reason (under 20 words) naming who it suits.
 For each chosen dish that has "risks", write "server_question": ONE plain sentence (under \
 25 words) that a diner would actually say to the server: name the dish, ask about every \
@@ -159,6 +163,11 @@ def brief(menu: Menu, request: TableRequest, hint: rules_hints.Hints | None = No
         }
         if d.name_zh:
             row["zh"] = d.name_zh
+        if d.family_id:
+            row["family"] = d.family_name or d.family_id
+            row["version"] = d.variant
+        if d.menu_marks:
+            row["menu_marks"] = [getattr(m, "value", m).replace("_", " ") for m in d.menu_marks]
         if d.spice_level is not None:
             row["spice"] = d.spice_level
         elif HOT_NAME.search(f"{d.name_en or ''} {d.name_zh or ''} {d.description_raw or ''}"):
@@ -302,6 +311,7 @@ def check(menu: Menu, request: TableRequest, answer: dict, staples) -> tuple[lis
                     "diets; do not count it for them."
                 )
         items.append(PlanItem(dish_id=dish_id, quantity=1))
+    problems += family_repeats(menu, request, [i.dish_id for i in items])
     items += [PlanItem(dish_id=d.id, quantity=request.n_diners) for d in staples]
     report = validate_order(menu, request, items)
     for reason in report["reasons"]:
@@ -679,6 +689,8 @@ def coverage_fix(menu: Menu, request: TableRequest, items) -> CoverageFix | None
         for drop, option in options:
             after = spread(menu, request, option)
             if after <= now or not validate_order(menu, request, option)["valid"]:
+                continue
+            if family_repeats(menu, request, [i.dish_id for i in option]):
                 continue
             subtotal = sum(cents(known[i.dish_id].price) * i.quantity for i in option)
             key = (after, drop is not None, -subtotal)  # most even, then a swap, then cheaper

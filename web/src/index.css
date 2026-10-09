@@ -534,3 +534,7 @@ details[open] > summary .who-count svg { transform: rotate(180deg); }
 .check-chip input { width: 15px; height: 15px; accent-color: var(--color-brand); }
 .check-chip.on { border-color: var(--color-brand); background: var(--color-brand-soft); color: var(--color-fg); font-weight: 600; }
 .check-chip:focus-within { outline: 2px solid var(--color-brand); outline-offset: 2px; }
+.dish-tags .tag-family, .tag-family { color: #3b4a7a; background: #eef1fb; border-color: #d3daf2; }
+.dish-tags .tag-mark, .tag-mark { color: #2f6b3a; background: #ecf7ee; border-color: #cde6d2; }
+.import-review .menu-mark { color: #2f6b3a; font-weight: 600; }
+.import-review .family-choices { display: block; color: var(--muted, #666); font-size: 0.82em; margin-top: 2px; }

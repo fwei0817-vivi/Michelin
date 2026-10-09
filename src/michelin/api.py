@@ -552,6 +552,27 @@ def _with_facts(dishes: list) -> tuple[list, tuple[int, int]]:
     return menu.dishes, dish_facts.coverage(menu)
 
 
+def _choices_notice(dishes: list, legend: str) -> str:
+    """' 3 dishes come with a choice (Kung Pao: Chicken, Beef, Shrimp, Tofu); each choice is
+    its own dish with its own price. Menu marks read: V Vegetarian, VP Vegetarian Possible.'"""
+    families: dict[str, list] = {}
+    for d in dishes:
+        if d.family_id:
+            families.setdefault(d.family_id, []).append(d)
+    out = ""
+    if families:
+        first = next(iter(families.values()))
+        example = f"{first[0].family_name}: {', '.join(d.variant for d in first)}"
+        n = len(families)
+        out += (
+            f" {n} {'dish comes' if n == 1 else 'dishes come'} with a choice ({example}); each "
+            "choice is listed as its own dish with its own price."
+        )
+    if legend and any(d.menu_marks or d.menu_spice for d in dishes):
+        out += f" Menu marks read from the legend: {legend.rstrip('.')}."
+    return out
+
+
 @app.post("/api/menu/parse")
 def parse_menu(req: ParseRequest) -> dict:
     import base64
@@ -575,15 +596,19 @@ def parse_menu(req: ParseRequest) -> dict:
         if mime is None:
             raise HTTPException(422, "Use a PNG, JPEG, or WebP menu image.")
         try:
-            dishes, printed_name, used_model = vision.read_menu_photo(image, mime)
+            read = vision.read_menu_photo(image, mime)
+            dishes, printed_name, used_model = read[:3]
+            legend = read[3] if len(read) > 3 else ""
         except gemini.RateLimited as exc:
             limited, limit_message = "daily_limit" if exc.daily else "rate_limited", str(exc)
             dishes, printed_name, used_model, fallback = None, None, None, limited
+            legend = ""
         except Exception as exc:  # noqa: BLE001 - any provider failure falls back below
             logging.getLogger("michelin").warning(
                 "Gemini photo read failed: %s: %s", type(exc).__name__, str(exc)[:300]
             )
             dishes, printed_name, used_model, fallback = None, None, None, "failed"
+            legend = ""
         dropped = max(0, len(dishes or []) - MAX_MENU_DISHES)
         dishes = (dishes or [])[:MAX_MENU_DISHES] if dishes is not None else None
         if dishes:
@@ -593,7 +618,9 @@ def parse_menu(req: ParseRequest) -> dict:
                 "text": "\n".join(f"{d.name_en} {d.price:.2f}" for d in dishes),
                 "restaurant_name": printed_name,
                 "mode": "gemini",
+                "legend": legend,
                 "notice": _parse_notice("gemini", facts, vision_model=used_model)
+                + _choices_notice(dishes, legend)
                 + (
                     f" The photo lists {dropped + MAX_MENU_DISHES} dishes; only the first "
                     f"{MAX_MENU_DISHES} were kept. Add any others by hand."
