@@ -109,6 +109,7 @@ export interface Relaxation {
 }
 
 export interface Conflict {
+  code?: string;
   message: string;
   relaxations: Relaxation[];
 }
@@ -135,6 +136,8 @@ export interface PlanResponse {
   plan?: Plan | null;
   conflict?: Conflict | null;
   subtotal_cap: number;
+  source?: "ai" | "mock";
+  source_note?: string | null;
 }
 
 export interface DiningSettings {

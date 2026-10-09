@@ -24,7 +24,7 @@ export function ConflictNote({ conflict, menu, diners, settings, onRelax }: Prop
   const cap = subtotalCap(settings.budget, n, settings.tax, settings.tip);
   return (
     <section className="sheet conflict" aria-labelledby="conflict-heading">
-      <h2 id="conflict-heading">No order fits yet</h2>
+      <h2 id="conflict-heading">{conflict.code === "ai_unavailable" ? "No recommendation right now" : "No order fits yet"}</h2>
       <p className="conflict-context">
         {menu.restaurant_name}, {n} {n === 1 ? "diner" : "diners"} at {money(settings.budget, cur)} each with tax and tip, so about {money(cap, cur)} in
         menu prices for the table. Everyone needs {settings.minDishes} {settings.minDishes === 1 ? "dish" : "dishes"} they can eat.

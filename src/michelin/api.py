@@ -21,9 +21,9 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from michelin.explain import explain
 from michelin.meal import PeopleAction, apply_people_action
 from michelin.model import ExtractionRequest, ExtractionResponse
+from michelin.plan import llm_planner
 from michelin.plan.budget import subtotal_cap, totals
 from michelin.plan.edibility import assessment, edible_by, open_questions
-from michelin.plan.optimizer import solve
 from michelin.plan.portions import required_range, total_units
 from michelin.plan.score import variety_score
 from michelin.plan.validation import validate_order
@@ -133,6 +133,8 @@ class PlanResponse(BaseModel):
     plan: Plan | None = None
     conflict: Conflict | None = None
     subtotal_cap: float
+    source: str = "ai"  # "ai" (the LLM chose, the rules checked) | "mock" (fixture demo)
+    source_note: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -148,7 +150,10 @@ def health() -> dict:
 
     # How a menu photo would be read: Gemini, local OCR, or not at all (paste text instead).
     photo = "gemini" if vision.configured() else "ocr" if shutil.which("tesseract") else None
-    return {"ok": True, "mock": MOCK, "photo": photo}
+    from michelin import llm
+
+    planner = "mock" if MOCK else llm.provider()  # "openrouter" | "gemini" | None
+    return {"ok": True, "mock": MOCK, "photo": photo, "planner": planner}
 
 
 @app.get("/api/menus", response_model=list[MenuSummary])
@@ -296,23 +301,29 @@ def plan(req: PlanRequest, x_profile_scope: str | None = Header(default=None)) -
     )
     cap = subtotal_cap(request.all_in_budget, 1, req.tax_rate, req.tip_rate)
 
+    # Recommendations come from the LLM only; the rules below validate, never choose.
+    source, source_note = "mock" if MOCK else "ai", None
     if MOCK:
         result = _mock_solve(menu, request)
     else:
-        try:
-            result = solve(menu, request)
-        except TimeoutError as e:
-            raise HTTPException(503, str(e)) from e
-
+        outcome = llm_planner.plan(menu, request)
+        source_note = outcome.note
+        result = outcome.plan if outcome.plan is not None else outcome.conflict
     if isinstance(result, Conflict):
-        return PlanResponse(kind="conflict", conflict=result, subtotal_cap=cap)
+        return PlanResponse(
+            kind="conflict",
+            conflict=result,
+            subtotal_cap=cap,
+            source=source,
+            source_note=source_note,
+        )
     try:
         result = Plan.model_validate(result)
     except (ValueError, TypeError) as exc:
         raise HTTPException(502, "Planner returned malformed output.") from exc
     before = result.model_dump(exclude={"items"})
     original_items = [i.model_dump(exclude={"reason"}) for i in result.items]
-    if req.explain:
+    if req.explain and source != "ai":  # AI plans keep the model's own reasons
         try:
             result = explain(result, menu, request)
         except NotImplementedError as e:
@@ -344,7 +355,9 @@ def plan(req: PlanRequest, x_profile_scope: str | None = Header(default=None)) -
             raise ValueError("Incorrect diner eligibility")
     except (ValueError, TypeError, KeyError, AttributeError) as exc:
         raise HTTPException(502, "Planner or explanation returned invalid output.") from exc
-    return PlanResponse(kind="plan", plan=result, subtotal_cap=cap)
+    return PlanResponse(
+        kind="plan", plan=result, subtotal_cap=cap, source=source, source_note=source_note
+    )
 
 
 @app.get("/api/model/prepared")
@@ -401,7 +414,7 @@ def _parse_notice(
     mode: str, matched: str, fallback: str | None = None, vision_model: str | None = None
 ) -> str:
     """Say which steps used a model, so the notice is true whether Gemini is on or off."""
-    from michelin import gemini
+    from michelin import llm
     from michelin.parse.matcher import model_name, provider_name
 
     parts = []
@@ -413,7 +426,8 @@ def _parse_notice(
         parts.append("Gemini could not read the photo, so local OCR read it.")
     if mode == "gemini":
         parts.append(
-            f"Gemini ({vision_model or gemini.model('vision')}) read the dish names and prices."
+            f"Gemini ({llm.label(vision_model or llm.model('vision'))}) read the dish names "
+            "and prices."
         )
     elif mode == "local_ocr" and not fallback:
         parts.append("Local OCR read the photo.")
@@ -421,7 +435,7 @@ def _parse_notice(
         parts.append("The pasted text was split into dishes locally.")
     if matched == "called":
         parts.append(
-            f"{model_name(provider_name())} matched names the knowledge base did not "
+            f"{llm.label(model_name(provider_name()))} matched names the knowledge base did not "
             "recognize to reviewed entries (it picks entries only, never ingredients)."
         )
     elif matched == "rate_limited":
@@ -471,7 +485,7 @@ def parse_menu(req: ParseRequest) -> dict:
         try:
             dishes, printed_name, used_model = vision.read_menu_photo(image, mime)
         except gemini.RateLimited as exc:
-            limited = "daily_limit" if exc.daily else "rate_limited"
+            limited, limit_message = "daily_limit" if exc.daily else "rate_limited", str(exc)
             dishes, printed_name, used_model, fallback = None, None, None, limited
         except Exception as exc:  # noqa: BLE001 - any provider failure falls back below
             logging.getLogger("michelin").warning(
@@ -490,14 +504,9 @@ def parse_menu(req: ParseRequest) -> dict:
         if dishes is not None:
             raise HTTPException(422, "No dishes with prices were found. Try a clearer photo.")
         if not shutil.which("tesseract"):
-            if fallback == "rate_limited":
-                raise HTTPException(429, gemini.RATE_LIMIT_MESSAGE)
-            if fallback == "daily_limit":
-                raise HTTPException(
-                    429,
-                    "Today's free Gemini quota is used up, so photos can't be read right now. "
-                    "Paste the menu text instead; the quota resets daily.",
-                )
+            if fallback in ("rate_limited", "daily_limit"):
+                extra = "" if "paste" in limit_message else " Paste the menu text instead."
+                raise HTTPException(429, limit_message + extra)
             raise HTTPException(
                 502, "Gemini could not read this photo. Try again, or paste the menu text."
             )

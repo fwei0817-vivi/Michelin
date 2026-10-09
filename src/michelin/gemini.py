@@ -29,8 +29,8 @@ RATE_LIMIT_MESSAGE = (
     "or paste the menu text."
 )
 DAILY_LIMIT_MESSAGE = (
-    "Today's free Gemini quota is used up, so the app is using its built-in rules instead. "
-    "The quota resets daily; you can also paste the menu text."
+    "Today's free Gemini quota is used up; it resets daily. Set OPENROUTER_API_KEY for a "
+    "paid model, or paste the menu text instead of a photo."
 )
 
 
@@ -38,9 +38,9 @@ class RateLimited(RuntimeError):
     """Gemini answered 429 / RESOURCE_EXHAUSTED (free-tier quota). `daily` when the
     per-day quota is gone rather than the per-minute one."""
 
-    def __init__(self, daily: bool = False):
+    def __init__(self, daily: bool = False, message: str | None = None):
         self.daily = daily
-        super().__init__(DAILY_LIMIT_MESSAGE if daily else RATE_LIMIT_MESSAGE)
+        super().__init__(message or (DAILY_LIMIT_MESSAGE if daily else RATE_LIMIT_MESSAGE))
 
 
 # While a quota is exhausted, skip calls instead of spending requests on more 429s.
@@ -80,8 +80,12 @@ def available() -> bool:
 
 
 def model(task: str = "") -> str:
-    """task "vision" or "match" picks its own override first."""
-    specific = {"vision": "MICHELIN_VISION_MODEL", "match": "MICHELIN_LLM_MODEL"}.get(task)
+    """task "vision", "match" or "plan" picks its own override first."""
+    specific = {
+        "vision": "MICHELIN_VISION_MODEL",
+        "match": "MICHELIN_LLM_MODEL",
+        "plan": "MICHELIN_PLANNER_MODEL",
+    }.get(task)
     return (
         (specific and os.environ.get(specific))
         or os.environ.get("MICHELIN_GEMINI_MODEL")

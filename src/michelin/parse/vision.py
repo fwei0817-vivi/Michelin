@@ -4,8 +4,8 @@ Gemini only transcribes what is printed: names (English and Chinese), prices, an
 printed description. It never labels ingredients or diets; `label_imported` does that from
 the reviewed knowledge base, and every row still needs human review before planning.
 
-Configuration lives in `michelin.gemini`: GEMINI_API_KEY (free Google AI Studio key) or
-MICHELIN_GEMINI_BACKEND=vertex. MICHELIN_VISION=off never calls a model; MICHELIN_VISION_MODEL
+Configuration lives in `michelin.llm`: OPENROUTER_API_KEY (preferred), else GEMINI_API_KEY
+(free Google AI Studio key) or MICHELIN_GEMINI_BACKEND=vertex. MICHELIN_VISION=off never calls a model; MICHELIN_VISION_MODEL
 overrides the model (default gemini-3.8-flash). Without a backend the API falls back to local
 OCR, then to text paste. Only the image is sent.
 """
@@ -17,7 +17,7 @@ import os
 import re
 import unicodedata
 
-from michelin import gemini
+from michelin import gemini, llm  # noqa: F401 - gemini is patched in tests
 from michelin.schemas import Dish
 
 MAX_DISHES = 40
@@ -55,11 +55,11 @@ SCHEMA = {
 def configured() -> bool:
     if os.environ.get("MICHELIN_VISION", "").lower() == "off":
         return False
-    return gemini.available()
+    return llm.provider() is not None
 
 
 def model_name() -> str:
-    return gemini.model("vision")
+    return llm.model("vision")
 
 
 def slug(text: str, taken: set[str]) -> str:
@@ -98,20 +98,9 @@ def rows_to_dishes(rows: list[dict]) -> list[Dish]:
 def read_menu_photo(image: bytes, mime: str, client=None) -> tuple[list[Dish], str | None, str]:
     """(dishes, restaurant name if printed, model used). Raises gemini.RateLimited on 429,
     and other errors on transport or malformed output."""
-    from google.genai import types
-
-    client = client or gemini.client()
-    model_id = model_name()
-    response, used = gemini.generate(
-        client,
-        model=model_id,
-        contents=[types.Part.from_bytes(data=image, mime_type=mime), PROMPT],
-        config=types.GenerateContentConfig(
-            **gemini.sampling(model_id),
-            response_mime_type="application/json",
-            response_json_schema=SCHEMA,
-        ),
+    text, used = llm.generate_json(
+        "vision", turns=[llm.Turn("user", PROMPT, image, mime)], schema=SCHEMA, client=client
     )
-    body = json.loads(response.text)
+    body = json.loads(text)
     name = str(body.get("restaurant_name") or "").strip() or None
     return rows_to_dishes(body.get("dishes") or []), name, used

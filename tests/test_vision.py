@@ -4,10 +4,17 @@ import base64
 import json
 from types import SimpleNamespace
 
+import pytest
 from fastapi.testclient import TestClient
 
 from michelin import api
 from michelin.parse import vision
+
+
+@pytest.fixture(autouse=True)
+def gemini_key(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")  # provider "gemini"; clients are faked
+
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
 client = TestClient(api.app)
@@ -103,7 +110,7 @@ def test_gemini_failure_without_ocr_is_a_clear_error(monkeypatch):
 
 
 def test_not_configured_without_key(monkeypatch):
-    for key in ("GEMINI_API_KEY", "GOOGLE_API_KEY", "MICHELIN_VISION"):
+    for key in ("GEMINI_API_KEY", "GOOGLE_API_KEY", "MICHELIN_VISION", "OPENROUTER_API_KEY"):
         monkeypatch.delenv(key, raising=False)
     assert not vision.configured()
     monkeypatch.setenv("GEMINI_API_KEY", "x")
@@ -163,7 +170,6 @@ def test_model_is_configurable(monkeypatch):
 def test_developer_api_by_default_vertex_on_request(monkeypatch):
     from michelin import gemini
 
-    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     assert gemini.available() and not gemini.use_vertex()
     monkeypatch.setenv("MICHELIN_GEMINI_BACKEND", "vertex")
     assert gemini.use_vertex()

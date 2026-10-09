@@ -6,7 +6,10 @@ normalized printed text, and reused verbatim: the same dish text gets the same m
 time, and a person can review or overwrite any stored answer (set "kb_id" and
 "reviewed": true). Only dishes without a stored answer reach the API.
 
-Providers (MICHELIN_LLM_PROVIDER, default gemini), all behind the same closed-list prompt:
+Providers (MICHELIN_LLM_PROVIDER; by default OpenRouter when OPENROUTER_API_KEY is set,
+else Gemini), all behind the same closed-list prompt:
+
+  openrouter     google/gemini-2.5-flash on OpenRouter (MICHELIN_OPENROUTER_MODEL to change)
 
   gemini         gemini-3.8-flash (MICHELIN_LLM_MODEL or MICHELIN_GEMINI_MODEL to change) on
                  the Gemini Developer API with GEMINI_API_KEY (free tier from
@@ -32,6 +35,7 @@ from michelin.schemas import Dish
 CACHE_PATH = Path(__file__).resolve().parents[3] / "data/knowledge/llm_matches.json"
 MODELS = {
     "gemini": gemini.DEFAULT_MODEL,
+    "openrouter": "google/gemini-2.5-flash",
     "claude-vertex": "claude-opus-5-5",
     "claude": "claude-opus-5-5",
 }
@@ -125,7 +129,11 @@ _last_model: dict[str, str] = {}  # model that actually answered (after a fallba
 
 
 def model_name(provider: str) -> str:
-    return gemini.model("match") if provider == "gemini" else MODELS[provider]
+    from michelin import llm
+
+    if provider in ("gemini", "openrouter"):
+        return llm.model("match", provider)
+    return MODELS[provider]
 
 
 def _ask_claude(dishes: list[Dish], kb: dict, client, vertex: bool) -> list[str | None]:
@@ -157,29 +165,27 @@ def _ask_claude(dishes: list[Dish], kb: dict, client, vertex: bool) -> list[str 
     return _parse(text, len(dishes), ids)
 
 
-def _ask_gemini(dishes: list[Dish], kb: dict, client) -> list[str | None]:
-    from google.genai import types
+def _ask_json_llm(dishes: list[Dish], kb: dict, client, which: str) -> list[str | None]:
+    """Gemini directly or through OpenRouter: same closed-list prompt and schema."""
+    from michelin import llm
 
-    client = client or gemini.client()
     ids = sorted(e["id"] for e in kb["dishes"])
-    model_id = model_name("gemini")
-    response, used = gemini.generate(
-        client,
-        model=model_id,
-        contents=_listing(dishes),
-        config=types.GenerateContentConfig(
-            system_instruction=[SYSTEM, catalog_text(kb)],
-            **gemini.sampling(model_id),
-            response_mime_type="application/json",
-            response_json_schema=_schema(ids),
-        ),
+    text, used = llm.generate_json(
+        "match",
+        system=SYSTEM + "\n\n" + catalog_text(kb),
+        turns=[llm.Turn("user", _listing(dishes))],
+        schema=_schema(ids),
+        which=which,
+        client=client,
     )
-    _last_model["gemini"] = used
-    return _parse(response.text, len(dishes), ids)
+    _last_model[which] = used
+    return _parse(text, len(dishes), ids)
 
 
 def provider_name() -> str:
-    name = os.environ.get("MICHELIN_LLM_PROVIDER", "gemini")
+    from michelin import llm
+
+    name = os.environ.get("MICHELIN_LLM_PROVIDER", "").lower() or llm.provider() or "gemini"
     if name not in MODELS:
         raise ValueError(f"MICHELIN_LLM_PROVIDER must be one of {sorted(MODELS)}, not {name!r}")
     return name
@@ -190,8 +196,8 @@ def ask_llm(
 ) -> list[str | None]:
     """One request for all dishes. Returns a kb id or None per dish, in order."""
     provider = provider or provider_name()
-    if provider == "gemini":
-        return _ask_gemini(dishes, kb, client)
+    if provider in ("gemini", "openrouter"):
+        return _ask_json_llm(dishes, kb, client, provider)
     return _ask_claude(dishes, kb, client, vertex=provider == "claude-vertex")
 
 

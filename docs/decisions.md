@@ -261,3 +261,12 @@ now default to `gemini-3.8-flash` on the free Gemini Developer API (`GEMINI_API_
 Studio) instead of `gemini-2.5-pro` on Vertex AI, which needs billing. Vertex stays available
 with `MICHELIN_GEMINI_BACKEND=vertex`. Earlier stored matches keep their recorded model. A 429
 pauses calls and falls back to the non-LLM path (OCR or pasted text; knowledge base only).
+
+**2026-10-09: the LLM recommends; the rules only validate.** `/api/plan` asks the LLM
+(OpenRouter `google/gemini-2.5-flash` when `OPENROUTER_API_KEY` is set, else the free Gemini
+key) for the order, using a brief with per-diner eligibility already computed. Each order
+goes through `validate_order` plus a per-diner safety check. Violations go back to the model
+for up to 3 retries. There is no optimizer fallback. If no model answers, or no order
+passes, the response is an explained conflict (`ai_unavailable` or `ai_no_valid_order`).
+The model's own "no fit" answer carries its suggested budget or coverage change, which is
+range-checked before it is shown.

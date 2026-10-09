@@ -37,37 +37,54 @@ uv run uvicorn michelin.api:app          # http://localhost:8000 serves API and 
 
 Tests: `uv run pytest` and `cd web && npm run lint`.
 
-### Gemini (free tier, optional)
+### AI model (required for recommendations)
 
-Menu photo reading and LLM dish-name matching use Gemini through the free Gemini Developer
-API (Google AI Studio). No billing account or Vertex project is needed.
+The LLM chooses the dishes. It also reads menu photos and, when you opt in, matches dish
+names. Deterministic code checks every order it proposes: dish ids must be on the menu,
+removed and kept dishes are respected, allergies and diets are applied per diner, the
+budget includes tax and tip, portions fall within range, and everyone gets enough dishes.
+Each violation goes back to the model, with up to 3 retries. There is no rules-planner
+fallback. If no model answers, or no proposed order passes the checks, the app says so.
+When the budget is too low, the model proposes the "Change one thing" fix.
 
-1. Create a key at <https://aistudio.google.com/apikey>.
-2. Export it (or put it in a git-ignored `.env` that your shell loads; never commit it):
+The app uses the first provider that is configured:
+
+1. **OpenRouter** (paid, OpenAI-compatible): set `OPENROUTER_API_KEY`. The default model is
+   `google/gemini-2.5-flash` (about $0.30 per million input tokens and $2.50 per million
+   output tokens; a plan costs well under a cent).
+2. **Gemini Developer API** (free tier): create a key at <https://aistudio.google.com/apikey>
+   and set `GEMINI_API_KEY`. The default model is `gemini-3.8-flash`.
+
+Keep keys in your shell or in a git-ignored `.env`, and never commit them:
 
 ```bash
-export GEMINI_API_KEY=...            # your AI Studio key
+export OPENROUTER_API_KEY=...        # or: export GEMINI_API_KEY=...
 uv sync --extra dev --extra llm      # installs google-genai
 cd web && npm run build && cd ..
-uv run --extra llm uvicorn michelin.api:app        # photos are read by Gemini
+uv run --extra llm uvicorn michelin.api:app
 MICHELIN_LLM_MATCH=1 uv run --extra llm uvicorn michelin.api:app   # also LLM name matching
 ```
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) | unset | turns Gemini on |
-| `MICHELIN_GEMINI_MODEL` | `gemini-3.8-flash` | model for every Gemini call (free tier) |
-| `MICHELIN_VISION_MODEL`, `MICHELIN_LLM_MODEL` | unset | per-task overrides |
-| `MICHELIN_GEMINI_FALLBACK_MODEL` | `gemini-2.5-flash` | tried once when the model is overloaded (503); empty disables |
-| `MICHELIN_GEMINI_BACKEND=vertex` | unset | use Vertex AI (billing, `gcloud auth application-default login`) |
+| `OPENROUTER_API_KEY` | unset | use OpenRouter (preferred when set) |
+| `MICHELIN_OPENROUTER_MODEL` | `google/gemini-2.5-flash` | OpenRouter model for every task |
+| `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) | unset | use the free Gemini API |
+| `MICHELIN_LLM_PROVIDER` | auto | force `openrouter` or `gemini` (the matcher also accepts `claude`, `claude-vertex`) |
+| `MICHELIN_GEMINI_MODEL` | `gemini-3.8-flash` | Gemini model for every task |
+| `MICHELIN_VISION_MODEL`, `MICHELIN_LLM_MODEL`, `MICHELIN_PLANNER_MODEL` | unset | Gemini per-task overrides |
+| `MICHELIN_GEMINI_FALLBACK_MODEL` | `gemini-2.5-flash` | tried once when Gemini is overloaded (503); empty disables |
+| `MICHELIN_GEMINI_BACKEND=vertex` | unset | Gemini on Vertex AI (billing, `gcloud auth application-default login`) |
 | `MICHELIN_VISION=off` | unset | never send photos to a model |
 
-The free tier is small (for Gemini 3.8 Flash about 5 requests per minute and 20 per day).
-On a 429 the app says so, pauses Gemini calls (a minute, or an hour when the daily quota is
-gone) and falls back: photos to local OCR if `tesseract` is installed, otherwise to pasting
-the menu text; name matching to the reviewed knowledge base alone. Without a key nothing is
-sent anywhere. Gemini only transcribes names and prices or picks knowledge-base entries; it
-never writes ingredient labels.
+The free Gemini tier is small: for Gemini 3.8 Flash, about 5 requests a minute and 20 a day.
+On a 429, or when OpenRouter credit runs out (402), the app says so. It pauses Gemini calls
+for a minute, or for an hour once the daily quota is gone. Photos fall back to local OCR if
+`tesseract` is installed, and otherwise to pasting the menu text. Name matching falls back
+to the reviewed knowledge base alone. The planner returns an explained "No recommendation
+right now". Identical plan requests are cached in `data/local/llm_plans.json`, which is
+git-ignored. The models only transcribe menus, pick knowledge-base entries, or choose dishes
+from the brief. They never write ingredient labels.
 
 ## Deploy
 
@@ -90,10 +107,10 @@ The English-only interface includes course cards, icon actions, a party/budget d
 per-diner coverage, menu search, swap comparisons, and a printable order ticket. Changing
 settings marks the previous plan stale until replanning succeeds.
 
-The real planner runs without API keys. Target courses and dining style affect ranking;
-budget (including tax/tip), portions, kept/excluded dishes, and diner coverage are enforced.
-For small menus the search is exact if it completes; on its time limit it can return a
-feasible incumbent, without claiming optimality. The API accepts up to 40 reviewed dishes.
+Recommendations come from the AI model (see above), and the rules enforce the budget
+(including tax and tip), portions, kept and excluded dishes, and diner coverage. The older
+branch-and-bound optimizer (`plan/optimizer.py`) is kept for tests and offline analysis.
+It is no longer used by `/api/plan`. The API accepts up to 40 reviewed dishes.
 Set `MICHELIN_MOCK=1` only for fixture-based demos.
 
 Menu editing and imports are session-local. Paste one English dish per line with its price

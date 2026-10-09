@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeftRight, Check, ChevronDown, CircleHelp, Flame, Leaf, LockKeyhole, Plus, RefreshCw, Trash2, UnlockKeyhole, UserX, Users, X } from "lucide-react";
+import { ArrowLeftRight, Check, ChevronDown, CircleHelp, Flame, Leaf, ListChecks, LockKeyhole, Plus, RefreshCw, Sparkles, Trash2, UnlockKeyhole, UserX, Users, X } from "lucide-react";
 import { CATEGORY_LABEL, checkLabel, currencySymbol, dishName, flagWording, listNames, money } from "../lib/format";
 import { dishQuestions, heatNote } from "../lib/dietary";
 import { photoFor } from "../lib/dishPhotos";
@@ -11,6 +11,8 @@ interface Props {
   plan: Plan;
   diners: DinerProfile[];
   settings: DiningSettings;
+  source: "ai" | "mock";
+  sourceNote: string | null;
   locked: string[];
   stale: boolean;
   loading: boolean;
@@ -26,7 +28,7 @@ interface Props {
 
 const SPICE = ["", "Mild", "Medium", "Hot"];
 
-export function Ticket({ menu, plan, diners, settings, locked, stale, loading, onLock, onSwap, onRemove, onAdd, onPlan, onOrder, canOrder, onParty }: Props) {
+export function Ticket({ menu, plan, diners, settings, source, sourceNote, locked, stale, loading, onLock, onSwap, onRemove, onAdd, onPlan, onOrder, canOrder, onParty }: Props) {
   const [filter, setFilter] = useState("all");
   const [open, setOpen] = useState<string[]>([]);
   const byId: Record<string, Dish> = Object.fromEntries(menu.dishes.map((d) => [d.id, d]));
@@ -102,6 +104,7 @@ export function Ticket({ menu, plan, diners, settings, locked, stale, loading, o
                   diners={diners}
                   cur={cur}
                   kept={locked.includes(item.dish_id)}
+                  ai={source === "ai"}
                   expanded={open.includes(item.dish_id)}
                   disabled={disabled}
                   onToggle={toggleOpen}
@@ -158,6 +161,10 @@ export function Ticket({ menu, plan, diners, settings, locked, stale, loading, o
 
         <aside className="bill" aria-label="Your order">
           <h2>Your order, {items.length} dishes</h2>
+          <p className={`plan-source plan-source-${source}`} title={sourceNote ?? undefined}>
+            {source === "ai" ? <Sparkles size={13} /> : <ListChecks size={13} />}
+            {source === "ai" ? "Chosen by AI, checked by the rules" : "Demo fixture plan"}
+          </p>
           <p className="bill-total">
             <strong>{money(plan.per_person, cur)}</strong>
             <span>per person</span>
@@ -220,12 +227,13 @@ export function Ticket({ menu, plan, diners, settings, locked, stale, loading, o
   );
 }
 
-function DishCard({ item, dish, diners, cur, kept, expanded, disabled, onToggle, onLock, onSwap, onRemove }: {
+function DishCard({ item, dish, diners, cur, kept, ai, expanded, disabled, onToggle, onLock, onSwap, onRemove }: {
   item: PlanItem;
   dish: Dish;
   diners: DinerProfile[];
   cur: string;
   kept: boolean;
+  ai: boolean;
   expanded: boolean;
   disabled: boolean;
   onToggle: (id: string) => void;
@@ -284,6 +292,12 @@ function DishCard({ item, dish, diners, cur, kept, expanded, disabled, onToggle,
           </span>
         )}
       </div>
+      {ai && item.reason && (
+        <p className="dish-reason">
+          <Sparkles size={12} />
+          <span>{item.reason}</span>
+        </p>
+      )}
       {(notFor.length > 0 || heat) && (
         <div className="dish-notes">
           {notFor.length > 0 && (
@@ -307,7 +321,7 @@ function DishCard({ item, dish, diners, cur, kept, expanded, disabled, onToggle,
             <span>{q}</span>
           </p>
         ))}
-        <p>{item.reason || "Adds another option to your shared table."}</p>
+        {!ai && <p>{item.reason || "Adds another option to your shared table."}</p>}
         {dish.allergens.length > 0 && <p className="dish-flags">{dish.allergens.map(flagWording).join(" · ")}</p>}
         {photo && (
           <p className="dish-flags">

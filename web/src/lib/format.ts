@@ -107,6 +107,7 @@ export function checkLabel(name: string, passed: boolean, minDishes: number): st
     coverage: [`Everyone has ${minDishes}+ options`, `Not everyone has ${minDishes}+ options`],
     budget: ["Within budget", "Over budget"],
     portions: ["Estimated portions on target", "Portions off target"],
+    ai: ["Menu ids and safety rules verified", "AI choice failed the checks"],
   };
   return labels[name]?.[passed ? 0 : 1] ?? name;
 }

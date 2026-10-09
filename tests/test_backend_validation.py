@@ -1,3 +1,4 @@
+import dataclasses
 import json
 from pathlib import Path
 
@@ -6,6 +7,7 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from michelin import api
+from michelin.plan import llm_planner
 from michelin.plan.budget import totals
 from michelin.plan.edibility import assessment, can_eat
 from michelin.plan.optimizer import solve
@@ -175,13 +177,24 @@ def test_mocked_planner_and_explanation_fail_closed(monkeypatch):
         "explain": True,
     }
     monkeypatch.setattr(api, "MOCK", False)
-    monkeypatch.setattr(api, "solve", lambda *a: {"items": [{"dish_id": "a", "quantity": -1}]})
+    real = llm_planner.plan
+
+    def tampered(*a, **k):
+        out = real(*a, **k)
+        return dataclasses.replace(out, plan=out.plan.model_copy(update={"total": 0}))
+
+    monkeypatch.setattr(llm_planner, "plan", tampered)
     assert client.post("/api/plan", json=body).status_code == 502
-    monkeypatch.setattr(api, "solve", solve)
-    monkeypatch.setattr(api, "explain", lambda plan, *a: plan.model_copy(update={"total": 0}))
-    assert client.post("/api/plan", json=body).status_code == 502
-    monkeypatch.setattr(api, "explain", lambda *a: None)
-    assert client.post("/api/plan", json=body).status_code == 502
+
+    def unknown_dish(*a, **k):
+        out = real(*a, **k)
+        items = [i.model_copy(update={"dish_id": "nope"}) for i in out.plan.items]
+        return dataclasses.replace(out, plan=out.plan.model_copy(update={"items": items}))
+
+    monkeypatch.setattr(llm_planner, "plan", unknown_dish)
+    result = client.post("/api/plan", json=body).json()
+    assert result["kind"] == "conflict"
+    assert result["conflict"]["code"] == "order_validation_failed"
 
 
 def test_decimal_rounding():
@@ -210,7 +223,7 @@ def test_order_endpoint_and_valid_plan(monkeypatch):
     assert result.status_code == 200 and result.json()["valid"]
 
 
-def test_explanation_exception_and_timeout_are_actionable(monkeypatch):
+def test_model_failure_is_actionable_not_another_planner(monkeypatch):
     client, menu = TestClient(api.app), synthetic_menu()
     body = {
         "menu_id": "test",
@@ -224,14 +237,10 @@ def test_explanation_exception_and_timeout_are_actionable(monkeypatch):
     def fail(*args):
         raise RuntimeError("synthetic model failure")
 
-    monkeypatch.setattr(api, "explain", fail)
-    assert client.post("/api/plan", json=body).status_code == 502
-
-    def timeout(*args):
-        raise TimeoutError("Retry with a smaller menu")
-
-    monkeypatch.setattr(api, "solve", timeout)
-    assert client.post("/api/plan", json=body).status_code == 503
+    monkeypatch.setattr(llm_planner, "_ask", fail)
+    result = client.post("/api/plan", json=body).json()
+    assert result["kind"] == "conflict" and result["conflict"]["code"] == "ai_unavailable"
+    assert "did not answer" in result["conflict"]["message"]
 
 
 def test_duplicate_people_are_rejected():
