@@ -214,3 +214,23 @@ def test_unchanged_order_says_plainly_that_nothing_changed(fake):
         r["change_note"]
         == "Couldn't make it less spicy: the AI kept the same order. Its spiciest dish is hot."
     )
+
+
+def test_less_spicy_on_an_already_mild_order_needs_no_ai_call(fake):
+    f = fake(order("mapo_tofu"))
+    mild = [
+        {"dish_id": "garlic_seasonal_greens", "quantity": 1},
+        {"dish_id": "hot_and_sour_soup", "quantity": 1},
+        {"dish_id": "steamed_rice", "quantity": 2},
+    ]
+    r = post({"chips": ["less_spicy"], "current": mild})
+    assert f.calls == [] and r["kind"] == "plan"
+    assert r["change_note"] == "Already mild: no dish is hotter than a 1." and r["changes"] == []
+    assert sorted(i["dish_id"] for i in r["plan"]["items"]) == sorted(i["dish_id"] for i in mild)
+    assert (
+        refine.unmet(["less_spicy"], MENU, [("hot_and_sour_soup", 1)], [("hot_and_sour_soup", 1)])
+        == []
+    )
+    hot_but_kept = [("mapo_tofu", 1), ("hot_and_sour_soup", 1)]
+    assert refine.already_mild(MENU, hot_but_kept, locked=["mapo_tofu"])
+    assert not refine.already_mild(MENU, hot_but_kept)

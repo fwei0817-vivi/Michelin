@@ -893,6 +893,10 @@ def plan(
     """A model-chosen order that passed every check, or a conflict that says why not. With
     feedback, the AI revises the current order (no cached answer is reused) and the outcome
     carries a change note whose claims match the code-computed changes."""
+    if feedback is not None:
+        mild = _already_mild(menu, request, feedback)
+        if mild is not None:
+            return mild
     outcome = _plan(menu, request, client, cache_path, feedback)
     if feedback is None or outcome.plan is None:
         return outcome
@@ -924,6 +928,41 @@ def plan(
     outcome.change_note = note
     outcome.changes = refine.changes_list(d)
     return outcome
+
+
+def _already_mild(menu: Menu, request: TableRequest, feedback) -> Outcome | None:
+    """'Less spicy' alone on an order with nothing above spice 1: the current order stays,
+    checked by the rules, with no model call."""
+    before = [(c.dish_id, c.quantity) for c in feedback.current]
+    if feedback.chips != ["less_spicy"] or feedback.text.strip():
+        return None
+    if not refine.already_mild(menu, before, request.locked_dish_ids):
+        return None
+    known = {d.id: d for d in menu.dishes}
+    answer = {
+        "dishes": [
+            {
+                "dish_id": i,
+                "reason": "",
+                "for": edible_by(known[i], request.diners),
+                "server_question": "",
+            }
+            for i, _ in before
+            if i in known and known[i].category.value != "staple"
+        ],
+        "server_questions": [],
+    }
+    problems, items = check(menu, request, answer, _staples(menu, request))
+    if problems:
+        return None  # the current order no longer passes: let the AI revise it
+    return Outcome(
+        _to_plan(menu, request, answer, items),
+        None,
+        "No AI call: the order is already mild.",
+        0,
+        change_note=refine.ALREADY_MILD,
+        changes=[],
+    )
 
 
 def _plan(menu, request, client=None, cache_path=None, feedback=None) -> Outcome:

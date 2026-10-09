@@ -108,6 +108,19 @@ GOAL_TEXT = {
 }
 
 
+ALREADY_MILD = "Already mild: no dish is hotter than a 1."
+
+
+def already_mild(menu: Menu, before, locked=()) -> bool:
+    """Every dish that is not kept (rice aside) is spice 1 or less: 'less spicy' is met."""
+    known = {x.id: x for x in menu.dishes}
+    return all(
+        _spice(known[i]) <= 1
+        for i, _ in before
+        if i in known and i not in set(locked) and known[i].category.value != "staple"
+    )
+
+
 def unmet(
     chips: list[str], menu: Menu, before, after, locked=(), d: dict | None = None
 ) -> list[str]:
@@ -137,9 +150,9 @@ def unmet(
     out = []
     for chip in chips:
         if chip == "less_spicy":
-            spicy_before = [i for i, _ in fb if _spice(known[i]) > 0]
-            if not spicy_before:
+            if already_mild(menu, before, locked):
                 continue
+            spicy_before = [i for i, _ in fb if _spice(known[i]) > 0]
             sb = [_spice(known[i]) for i, q in fb for _ in range(q)]
             sa = [_spice(known[i]) for i, q in fa for _ in range(q)] or [0]
             dropped = max(sa) < max(sb) or sum(sa) / len(sa) < sum(sb) / len(sb)
