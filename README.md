@@ -118,7 +118,8 @@ and portion estimates were removed (2026-10-09). `plan/hints.py` finds the cheap
 order deterministically; it tells the model whether any order fits, and when none does it sets
 the "Raise the budget to $X per person" fix (X = the lowest budget at which an order exists).
 The model writes one server question per chosen dish, naming who it is for and why; rule-based
-risks are passed in as facts and any risk the model skips is added back from the rules. The API accepts up to 80 reviewed dishes (a choice of protein counts once per choice).
+risks are passed in as facts and any risk the model skips is added back from the rules. The API accepts up to 150 reviewed dishes (a choice of protein counts once per choice; a menu can have up to 8 pages).
+Several photos of one menu are read together in one vision call (one call per page if they are very large), and a dish printed twice is listed once. A PDF menu is rendered to page images on the server with `pdftoppm` (poppler-utils, included in the Dockerfile); without it, upload photos of the pages instead.
 Set `MICHELIN_MOCK=1` only for fixture-based demos.
 
 Menu editing and imports are session-local. Paste one English dish per line with its price

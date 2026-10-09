@@ -12,7 +12,8 @@ All files were fetched on **2026-10-09**. Prices can change after that date.
 |---|---|---|---|---|---|---|
 | `nom-wah-tea-parlor.jpg` | Nom Wah Tea Parlor, 13 Doyers St | Cantonese dim sum | Chinatown | <https://www.nomwah.com/s/NYC-Menu-Legal-8_1.pdf> | 49 | **Real menu**: both pages of the restaurant's PDF, placed side by side as one JPEG (the 2.1 MB PDF is not committed) |
 | `cafe-mandarin.jpg` | Cafe Mandarin, 1st Ave at 67th St | Sichuan / Chinese-American | Upper East Side | <https://cafemandarinnyc.com/wp-content/uploads/2026/07/Menu0707.pdf> | 35 lines (54 orderable versions: 7 lines offer a choice of protein) | **Real menu**: pages 1–2 of the restaurant's PDF |
-| `cafe-mandarin.pdf` | Cafe Mandarin | | | same as above | 74 (4 pages) | **Original PDF** for reference. The app's photo step takes images only, so upload the JPG. |
+| `cafe-mandarin.pdf` | Cafe Mandarin | | | same as above | 62 lines on 4 pages (93 orderable versions). An earlier count here said 74; a recount of the PDF gives 35 + 11 + 16 = 62 priced lines. | **Original PDF.** The photo step accepts it: the server renders each page to an image. |
+| `cafe-mandarin-p1.jpg` … `-p4.jpg` | Cafe Mandarin | | | same as above | 18 / 17 / 11 / 16 lines | The PDF's 4 pages as JPEGs (`pdftoppm -r 110`, about 125 KB each), for testing several pages in one upload |
 | `hwa-yuan.jpg` | Hwa Yuan Szechuan, 42 East Broadway | Sichuan | Chinatown | <https://www.hwayuannyc.com/menu> | 53 | **Rendered from the real HTML text** |
 | `shanghai-21.jpg` | Shanghai 21, 21 Mott St | Shanghainese / soup dumplings | Chinatown | <https://shanghai21nyc.com/menu/> | 45 | **Rendered from the real HTML text** |
 | `hunan-slurp.jpg` | Hunan Slurp, 112 First Ave | Hunan | East Village | <https://www.hunanslurp.com/menu> | 36 | **Rendered from the real HTML text** |
@@ -96,3 +97,38 @@ In both runs, every plan passed the checks on the first try.
   choice of pork belly.
 - Words for the choice no longer stay in the name of each version: the tofu version is
   "Yu Xiang (Tofu)", not "Yu Xiang Pork (Tofu)".
+
+## Several pages as one menu: all 4 pages of Cafe Mandarin
+
+The four page JPEGs were uploaded together (`images_base64`) and read in **one** vision call
+with `google/gemini-3.5-flash-lite`. We then planned for the same tricky table at $40 a head.
+
+| Run | Lines read / printed | Versions | Sections | Duplicates | Read + facts | Plan | Cost |
+|---|---|---|---|---|---|---|---|
+| 1 | 62 / 62 | 91 | 9, all correct | none | 40 s (facts for about 40 new names) | valid, 4 dishes, $78.66, 2.3 s | $0.049 |
+| 2 (prompt reminder about per-dish surcharges) | 62 / 62 | 90 | 9 | none | 17 s (facts cached) | valid, 4 dishes, $79.93, 2.2 s | $0.024 |
+
+**Model slips, and how the code now handles them.** The fixes were checked by running the
+code on run 2's rows offline, with no new model calls. That gives 93 versions.
+
+- In run 2, "Yu Xiang Pork" lost its pork option. A dish named after one protein now keeps
+  that version, at the printed price.
+- "Sesame Chicken or Tofu" and "General Tso's Chicken or Tofu" were not split in run 2. A name
+  of the form "X Chicken or Tofu" is now split into two versions at the printed price.
+- Mongolian (Beef) was read as $20; the menu prints $18 with no surcharge for beef. The
+  protein in the dish's name now costs the printed price.
+
+**Still wrong:**
+
+- Cumin (Beef) is read as $20; the menu prints $18.
+- "Sichuan Boiled Beef / Fish $24 / $28" is read as the beef version only.
+
+**Safety:** no shrimp, wonton or shumai dish was offered to the shellfish diner. No meat was
+offered to the vegetarian, except the VP lines with a server question; with the split, only
+the tofu versions are offered. No pork was offered to the no-pork diner. Chicken Truffle Soup
+Dumplings are offered to that diner only with the question "Is there any pork in it?". No
+peanut dish was offered to the peanut diner.
+
+Uploading the PDF itself gives the same 4 JPEG pages: the server renders it with
+`pdftoppm`, so the server needs poppler-utils, which is now in the Dockerfile.
+

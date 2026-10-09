@@ -18,8 +18,9 @@ interface Props {
   old: string | null;
   mode: "browse" | "pick";
   initialTab?: "browse" | "import";
-  /** A photo picked on the menu step: read it straight away. */
-  initialPhoto?: File | null;
+  /** Photos (or PDFs) picked on the menu step: one is read straight away; several wait so
+   * more pages can be added or removed first. */
+  initialPhotos?: File[];
   /** Started from "Have the menu in front of you?": importing opens the new restaurant. */
   openAfterImport?: boolean;
   tax: number;
@@ -36,8 +37,28 @@ interface Props {
   onSelectMenu: (id: string) => void;
 }
 
-const MAX_DISHES = 80; // same as the server (MAX_MENU_DISHES)
+const MAX_DISHES = 150; // same as the server (MAX_MENU_DISHES)
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_PAGES = 8; // same as the server
+const isPdf = (f: File) => f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+
+const asBase64 = (f: File) => new Promise<string>((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(String(reader.result).split(",")[1]);
+  reader.onerror = () => reject(new Error(`${f.name} could not be read.`));
+  reader.readAsDataURL(f);
+});
+
+/** Page thumbnails (object URLs), freed when the pages change. */
+function usePreviews(files: File[]): string[] {
+  const [urls, setUrls] = useState<string[]>([]);
+  useEffect(() => {
+    const made = files.map((f) => (isPdf(f) ? "" : URL.createObjectURL(f)));
+    setUrls(made);
+    return () => made.forEach((u) => u && URL.revokeObjectURL(u));
+  }, [files]);
+  return urls;
+}
 const SPICE = ["", "Mild", "Medium", "Hot"];
 // Animal products and allergens that a dish name often does not reveal.
 const HIDDEN = /pork|lard|beef|chicken|duck|lamb|meat|broth|stock|shrimp|prawn|crab|oyster|fish|anchov|scallop|egg|milk|butter|cream|cheese|peanut|sesame|nut/i;
@@ -100,7 +121,7 @@ function reasonLine(reasons: string[], confirm: boolean): string {
 }
 
 /** The restaurant menu drawer: browse and edit the menu, import one, or pick a dish to add or swap in. */
-export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mode, initialTab = "browse", initialPhoto = null, openAfterImport = false, tax, tip, budget, onPick, onAiSwap, onClose, onUpdate, onCreate, onSelectMenu }: Props) {
+export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mode, initialTab = "browse", initialPhotos = [], openAfterImport = false, tax, tip, budget, onPick, onAiSwap, onClose, onUpdate, onCreate, onSelectMenu }: Props) {
   const [created, setCreated] = useState<{ id: string; name: string } | null>(null);
   const [prepared, setPrepared] = useState<PreparedInput[]>([]);
   const [preparedId, setPreparedId] = useState("");
@@ -126,7 +147,17 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"browse" | "import">(initialTab);
   const [text, setText] = useState("");
-  const [photo, setPhoto] = useState<File | null>(initialPhoto);
+  const [photos, setPhotos] = useState<File[]>(initialPhotos);
+  const previews = usePreviews(photos);
+  const photo = photos[0] ?? null;
+  const addPages = (picked: File[]) => {
+    const tooBig = picked.filter((f) => f.size > MAX_IMAGE_BYTES);
+    const ok = picked.filter((f) => f.size <= MAX_IMAGE_BYTES);
+    const next = [...photos, ...ok].slice(0, MAX_PAGES);
+    setPhotos(next);
+    setImported([]);
+    setError(tooBig.length ? `Choose files smaller than 8 MB (${tooBig.map((f) => f.name).join(", ")} skipped).` : photos.length + ok.length > MAX_PAGES ? `Use up to ${MAX_PAGES} pages for one menu.` : "");
+  };
   const [readNotice, setReadNotice] = useState("");
   const [parsing, setParsing] = useState(false);
   const [imported, setImported] = useState<Dish[]>([]);
@@ -167,7 +198,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
   const hiddenByCategory = sameCategory && oldDish ? menu.dishes.filter((d) => !onSlip.has(d.id) && d.category !== oldDish.category).length : 0;
 
   const update = (next: Menu) => { setVerified(false); onUpdate(next); };
-  const autoRead = useRef(!!initialPhoto);
+  const autoRead = useRef(initialPhotos.length === 1);
   useEffect(() => { if (autoRead.current) { autoRead.current = false; void importRows(); } });
 
   const importRows = async () => {
@@ -175,16 +206,8 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
     setError("");
     setImported([]); setExtractedMenu(null); setExtractionNotice(""); setCreated(null); setReadNotice("");
     try {
-      let image_base64: string | undefined;
-      if (photo) {
-        image_base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result).split(",")[1]);
-          reader.onerror = () => reject(new Error("The image could not be read."));
-          reader.readAsDataURL(photo);
-        });
-      }
-      const result = await parseMenu(photo ? { image_base64 } : { text });
+      const pages = await Promise.all(photos.map(asBase64));
+      const result = await parseMenu(pages.length ? { images_base64: pages } : { text });
       setImported(result.dishes);
       setText(result.text);
       setReadNotice(result.notice ?? "");
@@ -271,28 +294,33 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
             </div>
             <label className="upload-area">
               <FileImage size={24} />
-              <strong>{photo?.name ?? "Choose a menu photo"}</strong>
-              <span>PNG, JPEG or WebP, up to 8 MB. Names and prices are read from the photo; the AI guesses likely ingredients from each name.</span>
+              <strong>{photos.length ? (photos.length < MAX_PAGES ? "Add another page" : `${MAX_PAGES} pages, the most for one menu`) : "Choose menu photos or a PDF"}</strong>
+              <span>PNG, JPEG or WebP photos, or a PDF, up to 8 MB each and {MAX_PAGES} pages. Several pages are read together as one menu; names and prices are read from the pages, and the AI guesses likely ingredients from each name.</span>
               <input
                 aria-label="Menu image"
                 type="file"
-                accept="image/png,image/jpeg,image/webp"
+                multiple
+                disabled={photos.length >= MAX_PAGES}
+                accept="image/png,image/jpeg,image/webp,application/pdf"
                 onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f && f.size > MAX_IMAGE_BYTES) {
-                    setError("Choose an image smaller than 8 MB.");
-                    e.target.value = "";
-                    setPhoto(null);
-                  } else {
-                    setPhoto(f ?? null);
-                    setError("");
-                    setImported([]);
-                  }
+                  addPages(Array.from(e.target.files ?? []));
+                  e.target.value = "";
                 }}
               />
             </label>
-            {photo ? (
-              <button className="btn btn-outline btn-small" onClick={() => setPhoto(null)}>Paste text instead</button>
+            {photos.length > 0 && (
+              <ul className="page-thumbs" aria-label="Menu pages">
+                {photos.map((f, k) => (
+                  <li key={`${f.name}-${k}`}>
+                    {previews[k] ? <img src={previews[k]} alt={`Page ${k + 1}`} /> : <span className="page-pdf"><FileImage size={22} />PDF</span>}
+                    <small title={f.name}>{k + 1}. {f.name}</small>
+                    <button type="button" className="text-button" aria-label={`Remove page ${k + 1} (${f.name})`} onClick={() => { setPhotos(photos.filter((_, j) => j !== k)); setImported([]); }}>Remove</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {photos.length > 0 ? (
+              <button className="btn btn-outline btn-small" onClick={() => setPhotos([])}>Paste text instead</button>
             ) : (
               <label className="field-label">
                 Or paste the menu text, one dish and price per line
@@ -301,7 +329,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
             )}
             <button className="btn btn-primary" disabled={parsing || (!text.trim() && !photo)} onClick={() => void importRows()}>
               <Upload size={15} />
-              {parsing ? "Reading menu…" : photo ? "Read the menu" : "Extract dishes"}
+              {parsing ? (photos.length > 1 ? `Reading ${photos.length} pages…` : "Reading menu…") : photos.length > 1 ? `Read ${photos.length} pages as one menu` : photo ? "Read the menu" : "Extract dishes"}
             </button>
             {readNotice && <p className="helper" role="status">{readNotice}</p>}
             <details className="photo-import">
@@ -323,14 +351,16 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                   {groupFamilies(imported).map((d, k, all) => {
                     if (d.family_id && all[k - 1]?.family_id === d.family_id) return null;
                     const mark = markWording(d);
-                    if (!d.family_id) return <li key={d.id}><span>{dishName(d)}{mark && <small className="menu-mark"> {mark}</small>}</span><strong>{money(d.price, cur)}</strong></li>;
+                    const heading = d.menu_section && d.menu_section !== all.slice(0, k).reverse().find((x) => x.menu_section)?.menu_section
+                      ? <li key={`section-${k}`} className="menu-section-head">{d.menu_section}</li> : null;
+                    if (!d.family_id) return [heading, <li key={d.id}><span>{dishName(d)}{mark && <small className="menu-mark"> {mark}</small>}</span><strong>{money(d.price, cur)}</strong></li>];
                     const versions = all.filter((x) => x.family_id === d.family_id);
-                    return (
+                    return [heading, (
                       <li key={d.family_id} className="family-row">
                         <span>{d.family_name ?? dishName(d)}{mark && <small className="menu-mark"> {mark}</small>}<small className="family-choices">Choice of {versions.map((x) => `${x.variant} ${money(x.price, cur)}`).join(" · ")}</small></span>
                         <strong>{versions.length} choices</strong>
                       </li>
-                    );
+                    )];
                   })}
                 </ul>
                 <button

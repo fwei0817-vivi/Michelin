@@ -20,7 +20,8 @@ interface Props {
   settings: DiningSettings;
   photoReader: "openrouter" | "gemini" | "ocr" | null;
   onMenu: () => void;
-  onPhoto: (file: File) => void;
+  /** One or more photos (or PDFs) of the same menu. */
+  onPhoto: (files: File[]) => void;
   onPaste: () => void;
   onSample: () => void;
   onChange: (s: DiningSettings) => void;
@@ -48,9 +49,9 @@ export function SetupFlow({ step, onStep, canPlan, menu, diners, saved, onPick, 
   // The menu itself, dishes with an illustrative photo first.
   const preview = [...menu.dishes].sort((a, b) => Number(!!photoFor(b)) - Number(!!photoFor(a))).slice(0, 12);
   const picked = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
+    const files = Array.from(e.target.files ?? []);
     e.target.value = "";
-    if (f) onPhoto(f);
+    if (files.length) onPhoto(files);
   };
   return (
     <div className="onboarding">
@@ -120,7 +121,7 @@ export function SetupFlow({ step, onStep, canPlan, menu, diners, saved, onPick, 
               </button>
               <button className="btn btn-outline" onClick={() => upload.current?.click()}>
                 <ImageUp size={16} />
-                Upload a photo
+                Upload photos or a PDF
               </button>
               <button className="text-button" onClick={onPaste}>
                 Or paste the menu text
@@ -128,7 +129,7 @@ export function SetupFlow({ step, onStep, canPlan, menu, diners, saved, onPick, 
             </div>
             {!photoReader && <p className="helper">Photo reading is not set up on this server yet, so pasting the text is the reliable path.</p>}
             <input ref={camera} type="file" accept="image/*" capture="environment" hidden aria-label="Take a menu photo" onChange={picked} />
-            <input ref={upload} type="file" accept="image/png,image/jpeg,image/webp" hidden aria-label="Upload a menu photo" onChange={picked} />
+            <input ref={upload} type="file" multiple accept="image/png,image/jpeg,image/webp,application/pdf" hidden aria-label="Upload a menu photo" onChange={picked} />
           </section>
             </>
           ) : (
@@ -143,7 +144,7 @@ export function SetupFlow({ step, onStep, canPlan, menu, diners, saved, onPick, 
               </button>
               <button className="btn btn-outline" onClick={() => upload.current?.click()}>
                 <ImageUp size={16} />
-                Upload a photo
+                Upload photos or a PDF
               </button>
               <button className="text-button" onClick={onPaste}>
                 Or paste the menu text
@@ -151,7 +152,7 @@ export function SetupFlow({ step, onStep, canPlan, menu, diners, saved, onPick, 
             </div>
             {!photoReader && <p className="helper">Photo reading is not set up on this server yet, so pasting the text is the reliable path.</p>}
             <input ref={camera} type="file" accept="image/*" capture="environment" hidden aria-label="Take a menu photo" onChange={picked} />
-            <input ref={upload} type="file" accept="image/png,image/jpeg,image/webp" hidden aria-label="Upload a menu photo" onChange={picked} />
+            <input ref={upload} type="file" multiple accept="image/png,image/jpeg,image/webp,application/pdf" hidden aria-label="Upload a menu photo" onChange={picked} />
           </section>
           <h2 className="setup-subhead">Or use a saved menu</h2>
           <section className="menu-choice" aria-label="Current menu">

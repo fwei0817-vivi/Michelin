@@ -11,7 +11,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-MAX_MENU_DISHES = 80  # real menus run 25-60 lines, more once choices become versions; then cut
+MAX_MENU_DISHES = 150  # a 4-page menu runs ~75 lines, ~110 once choices become versions
 
 
 class EvidenceTier(str, Enum):
@@ -128,6 +128,7 @@ class Dish(BaseModel):
     variant: str | None = None  # "Tofu"
     menu_marks: list[MenuMark] = Field(default_factory=list)
     menu_spice: int | None = Field(default=None, ge=0, le=3)  # pepper icons, capped at 3
+    menu_section: str | None = None  # the printed heading ("Dim Sum"), as read
 
 
 class Menu(BaseModel):

@@ -18,7 +18,7 @@ from __future__ import annotations
 import base64
 import logging
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from michelin import gemini
 from michelin.gemini import RateLimited
@@ -45,6 +45,11 @@ class Turn:
     text: str
     image: bytes | None = None
     mime: str | None = None
+    more: list[tuple[bytes, str]] = field(default_factory=list)  # further pages: (bytes, mime)
+
+    def pictures(self) -> list[tuple[bytes, str]]:
+        first = [(self.image, self.mime or "image/png")] if self.image is not None else []
+        return first + list(self.more)
 
 
 def openrouter_key() -> str | None:
@@ -114,8 +119,8 @@ def _gemini(model_id, turns, schema, system, client, temperature=None):
     contents = []
     for t in turns:
         parts = []
-        if t.image is not None:
-            parts.append(types.Part.from_bytes(data=t.image, mime_type=t.mime or "image/png"))
+        for data, mime in t.pictures():
+            parts.append(types.Part.from_bytes(data=data, mime_type=mime))
         parts.append(types.Part.from_text(text=t.text))
         contents.append(types.Content(role=t.role, parts=parts))
     response, used = gemini.generate(
@@ -142,19 +147,15 @@ def _openrouter(model_id, turns, schema, system, client, temperature=None) -> st
     messages = [{"role": "system", "content": system}] if system else []
     for t in turns:
         role = "assistant" if t.role == "model" else "user"
-        if t.image is None:
+        pictures = t.pictures()
+        if not pictures:
             messages.append({"role": role, "content": t.text})
             continue
-        url = f"data:{t.mime or 'image/png'};base64,{base64.b64encode(t.image).decode()}"
-        messages.append(
-            {
-                "role": role,
-                "content": [
-                    {"type": "text", "text": t.text},
-                    {"type": "image_url", "image_url": {"url": url}},
-                ],
-            }
-        )
+        content: list[dict] = [{"type": "text", "text": t.text}]
+        for data, mime in pictures:
+            url = f"data:{mime};base64,{base64.b64encode(data).decode()}"
+            content.append({"type": "image_url", "image_url": {"url": url}})
+        messages.append({"role": role, "content": content})
     body = {
         "model": model_id,
         "messages": messages,

@@ -51,6 +51,7 @@ export interface Dish {
   variant?: string | null;
   menu_marks?: MenuMark[];
   menu_spice?: number | null;
+  menu_section?: string | null;
 }
 
 export type MenuMark = "vegetarian" | "vegan" | "vegetarian_possible" | "gluten_free" | "gluten_free_possible";

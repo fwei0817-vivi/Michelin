@@ -100,6 +100,7 @@ def bare(menu: Menu) -> Menu:
         "variant",
         "menu_marks",
         "menu_spice",
+        "menu_section",
     )
     return menu.model_copy(
         update={"dishes": [Dish(**{k: getattr(d, k) for k in keep}) for d in menu.dishes]}
@@ -701,7 +702,7 @@ def prepare(menu: Menu, client=None) -> Menu:
     missing = [d for d in plain.dishes if _key(d) not in cache]
     if not missing or (llm.provider() is None and client is None):
         missing = []
-    for start in range(0, min(len(missing), 3 * MAX_DISHES), MAX_DISHES):
+    for start in range(0, len(missing), MAX_DISHES):  # up to MAX_MENU_DISHES: 4 calls
         batch = missing[start : start + MAX_DISHES]
         try:
             text, used = _ask(batch, client)

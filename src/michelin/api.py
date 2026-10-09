@@ -479,6 +479,83 @@ def extract_menu(req: ExtractionRequest) -> ExtractionResponse:
 class ParseRequest(BaseModel):
     text: str = Field(default="", max_length=100000)
     image_base64: str | None = Field(default=None, max_length=12000000)
+    # More pages of the same menu (photos or PDFs), read together and merged into one menu.
+    images_base64: list[str] = Field(default_factory=list, max_length=8)
+
+    @field_validator("images_base64")
+    @classmethod
+    def _page_size(cls, pages: list[str]) -> list[str]:
+        if any(len(p) > 12000000 for p in pages):
+            raise ValueError("Each page must be under 8 MB.")
+        return pages
+
+
+MAX_PDF_PAGES = 8
+
+
+def _pdf_pages(pdf: bytes) -> list[tuple[bytes, str]]:
+    """Each PDF page as a JPEG (poppler's pdftoppm, 110 dpi: legible, ~300 KB a page)."""
+    import shutil
+    import subprocess
+    import tempfile
+
+    binary = shutil.which("pdftoppm")
+    if not binary:
+        raise HTTPException(
+            422, "PDF menus need poppler-utils on this server. Upload photos of the pages instead."
+        )
+    with tempfile.TemporaryDirectory() as tmp:
+        source = Path(tmp) / "menu.pdf"
+        source.write_bytes(pdf)
+        try:
+            result = subprocess.run(
+                [
+                    binary,
+                    "-r",
+                    "110",
+                    "-jpeg",
+                    "-jpegopt",
+                    "quality=80",
+                    "-f",
+                    "1",
+                    "-l",
+                    str(MAX_PDF_PAGES),
+                    str(source),
+                    str(Path(tmp) / "page"),
+                ],
+                capture_output=True,
+                timeout=60,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            raise HTTPException(422, "The PDF took too long to open. Upload page photos instead.")
+        files = sorted(Path(tmp).glob("page*.jpg"))
+        if result.returncode or not files:
+            raise HTTPException(422, "The PDF could not be opened. Upload page photos instead.")
+        return [(f.read_bytes(), "image/jpeg") for f in files]
+
+
+def _pages(req: ParseRequest) -> list[tuple[bytes, str]]:
+    """Every uploaded page as (image bytes, mime): photos as they are, PDFs page by page."""
+    import base64
+    import binascii
+
+    pages: list[tuple[bytes, str]] = []
+    for encoded in [*([req.image_base64] if req.image_base64 else []), *req.images_base64]:
+        try:
+            data = base64.b64decode(encoded, validate=True)
+        except (ValueError, binascii.Error):
+            raise HTTPException(422, "The image could not be read.")
+        if data.startswith(b"%PDF"):
+            pages += _pdf_pages(data)
+            continue
+        mime = _image_mime(data)
+        if mime is None:
+            raise HTTPException(422, "Use PNG, JPEG, or WebP menu photos, or a PDF.")
+        pages.append((data, mime))
+    if len(pages) > MAX_PDF_PAGES:
+        raise HTTPException(422, f"Use up to {MAX_PDF_PAGES} pages for one menu.")
+    return pages
 
 
 def _image_mime(image: bytes) -> str | None:
@@ -575,8 +652,6 @@ def _choices_notice(dishes: list, legend: str) -> str:
 
 @app.post("/api/menu/parse")
 def parse_menu(req: ParseRequest) -> dict:
-    import base64
-    import binascii
     import logging
     import shutil
     import subprocess
@@ -587,16 +662,13 @@ def parse_menu(req: ParseRequest) -> dict:
 
     text = req.text
     fallback = None  # why a configured Gemini photo read was not used
-    if req.image_base64 and vision.configured():
+    pages = _pages(req)
+    if pages and vision.configured():
         try:
-            image = base64.b64decode(req.image_base64, validate=True)
-        except (ValueError, binascii.Error):
-            raise HTTPException(422, "The image could not be read.")
-        mime = _image_mime(image)
-        if mime is None:
-            raise HTTPException(422, "Use a PNG, JPEG, or WebP menu image.")
-        try:
-            read = vision.read_menu_photo(image, mime)
+            if len(pages) == 1:
+                read = vision.read_menu_photo(*pages[0])
+            else:
+                read = vision.read_menu_pages(pages)
             dishes, printed_name, used_model = read[:3]
             legend = read[3] if len(read) > 3 else ""
         except gemini.RateLimited as exc:
@@ -620,9 +692,11 @@ def parse_menu(req: ParseRequest) -> dict:
                 "mode": "gemini",
                 "legend": legend,
                 "notice": _parse_notice("gemini", facts, vision_model=used_model)
+                + (f" Read {len(pages)} pages as one menu." if len(pages) > 1 else "")
                 + _choices_notice(dishes, legend)
                 + (
-                    f" The photo lists {dropped + MAX_MENU_DISHES} dishes; only the first "
+                    f" The {'photo' if len(pages) == 1 else 'menu'} lists "
+                    f"{dropped + MAX_MENU_DISHES} dishes; only the first "
                     f"{MAX_MENU_DISHES} were kept. Add any others by hand."
                     if dropped
                     else ""
@@ -637,45 +711,39 @@ def parse_menu(req: ParseRequest) -> dict:
             raise HTTPException(
                 502, "Gemini could not read this photo. Try again, or paste the menu text."
             )
-    if req.image_base64:
+    if pages:
         binary = shutil.which("tesseract")
         if not binary:
             raise HTTPException(
                 503,
                 "Image reading is unavailable on this server. Paste menu text or add dishes manually.",
             )
-        try:
-            image = base64.b64decode(req.image_base64, validate=True)
-        except (ValueError, binascii.Error):
-            raise HTTPException(422, "The image could not be read.")
-        if not (
-            image.startswith((b"\x89PNG", b"\xff\xd8\xff"))
-            or (image.startswith(b"RIFF") and image[8:12] == b"WEBP")
-        ):
-            raise HTTPException(422, "Use a PNG, JPEG, or WebP menu image.")
-        try:
-            with tempfile.NamedTemporaryFile(suffix=".img") as source:
-                source.write(image)
-                source.flush()
-                result = subprocess.run(
-                    [binary, source.name, "stdout", "-l", "eng"],
-                    capture_output=True,
-                    text=True,
-                    timeout=25,
-                    check=False,
-                )
-            if result.returncode:
+        texts = []
+        for image, _mime in pages:
+            try:
+                with tempfile.NamedTemporaryFile(suffix=".img") as source:
+                    source.write(image)
+                    source.flush()
+                    result = subprocess.run(
+                        [binary, source.name, "stdout", "-l", "eng"],
+                        capture_output=True,
+                        text=True,
+                        timeout=25,
+                        check=False,
+                    )
+                if result.returncode:
+                    raise HTTPException(
+                        422, "The image could not be read. Try a clearer photo or paste the text."
+                    )
+                texts.append(result.stdout)
+            except subprocess.TimeoutExpired:
                 raise HTTPException(
-                    422, "The image could not be read. Try a clearer photo or paste the text."
+                    503, "Image reading took too long. Try a smaller photo or paste the text."
                 )
-            text = result.stdout
-        except subprocess.TimeoutExpired:
-            raise HTTPException(
-                503, "Image reading took too long. Try a smaller photo or paste the text."
-            )
+        text = "\n".join(texts)
     if not text.strip():
         raise HTTPException(422, "Paste menu text or choose an image first.")
-    mode = "local_ocr" if req.image_base64 else "local_text"
+    mode = "local_ocr" if pages else "local_text"
     labeled, facts = _with_facts(parse_text(text))
     return {
         "dishes": [d.model_dump() for d in labeled],

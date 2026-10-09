@@ -45,7 +45,7 @@ export const menuFacts = (menu: Menu) => request<Menu>("/api/menu/facts", {
   method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(menu),
 });
 export const getHealth = () => request<{ok: boolean; mock: boolean; photo?: "openrouter" | "gemini" | "ocr" | null}>("/api/health");
-export const parseMenu = (body: {text?: string; image_base64?: string}) => request<{ dishes: Menu["dishes"]; text: string; mode?: string; notice?: string; restaurant_name?: string | null }>("/api/menu/parse", {
+export const parseMenu = (body: {text?: string; image_base64?: string; images_base64?: string[]}) => request<{ dishes: Menu["dishes"]; text: string; mode?: string; notice?: string; restaurant_name?: string | null }>("/api/menu/parse", {
   method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
 });
 
