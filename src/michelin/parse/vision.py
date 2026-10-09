@@ -34,13 +34,15 @@ price. If nothing is readable, return an empty list.
 
 Choices: when one line offers a choice of protein or version ("Kung Pao Chicken / Beef / \
 Shrimp / Tofu", "Choice of Chicken | Beef +$2 | Shrimp +$4 | Tofu", "Sesame Chicken or \
-Tofu"), return it ONCE with "choices": one entry per option, each with its own name as \
-printed ("Chicken", "Beef", "Tofu"), its Chinese if printed (鸡, 牛, 豆腐), and its full \
-price (the dish price plus any printed surcharge: $18 and "Beef +$2" is 20). Then "name_en" \
-and "name_zh" are the dish name WITHOUT the options ("Kung Pao", "宫保"), and "description" \
-leaves out the choice list. Sizes or piece counts are not choices. Read each dish's own \
-choice line: surcharges differ between dishes, and an option with no printed surcharge \
-costs the dish price even if another dish charges extra for it.
+Tofu", "Boiled Beef / Fish $24 / $28"), return it ONCE. Copy the choice line exactly as \
+printed, surcharges included, into "choice_text" ("Choice of Pork | Chicken | Beef +$2 | \
+Shrimp +$4 | Tofu"), and the printed price exactly as shown into "price_text" ("$18", or \
+"$24 / $28"). Then "choices": one entry per option in printed order, each with its own name \
+as printed ("Chicken", "Beef", "Tofu"), its Chinese if printed (鸡, 牛, 豆腐), and \
+"upcharge": the surcharge printed right next to THAT option ("+$2"), or "" if that option \
+has none. Do not add up prices; the app does. "price" is the dish's base price. \
+"name_en" and "name_zh" are the dish name WITHOUT the options ("Kung Pao", "宫保"), and \
+"description" leaves out the choice list. Sizes or piece counts are not choices.
 
 Marks: read the menu's legend (often at the bottom: e.g. a pepper = spicy, V = vegetarian, \
 VG or a different V = vegan, VP = vegetarian possible, GF = gluten free, GP = gluten-free \
@@ -80,6 +82,8 @@ SCHEMA = {
                     "marks": {"type": "array", "items": {"type": "string", "enum": MARKS}},
                     "spicy": {"type": "integer"},
                     "section": {"type": "string"},
+                    "price_text": {"type": "string"},
+                    "choice_text": {"type": "string"},
                     "choices": {
                         "type": "array",
                         "items": {
@@ -87,6 +91,7 @@ SCHEMA = {
                             "properties": {
                                 "name_en": {"type": "string"},
                                 "name_zh": {"type": "string"},
+                                "upcharge": {"type": "string"},
                                 "price": {"type": "number"},
                             },
                             "required": ["name_en"],
@@ -200,12 +205,121 @@ def _fill_choices(name: str, price: float | None, choices: list[dict]) -> list[d
     head = named[0]
     out = [dict(c) for c in choices]
     same = [c for c in out if _same(c.get("name_en")) == head]
-    if not same:
+    proteins = [c for c in out if _same(c.get("name_en")) in _PROTEINS]
+    if not same and len(proteins) * 2 > len(out):  # a protein choice, not cooking styles
         return [{"name_en": head.title(), "price": price}, *out]
     for c in same:
         cost = _price(c.get("price"))
         if cost is not None and cost > price:
             c["price"] = price
+    return out
+
+
+_MONEY = re.compile(r"\$?\s*(\d+(?:\.\d{1,2})?)")
+_UP = re.compile(r"\+\s*\$?\s*(\d+(?:\.\d{1,2})?)")
+_ZH_OPTION = {
+    "牛": "Beef",
+    "鱼": "Fish",
+    "鸡": "Chicken",
+    "虾": "Shrimp",
+    "猪": "Pork",
+    "肉": "Pork",
+    "豆腐": "Tofu",
+    "羊": "Lamb",
+    "鸭": "Duck",
+    "蔬菜": "Vegetable",
+}
+
+
+def _up(text) -> float | None:
+    """'+$2' -> 2.0; '' -> 0.0; anything else -> None (not a surcharge we can read)."""
+    t = str(text or "").strip()
+    if not t:
+        return 0.0
+    m = _UP.fullmatch(t) or _UP.search(t)
+    return float(m[1]) if m else None
+
+
+def _choice_line(text: str) -> list[tuple[str, float]]:
+    """'Choice of Pork | Chicken | Beef +$2 | Shrimp +$4 | Tofu' -> [(Pork, 0), (Chicken, 0),
+    (Beef, 2), (Shrimp, 4), (Tofu, 0)]: each surcharge stays with the option it is printed
+    next to. Chinese-only parts are skipped; fewer than two options means no choice line."""
+    t = re.sub(r"^.*?\bchoice of\b[:\s]*", "", str(text or ""), flags=re.IGNORECASE | re.DOTALL)
+    out = []
+    for part in re.split(r"\s*[|｜/,]\s*|\s+or\s+", t):
+        m = re.fullmatch(r"\s*([A-Za-z][A-Za-z '&.-]*?)\s*(\+\s*\$?\s*\d+(?:\.\d{1,2})?)?\s*", part)
+        if m:
+            out.append((m[1].strip(), _up(m[2]) or 0.0))
+    return out if len(out) >= 2 else []
+
+
+def _priced_choices(row: dict, name: str, price: float | None, choices: list[dict]) -> list[dict]:
+    """Every version's price computed here, as base price + that option's own printed
+    surcharge. The printed choice line (choice_text, or a 'Choice of' line in the
+    description) wins over the model's per-option numbers, so a surcharge array shifted onto
+    the wrong options ('Pork 18, Chicken 20, Beef 22, Shrimp 18' for 'Beef +$2 | Shrimp +$4')
+    is repaired. 'Beef / Fish $24 / $28' pairs names and prices in order."""
+    prices = [
+        float(x)
+        for x in _MONEY.findall(str(row.get("price_text") or ""))
+        if "$" in str(row.get("price_text") or "")
+    ]
+    if len(prices) >= 2:  # paired prices: one per option, in printed order
+        opts = [str(c.get("name_en") or "").strip() for c in choices]
+        if len(opts) != len(prices):
+            zh = str(row.get("name_zh") or "")
+            parts = [p.strip() for p in _SEP.split(zh)]
+            if len(parts) == len(prices):
+                opts = []
+                for p in parts:
+                    hit = next(
+                        (
+                            v
+                            for k, v in sorted(_ZH_OPTION.items(), key=lambda kv: -len(kv[0]))
+                            if p.endswith(k)
+                        ),
+                        None,
+                    )
+                    opts.append(hit or "")
+        if len(opts) == len(prices) and all(opts):
+            return [
+                {
+                    "name_en": o,
+                    "price": p,
+                    **(
+                        {"name_zh": c.get("name_zh")}
+                        if (
+                            c := next(
+                                (c for c in choices if _same(c.get("name_en")) == _same(o)), None
+                            )
+                        )
+                        else {}
+                    ),
+                }
+                for o, p in zip(opts, prices)
+            ]
+    if price is None:
+        return choices
+    line = _choice_line(row.get("choice_text") or "")
+    if not line:
+        m = _CHOICE_LINE.search(str(row.get("description") or ""))
+        line = _choice_line(m[0].split("\n")[0]) if m else []
+    if line:
+        printed = {_same(n): up for n, up in line}
+        names = {_same(c.get("name_en")) for c in choices}
+        if not choices or names <= set(printed):
+            zh = {_same(c.get("name_en")): c.get("name_zh") for c in choices}
+            return [
+                {"name_en": n, "name_zh": zh.get(_same(n)), "price": round(price + up, 2)}
+                for n, up in line
+            ]
+    out = []
+    for c in choices:
+        c = dict(c)
+        up = _up(c["upcharge"]) if "upcharge" in c else None
+        if up is not None:
+            c["price"] = round(price + up, 2)
+        out.append(c)
     return out
 
 
@@ -263,7 +377,7 @@ def rows_to_dishes(rows: list[dict]) -> list[Dish]:
         ]
         if not name:
             continue
-        choices = _fill_choices(name, price, choices)
+        choices = _fill_choices(name, price, _priced_choices(row, name, price, choices))
         if len(choices) < 2:
             if price is None:
                 continue

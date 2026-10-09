@@ -118,10 +118,29 @@ code on run 2's rows offline, with no new model calls. That gives 93 versions.
 - Mongolian (Beef) was read as $20; the menu prints $18 with no surcharge for beef. The
   protein in the dish's name now costs the printed price.
 
-**Still wrong:**
+**Choice prices are now computed in code.** The photo step copies each dish's choice line
+as printed ("Choice of Pork | Chicken | Beef +$2 | Shrimp +$4 | Tofu") and each option's own
+surcharge. The app then prices each version as the base price plus that option's surcharge.
+When the printed line is available it always wins, so a list with surcharges moved onto the
+wrong options is repaired; one local import showed "Chicken $20, Beef $22, Shrimp $18".
+Paired prices ("水煮牛 / 鱼 $24 / $28") become one version each. A fresh read of the 4 pages
+is saved as `tests/fixtures/cafe_mandarin_4p_read.json` (one call, $0.021), and the tests
+price every Main Classics version from it:
 
-- Cumin (Beef) is read as $20; the menu prints $18.
-- "Sichuan Boiled Beef / Fish $24 / $28" is read as the beef version only.
+| Dish | Versions and prices |
+|---|---|
+| Yu Xiang | Pork $18, Chicken $18, Beef $20, Shrimp $22, Tofu $18 |
+| Sesame | Chicken $18, Tofu $18 |
+| General Tso's | Chicken $18, Tofu $18 |
+| Kung Pao | Chicken $18, Beef $20, Shrimp $22, Tofu $18 |
+| Chicken Broccoli | Chicken $18, Beef $20, Shrimp $22, Tofu $18 |
+| Cumin | Lamb $18, Chicken $18, Beef $18, Shrimp $22, Tofu $18 |
+| Mongolian | Chicken $18, Beef $18, Shrimp $22, Tofu $18 |
+| Twice Cooked Pork Belly | $18 |
+| Country Style Pork & Chili | $21 |
+| Hunan Wild Mushroom (w/ Pork Belly) | $21 |
+| Hunan Beef | $23 |
+| Sichuan Boiled in Chili Oil (Chef's Recommendation) | Beef $24, Fish $28 |
 
 **Safety:** no shrimp, wonton or shumai dish was offered to the shellfish diner. No meat was
 offered to the vegetarian, except the VP lines with a server question; with the split, only

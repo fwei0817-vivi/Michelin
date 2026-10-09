@@ -1,0 +1,908 @@
+{
+ "restaurant_name": "CAFE MANDARIN 御庭",
+ "legend": "Spicy V Vegetarian VP Vegetarian Possible V Vegan GF Gluten Free GP Gluten Free Possible",
+ "dishes": [
+  {
+   "name_en": "Cucumber Salad",
+   "name_zh": "蒜蓉青瓜 / 炝汁青瓜",
+   "price": 10,
+   "description": "Choice of Garlic or Spicy Chili Oil 蒜香 或 香辣红油",
+   "marks": [
+    "vegetarian",
+    "gluten_free"
+   ],
+   "spicy": 1,
+   "section": "Cold Appetizers",
+   "choice_text": "Choice of Garlic or Spicy Chili Oil 蒜香 或 香辣红油",
+   "choices": [
+    {
+     "name_en": "Garlic",
+     "name_zh": "蒜香",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Spicy Chili Oil",
+     "name_zh": "香辣红油",
+     "upcharge": ""
+    }
+   ]
+  },
+  {
+   "name_en": "Chilled Zucchini in Tangy Sauce",
+   "name_zh": "捞汁西葫芦",
+   "price": 10,
+   "description": "Chilled | Garlic | Aged Vinegar 凉拌 | 蒜 | 陈醋",
+   "marks": [
+    "vegetarian",
+    "gluten_free_possible"
+   ],
+   "spicy": 1,
+   "section": "Cold Appetizers"
+  },
+  {
+   "name_en": "Emperor's Cabbage",
+   "name_zh": "乾隆白菜",
+   "price": 10,
+   "description": "Sesame Paste | Aged Vinegar | Organic Honey 芝麻酱 | 陈醋 | 蜂蜜",
+   "marks": [
+    "vegetarian",
+    "gluten_free"
+   ],
+   "spicy": 0,
+   "section": "Cold Appetizers"
+  },
+  {
+   "name_en": "Wood Ear Mushroom with Fermented Chili",
+   "name_zh": "山椒木耳",
+   "price": 10,
+   "description": "Scallion | Cilantro 葱 | 香菜",
+   "marks": [
+    "vegetarian",
+    "gluten_free_possible"
+   ],
+   "spicy": 1,
+   "section": "Cold Appetizers"
+  },
+  {
+   "name_en": "Chili-Oil Firm Tofu",
+   "name_zh": "油泼老豆腐",
+   "price": 10,
+   "description": "Aged Tofu | Sizzling Chili Oil | Bean Sprouts 老豆腐 | 油泼辣子 | 芹茎 | 豆芽",
+   "marks": [
+    "vegetarian"
+   ],
+   "spicy": 1,
+   "section": "Cold Appetizers"
+  },
+  {
+   "name_en": "Celery & Tofu Skin",
+   "name_zh": "西芹拌腐竹",
+   "price": 10,
+   "description": "Celery | Tofu Skin | Sesame Oil 西芹 | 腐竹 | 香油",
+   "marks": [
+    "vegetarian"
+   ],
+   "spicy": 0,
+   "section": "Cold Appetizers"
+  },
+  {
+   "name_en": "Vegetable Spring Roll (3)",
+   "name_zh": "素春卷",
+   "price": 8,
+   "description": "Sweet Chili Sauce 甜辣酱",
+   "marks": [
+    "vegetarian"
+   ],
+   "spicy": 0,
+   "section": "Hot Appetizers"
+  },
+  {
+   "name_en": "Sichuan Crispy Eggplant",
+   "name_zh": "川香风味茄子",
+   "price": 10,
+   "description": "Crispy Eggplant | Sichuan Sweet Soy Glaze | Cilantro 香酥茄子 | 川香糖醋汁 | 香菜",
+   "marks": [
+    "vegetarian"
+   ],
+   "spicy": 1,
+   "section": "Hot Appetizers"
+  },
+  {
+   "name_en": "Chicken Lettuce Wraps",
+   "name_zh": "鸡松",
+   "price": 13,
+   "description": "Onion 洋葱",
+   "marks": [
+    "gluten_free_possible"
+   ],
+   "spicy": 0,
+   "section": "Hot Appetizers"
+  },
+  {
+   "name_en": "Green Tea Chicken Wings (5)",
+   "name_zh": "茶香鸡翅",
+   "price": 13,
+   "description": "Green Tea | Honey Chili Soy Glaze 绿茶 | 甜辣酱",
+   "marks": [],
+   "spicy": 1,
+   "section": "Hot Appetizers"
+  },
+  {
+   "name_en": "Mandarin Spare Ribs",
+   "name_zh": "桂花小排",
+   "price": 13,
+   "description": "Sweet & Sour 糖醋汁",
+   "marks": [],
+   "spicy": 0,
+   "section": "Hot Appetizers"
+  },
+  {
+   "name_en": "Dan Dan Noodles",
+   "name_zh": "担担面",
+   "price": 8,
+   "description": "Pork | Sichuan Chili | Sesame | Scallion 猪肉 | 红油 | 芝麻 | 葱",
+   "marks": [],
+   "spicy": 1,
+   "section": "Dim Sum"
+  },
+  {
+   "name_en": "Mandarin Pot Stickers (4)",
+   "name_zh": "生煎锅贴",
+   "price": 10,
+   "description": "Berkshire Pork | Cabbage 黑猪肉 | 白菜",
+   "marks": [],
+   "spicy": 0,
+   "section": "Dim Sum"
+  },
+  {
+   "name_en": "Sichuan Wonton (5)",
+   "name_zh": "红油抄手",
+   "price": 10,
+   "description": "Pork & Shrimp Wonton | Sichuan Chili Oil Broth 猪肉鲜虾 | 红油汤",
+   "marks": [],
+   "spicy": 1,
+   "section": "Dim Sum"
+  },
+  {
+   "name_en": "Classic Soup Dumplings (4)",
+   "name_zh": "小笼包",
+   "price": 12,
+   "description": "Berkshire Pork & Ginger 黑猪肉 | 姜",
+   "marks": [],
+   "spicy": 0,
+   "section": "Dim Sum"
+  },
+  {
+   "name_en": "Berkshire Pork & Shrimp Shumai (3)",
+   "name_zh": "黑豚虾肉烧卖",
+   "price": 12,
+   "description": "Berkshire Pork | Rock Shrimp | Ginger 黑猪肉 | 大虾 | 姜",
+   "marks": [],
+   "spicy": 0,
+   "section": "Dim Sum"
+  },
+  {
+   "name_en": "Vegetable Dumplings (4)",
+   "name_zh": "素饺",
+   "price": 12,
+   "description": "Steamed or Pan Fried 蒸 或 煎",
+   "marks": [
+    "vegetarian"
+   ],
+   "spicy": 0,
+   "section": "Dim Sum"
+  },
+  {
+   "name_en": "Chicken Truffle Soup Dumplings (4)",
+   "name_zh": "黑松露鸡肉小笼包",
+   "price": 14,
+   "description": "Squid Ink Dough | Ginger | Black Truffle 墨鱼汁面皮 | 姜 | 黑松露",
+   "marks": [],
+   "spicy": 0,
+   "section": "Dim Sum"
+  },
+  {
+   "name_en": "Ginger Salad",
+   "name_zh": "姜汁沙拉",
+   "price": 5,
+   "description": "Green Salad | Ginger Dressing",
+   "marks": [
+    "vegetarian"
+   ],
+   "spicy": 0,
+   "section": "Soup & Salad"
+  },
+  {
+   "name_en": "Wonton Soup",
+   "name_zh": "馄饨汤",
+   "price": 5,
+   "description": "Pork & Shrimp Wonton | Chicken Broth 猪肉鲜虾馄饨 | 鸡汤",
+   "marks": [],
+   "spicy": 0,
+   "section": "Soup & Salad"
+  },
+  {
+   "name_en": "Hot & Sour Soup",
+   "name_zh": "酸辣汤",
+   "price": 5,
+   "description": "",
+   "marks": [
+    "vegetarian"
+   ],
+   "spicy": 1,
+   "section": "Soup & Salad"
+  },
+  {
+   "name_en": "Egg Drop Soup",
+   "name_zh": "蛋花汤",
+   "price": 5,
+   "description": "",
+   "marks": [
+    "vegetarian"
+   ],
+   "spicy": 0,
+   "section": "Soup & Salad"
+  },
+  {
+   "name_en": "West Lake Beef Soup",
+   "name_zh": "西湖牛肉羹",
+   "price": 16,
+   "description": "Egg White | Cilantro | Ground Beef 蛋白 | 香菜 | 牛肉末",
+   "marks": [],
+   "spicy": 0,
+   "section": "Soup & Salad"
+  },
+  {
+   "name_en": "Famous Chengdu Fish Soup",
+   "name_zh": "酸菜鱼片汤",
+   "price": 20,
+   "description": "Fluke Filet | Chinese Sour Cabbage 鱼片 | 酸菜",
+   "marks": [
+    "gluten_free"
+   ],
+   "spicy": 1,
+   "section": "Soup & Salad"
+  },
+  {
+   "name_en": "Yu Xiang Pork",
+   "name_zh": "鱼香肉丝 / 牛 / 鸡 / 虾 / 豆腐",
+   "price": 18,
+   "description": "Bamboo | Celery | Bell Pepper | Mushroom 笋|芹菜|灯笼椒|蘑菇",
+   "marks": [
+    "vegetarian_possible"
+   ],
+   "spicy": 1,
+   "section": "Main Classics",
+   "choice_text": "Choice of Pork | Chicken | Beef +$2 | Shrimp +$4 | Tofu",
+   "choices": [
+    {
+     "name_en": "Pork",
+     "name_zh": "猪肉",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Chicken",
+     "name_zh": "鸡",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Beef",
+     "name_zh": "牛",
+     "upcharge": "+$2"
+    },
+    {
+     "name_en": "Shrimp",
+     "name_zh": "虾",
+     "upcharge": "+$4"
+    },
+    {
+     "name_en": "Tofu",
+     "name_zh": "豆腐",
+     "upcharge": ""
+    }
+   ]
+  },
+  {
+   "name_en": "Sesame Chicken or Tofu",
+   "name_zh": "芝麻鸡 / 芝麻豆腐",
+   "price": 18,
+   "description": "Broccoli | Brown Sesame Sauce 西兰花 | 芝麻",
+   "marks": [
+    "vegetarian_possible"
+   ],
+   "spicy": 0,
+   "section": "Main Classics"
+  },
+  {
+   "name_en": "General Tso's Chicken or Tofu",
+   "name_zh": "左宗鸡 / 左宗豆腐",
+   "price": 18,
+   "description": "Broccoli | Spicy Brown Sauce 西兰花 | 甜辣酱",
+   "marks": [
+    "vegetarian_possible"
+   ],
+   "spicy": 1,
+   "section": "Main Classics"
+  },
+  {
+   "name_en": "Kung Pao Chicken",
+   "name_zh": "宫保鸡 / 牛 / 虾 / 豆腐",
+   "price": 18,
+   "description": "Scallion | Peanut 葱 | 花生",
+   "marks": [
+    "vegetarian_possible"
+   ],
+   "spicy": 1,
+   "section": "Main Classics",
+   "choice_text": "Choice of Chicken | Beef +$2 | Shrimp +$4 | Tofu",
+   "choices": [
+    {
+     "name_en": "Chicken",
+     "name_zh": "鸡",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Beef",
+     "name_zh": "牛",
+     "upcharge": "+$2"
+    },
+    {
+     "name_en": "Shrimp",
+     "name_zh": "虾",
+     "upcharge": "+$4"
+    },
+    {
+     "name_en": "Tofu",
+     "name_zh": "豆腐",
+     "upcharge": ""
+    }
+   ]
+  },
+  {
+   "name_en": "Chicken Broccoli",
+   "name_zh": "芥兰鸡 / 牛 / 虾 / 豆腐",
+   "price": 18,
+   "description": "Brown Garlic Sauce",
+   "marks": [
+    "vegetarian_possible",
+    "gluten_free_possible"
+   ],
+   "spicy": 0,
+   "section": "Main Classics",
+   "choice_text": "Choice of Chicken | Beef +$2 | Shrimp +$4 | Tofu",
+   "choices": [
+    {
+     "name_en": "Chicken",
+     "name_zh": "鸡",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Beef",
+     "name_zh": "牛",
+     "upcharge": "+$2"
+    },
+    {
+     "name_en": "Shrimp",
+     "name_zh": "虾",
+     "upcharge": "+$4"
+    },
+    {
+     "name_en": "Tofu",
+     "name_zh": "豆腐",
+     "upcharge": ""
+    }
+   ]
+  },
+  {
+   "name_en": "Cumin Lamb",
+   "name_zh": "孜然羊 / 鸡 / 牛 / 虾 / 豆腐",
+   "price": 18,
+   "description": "羊 | 鸡 | 牛 | 虾+ $4 | 豆腐",
+   "marks": [
+    "vegetarian_possible"
+   ],
+   "spicy": 1,
+   "section": "Main Classics",
+   "choice_text": "Choice of Lamb | Chicken | Beef | Shrimp +$4 | Tofu",
+   "choices": [
+    {
+     "name_en": "Lamb",
+     "name_zh": "羊",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Chicken",
+     "name_zh": "鸡",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Beef",
+     "name_zh": "牛",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Shrimp",
+     "name_zh": "虾",
+     "upcharge": "+$4"
+    },
+    {
+     "name_en": "Tofu",
+     "name_zh": "豆腐",
+     "upcharge": ""
+    }
+   ]
+  },
+  {
+   "name_en": "Mongolian Beef",
+   "name_zh": "蒙古牛 / 鸡 / 虾 / 豆腐",
+   "price": 18,
+   "description": "Scallion | Bell Pepper 葱 | 青红椒",
+   "marks": [
+    "vegetarian_possible"
+   ],
+   "spicy": 0,
+   "section": "Main Classics",
+   "choice_text": "Choice of Chicken | Beef | Shrimp +$4 | Tofu",
+   "choices": [
+    {
+     "name_en": "Chicken",
+     "name_zh": "鸡",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Beef",
+     "name_zh": "牛",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Shrimp",
+     "name_zh": "虾",
+     "upcharge": "+$4"
+    },
+    {
+     "name_en": "Tofu",
+     "name_zh": "豆腐",
+     "upcharge": ""
+    }
+   ]
+  },
+  {
+   "name_en": "Twice Cooked Pork Belly",
+   "name_zh": "回锅肉",
+   "price": 18,
+   "description": "Leeks | Jalapeño 蒜苗 | 墨西哥椒",
+   "marks": [],
+   "spicy": 1,
+   "section": "Main Classics"
+  },
+  {
+   "name_en": "Country Style Pork & Chili",
+   "name_zh": "全家福小炒肉",
+   "price": 21,
+   "description": "Pork Belly | Green Chili Pepper | Garlic | Ginger | Chinese Black Bean 青椒 | 蒜 | 姜 | 豆豉",
+   "marks": [],
+   "spicy": 1,
+   "section": "Main Classics"
+  },
+  {
+   "name_en": "Hunan Wild Mushroom (w/ Pork Belly)",
+   "name_zh": "干锅鹿茸菌",
+   "price": 21,
+   "description": "Pork Belly | Sesame Chili or Ginger Scallion Oil 加五花肉 | 红油 或 姜葱油",
+   "marks": [
+    "vegetarian_possible",
+    "gluten_free_possible"
+   ],
+   "spicy": 1,
+   "section": "Main Classics"
+  },
+  {
+   "name_en": "Hunan Beef",
+   "name_zh": "小炒黄牛肉",
+   "price": 23,
+   "description": "Sirloin Steak | Cilantro | Red Bell Pepper | Chili 香菜 | 红椒 | 辣椒",
+   "marks": [],
+   "spicy": 3,
+   "section": "Main Classics"
+  },
+  {
+   "name_en": "Thousand Layer Tofu",
+   "name_zh": "千叶豆腐",
+   "price": 22,
+   "description": "Pork Belly | Jalapeño | Red Bell Pepper | Chinese Celery 五花肉 | 墨西哥椒 | 红椒 | 唐芹",
+   "marks": [],
+   "spicy": 1,
+   "section": "Chef's Recommendation"
+  },
+  {
+   "name_en": "Chongqing Chili Chicken",
+   "name_zh": "辣子鸡",
+   "price": 22,
+   "description": "Jalapeño | Chinese Celery | Cilantro | Sesame Seeds 墨西哥椒 | 芹菜 | 香菜 | 芝麻",
+   "marks": [],
+   "spicy": 2,
+   "section": "Chef's Recommendation"
+  },
+  {
+   "name_en": "Wok Braised Beef Brisket",
+   "name_zh": "砂锅土豆炖牛肉",
+   "price": 22,
+   "description": "Potato | Carrot | Red Pepper | Mushroom | Scallion 土豆 | 胡萝卜 | 红椒 | 香菇 | 青葱",
+   "marks": [],
+   "spicy": 0,
+   "section": "Chef's Recommendation"
+  },
+  {
+   "name_en": "Three Cup Chicken",
+   "name_zh": "三杯鸡",
+   "price": 22,
+   "description": "Basil | Ginger Soy Sauce 九层塔 | 三杯汁",
+   "marks": [],
+   "spicy": 0,
+   "section": "Chef's Recommendation"
+  },
+  {
+   "name_en": "Chinese Sausage & Flat Beans",
+   "name_zh": "腊味炒扁豆",
+   "price": 22,
+   "description": "Flat Beans | Garlic | Chili 扁豆 | 蒜",
+   "marks": [
+    "gluten_free_possible"
+   ],
+   "spicy": 0,
+   "section": "Chef's Recommendation"
+  },
+  {
+   "name_en": "Wok Organic Cauliflower with Pork Belly",
+   "name_zh": "干锅花菜",
+   "price": 24,
+   "description": "Red Bell Pepper | Scallion 红椒 | 葱",
+   "marks": [
+    "gluten_free_possible"
+   ],
+   "spicy": 1,
+   "section": "Chef's Recommendation"
+  },
+  {
+   "name_en": "Walnut Shrimp",
+   "name_zh": "核桃虾",
+   "price": 24,
+   "description": "Broccoli | Roasted Walnut | Wasabi Mayo 西兰花 | 烤核桃 | 芥末蛋黄酱",
+   "marks": [],
+   "spicy": 0,
+   "section": "Chef's Recommendation"
+  },
+  {
+   "name_en": "Mandarin Braised Pork Belly",
+   "name_zh": "金瓜红烧肉",
+   "price": 26,
+   "description": "Chinese Five Spice | Japanese Pumpkin 五香 | 日本南瓜",
+   "marks": [],
+   "spicy": 0,
+   "section": "Chef's Recommendation"
+  },
+  {
+   "name_en": "Dry-Braised Tomato Shrimp",
+   "name_zh": "干烧茄汁虾",
+   "price": 26,
+   "description": "Shrimp | Dry-Braised | Tomato Chili Sauce | Broccoli | Basil 虾 | 干烧 | 茄汁 | 西兰花 | 九层塔",
+   "marks": [
+    "gluten_free_possible"
+   ],
+   "spicy": 0,
+   "section": "Chef's Recommendation"
+  },
+  {
+   "name_en": "Sichuan Boiled Beef in Chili Oil",
+   "name_zh": "水煮牛 / 鱼",
+   "price": 24,
+   "description": "Sliced Beef | Chili Oil | Sichuan Peppercorn | Cabbage | Wood Ear Mushroom | Dried Tofu Skin | Celery 牛肉片 或 鱼片 | 红油 | 花椒 | 白菜 | 木耳 | 腐竹 | 芹菜",
+   "marks": [],
+   "spicy": 2,
+   "section": "Chef's Recommendation",
+   "price_text": "$24 / $28"
+  },
+  {
+   "name_en": "Fluke Fish Filet",
+   "name_zh": "龙利鱼片",
+   "price": 28,
+   "description": "Choice of Steamed w/ Ginger Scallion / Hunan Fermented Chili / Salt & Pepper / Sweet & Sour 姜葱豉油 / 湖南香辣 / 椒盐 / 糖醋",
+   "marks": [
+    "gluten_free_possible"
+   ],
+   "spicy": 1,
+   "section": "Chef's Recommendation",
+   "choice_text": "Choice of Steamed w/ Ginger Scallion / Hunan Fermented Chili / Salt & Pepper / Sweet & Sour",
+   "choices": [
+    {
+     "name_en": "Steamed w/ Ginger Scallion",
+     "name_zh": "姜葱豉油",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Hunan Fermented Chili",
+     "name_zh": "湖南香辣",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Salt & Pepper",
+     "name_zh": "椒盐",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Sweet & Sour",
+     "name_zh": "糖醋",
+     "upcharge": ""
+    }
+   ]
+  },
+  {
+   "name_en": "Yu Xiang Eggplant",
+   "name_zh": "鱼香茄子",
+   "price": 17,
+   "description": "Spicy Ginger Garlic Sauce 鱼香汁 (姜蒜)",
+   "marks": [
+    "vegetarian"
+   ],
+   "spicy": 1,
+   "section": "Healthy Vegetables & Tofu"
+  },
+  {
+   "name_en": "Wok Fried String Bean",
+   "name_zh": "干煸四季豆",
+   "price": 17,
+   "description": "Chili & Sichuan Peppercorn | Chengdu Bean Sprout | Chinese Pickles 辣椒花椒 | 碎米芽菜",
+   "marks": [
+    "vegetarian",
+    "gluten_free_possible"
+   ],
+   "spicy": 1,
+   "section": "Healthy Vegetables & Tofu"
+  },
+  {
+   "name_en": "Mapo Tofu",
+   "name_zh": "麻婆豆腐",
+   "price": 17,
+   "description": "Black Bean Chili Sauce 豆豉辣酱",
+   "marks": [
+    "vegetarian"
+   ],
+   "spicy": 1,
+   "section": "Healthy Vegetables & Tofu"
+  },
+  {
+   "name_en": "Tomato & Egg",
+   "name_zh": "番茄拉丝黄金蛋",
+   "price": 17,
+   "description": "Tomato & Egg",
+   "marks": [
+    "vegetarian",
+    "gluten_free_possible"
+   ],
+   "spicy": 0,
+   "section": "Healthy Vegetables & Tofu"
+  },
+  {
+   "name_en": "Mixed Vegetable & Tofu",
+   "name_zh": "蔬菜豆腐煲",
+   "price": 19,
+   "description": "",
+   "marks": [
+    "vegetarian",
+    "gluten_free_possible"
+   ],
+   "spicy": 0,
+   "section": "Healthy Vegetables & Tofu"
+  },
+  {
+   "name_en": "Organic Cauliflower Stir Fry",
+   "name_zh": "清炒花菜",
+   "price": 19,
+   "description": "",
+   "marks": [
+    "vegetarian",
+    "gluten_free_possible"
+   ],
+   "spicy": 0,
+   "section": "Healthy Vegetables & Tofu"
+  },
+  {
+   "name_en": "Chinese Pea Leaves",
+   "name_zh": "豆苗",
+   "price": 19,
+   "description": "Choice of regular or garlic stir fry 清炒 或 蒜蓉",
+   "marks": [
+    "vegetarian",
+    "gluten_free_possible"
+   ],
+   "spicy": 0,
+   "section": "Healthy Vegetables & Tofu",
+   "choice_text": "Choice of regular or garlic stir fry 清炒 或 蒜蓉",
+   "choices": [
+    {
+     "name_en": "regular stir fry",
+     "name_zh": "清炒",
+     "upcharge": ""
+    },
+    {
+     "name_en": "garlic stir fry",
+     "name_zh": "蒜蓉",
+     "upcharge": ""
+    }
+   ]
+  },
+  {
+   "name_en": "Lo Mein",
+   "name_zh": "炒面",
+   "price": 16,
+   "description": "Vegetable | Chicken | Beef +$2 | Shrimp +$4 | Combo +$4 蔬菜|鸡|牛+$2|虾+$4|混合+$4",
+   "marks": [],
+   "spicy": 0,
+   "section": "Rice & Noodle",
+   "choice_text": "Choice of Vegetable | Chicken | Beef +$2 | Shrimp +$4 | Combo +$4",
+   "choices": [
+    {
+     "name_en": "Vegetable",
+     "name_zh": "蔬菜",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Chicken",
+     "name_zh": "鸡",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Beef",
+     "name_zh": "牛",
+     "upcharge": "+$2"
+    },
+    {
+     "name_en": "Shrimp",
+     "name_zh": "虾",
+     "upcharge": "+$4"
+    },
+    {
+     "name_en": "Combo",
+     "name_zh": "混合",
+     "upcharge": "+$4"
+    }
+   ]
+  },
+  {
+   "name_en": "Vegetable Fried Rice",
+   "name_zh": "炒饭",
+   "price": 16,
+   "description": "Vegetable | Chicken | Beef +$2 | Shrimp +$4 | Combo +$4 蔬菜|鸡|牛+$2|虾+$4|混合+$4",
+   "marks": [
+    "gluten_free_possible"
+   ],
+   "spicy": 0,
+   "section": "Rice & Noodle",
+   "choice_text": "Choice of Vegetable | Chicken | Beef +$2 | Shrimp +$4 | Combo +$4",
+   "choices": [
+    {
+     "name_en": "Vegetable",
+     "name_zh": "蔬菜",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Chicken",
+     "name_zh": "鸡",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Beef",
+     "name_zh": "牛",
+     "upcharge": "+$2"
+    },
+    {
+     "name_en": "Shrimp",
+     "name_zh": "虾",
+     "upcharge": "+$4"
+    },
+    {
+     "name_en": "Combo",
+     "name_zh": "混合",
+     "upcharge": "+$4"
+    }
+   ]
+  },
+  {
+   "name_en": "Braised Beef Noodles",
+   "name_zh": "牛肉面",
+   "price": 16,
+   "description": "Chinese Pea Shoots 豆苗",
+   "marks": [],
+   "spicy": 0,
+   "section": "Rice & Noodle"
+  },
+  {
+   "name_en": "Chengdu Fried Rice",
+   "name_zh": "成都炒饭",
+   "price": 16,
+   "description": "Chinese Pickles | Scallion | Egg 碎米芽菜 | 葱 | 蛋",
+   "marks": [
+    "gluten_free_possible"
+   ],
+   "spicy": 0,
+   "section": "Rice & Noodle"
+  },
+  {
+   "name_en": "Pineapple Fried Rice",
+   "name_zh": "菠萝炒饭",
+   "price": 16,
+   "description": "Vegetable | Chicken | Beef +$2 | Shrimp +$4 | Combo +$4 菠萝|鸡|牛+$2|虾+$4|混合+$4",
+   "marks": [
+    "gluten_free_possible"
+   ],
+   "spicy": 0,
+   "section": "Rice & Noodle",
+   "choice_text": "Choice of Vegetable | Chicken | Beef +$2 | Shrimp +$4 | Combo +$4",
+   "choices": [
+    {
+     "name_en": "Vegetable",
+     "name_zh": "菠萝",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Chicken",
+     "name_zh": "鸡",
+     "upcharge": ""
+    },
+    {
+     "name_en": "Beef",
+     "name_zh": "牛",
+     "upcharge": "+$2"
+    },
+    {
+     "name_en": "Shrimp",
+     "name_zh": "虾",
+     "upcharge": "+$4"
+    },
+    {
+     "name_en": "Combo",
+     "name_zh": "混合",
+     "upcharge": "+$4"
+    }
+   ]
+  },
+  {
+   "name_en": "BBQ Pork Fried Rice",
+   "name_zh": "叉烧炒饭",
+   "price": 17,
+   "description": "Char Siu | Egg | Scallion | Carrot | Green Beans 叉烧 | 蛋 | 葱 | 胡萝卜 | 青豆",
+   "marks": [],
+   "spicy": 0,
+   "section": "Rice & Noodle"
+  },
+  {
+   "name_en": "Hong Kong Rice Noodle",
+   "name_zh": "干炒牛河",
+   "price": 17,
+   "description": "Beef | Bean Sprout | Scallion | Basil 牛肉 | 豆芽 | 葱 | 九层塔",
+   "marks": [
+    "gluten_free_possible"
+   ],
+   "spicy": 0,
+   "section": "Rice & Noodle"
+  },
+  {
+   "name_en": "Pumpkin Cake (3)",
+   "name_zh": "南瓜糕",
+   "price": 12,
+   "description": "",
+   "marks": [],
+   "spicy": 0,
+   "section": "Dessert"
+  },
+  {
+   "name_en": "Eight Treasure Sticky Rice",
+   "name_zh": "八宝糯米饭",
+   "price": 15,
+   "description": "",
+   "marks": [],
+   "spicy": 0,
+   "section": "Dessert"
+  }
+ ]
+}

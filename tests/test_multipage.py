@@ -151,3 +151,111 @@ def test_the_printed_name_keeps_its_versions_and_price():
     assert got["Sesame (Chicken)"] == 18 and got["Sesame (Tofu)"] == 18
     assert got["Yu Xiang (Pork)"] == 18 and got["Yu Xiang (Beef)"] == 20
     assert got["Mongolian (Beef)"] == 18 and got["Mongolian (Shrimp)"] == 22
+
+
+# --- choice prices: base + each option's own printed surcharge ---------------------------
+
+import copy
+
+READ = json.loads((Path(__file__).parent / "fixtures" / "cafe_mandarin_4p_read.json").read_text())
+
+MAIN_CLASSICS = {
+    "Yu Xiang (Pork)": 18,
+    "Yu Xiang (Chicken)": 18,
+    "Yu Xiang (Beef)": 20,
+    "Yu Xiang (Shrimp)": 22,
+    "Yu Xiang (Tofu)": 18,
+    "Kung Pao (Chicken)": 18,
+    "Kung Pao (Beef)": 20,
+    "Kung Pao (Shrimp)": 22,
+    "Kung Pao (Tofu)": 18,
+    "Broccoli (Chicken)": 18,
+    "Broccoli (Beef)": 20,
+    "Broccoli (Shrimp)": 22,
+    "Broccoli (Tofu)": 18,
+    "Cumin (Lamb)": 18,
+    "Cumin (Chicken)": 18,
+    "Cumin (Beef)": 18,
+    "Cumin (Shrimp)": 22,
+    "Cumin (Tofu)": 18,
+    "Mongolian (Chicken)": 18,
+    "Mongolian (Beef)": 18,
+    "Mongolian (Shrimp)": 22,
+    "Mongolian (Tofu)": 18,
+    "Sesame (Chicken)": 18,
+    "Sesame (Tofu)": 18,
+}
+
+
+def _prices(rows):
+    from michelin.parse.vision import rows_to_dishes
+
+    return {d.name_en: d.price for d in rows_to_dishes(rows)}
+
+
+def _row(name):
+    return next(r for r in copy.deepcopy(READ["dishes"]) if r["name_en"] == name)
+
+
+def test_saved_four_page_read_prices_every_main_classic_as_printed():
+    got = _prices(READ["dishes"])
+    assert {k: got.get(k) for k in MAIN_CLASSICS} == MAIN_CLASSICS
+    assert got["Sichuan Boiled in Chili Oil (Beef)"] == 24
+    assert got["Sichuan Boiled in Chili Oil (Fish)"] == 28
+    assert got["Lo Mein (Beef)"] == 18 and got["Lo Mein (Combo)"] == 20
+    assert not any("(Fish)" in n for n in got if n.startswith("Fluke"))  # styles, not proteins
+
+
+def test_surcharges_shifted_onto_the_wrong_options_are_repaired():
+    """Yukino's import: 'Pork 18, Chicken 20, Beef 22, Shrimp 18' for 'Beef +$2 | Shrimp +$4'."""
+    row = _row("Yu Xiang Pork")
+    for c, (wrong, up) in zip(
+        row["choices"], [(18, ""), (20, "+$2"), (22, "+$4"), (18, ""), (18, "")]
+    ):
+        c["price"], c["upcharge"] = wrong, up
+    got = _prices([row])
+    assert [got[f"Yu Xiang ({o})"] for o in ("Pork", "Chicken", "Beef", "Shrimp", "Tofu")] == [
+        18,
+        18,
+        20,
+        22,
+        18,
+    ]
+
+
+def test_choice_line_in_the_description_also_wins():
+    row = _row("Kung Pao Chicken")
+    row.pop("choice_text")
+    row["description"] = "Scallion | Peanut\nChoice of Chicken | Beef +$2 | Shrimp +$4 | Tofu"
+    for c, wrong in zip(row["choices"], [20, 22, 18, 18]):
+        c["price"], c["upcharge"] = wrong, ""
+    got = _prices([row])
+    assert [got[f"Kung Pao ({o})"] for o in ("Chicken", "Beef", "Shrimp", "Tofu")] == [
+        18,
+        20,
+        22,
+        18,
+    ]
+
+
+def test_each_options_own_upcharge_token_without_a_choice_line():
+    row = _row("Cumin Lamb")
+    row.pop("choice_text")
+    for c in row["choices"]:
+        c["price"] = 99
+    got = _prices([row])
+    assert got["Cumin (Beef)"] == 18 and got["Cumin (Shrimp)"] == 22 and got["Cumin (Lamb)"] == 18
+
+
+def test_paired_prices_split_by_the_chinese_name():
+    row = {
+        "name_en": "Sichuan Boiled Beef in Chili Oil",
+        "name_zh": "水煮牛 / 鱼",
+        "price": 24,
+        "price_text": "$24 / $28",
+    }
+    got = _prices([row])
+    assert got == {
+        "Sichuan Boiled in Chili Oil (Beef)": 24,
+        "Sichuan Boiled in Chili Oil (Fish)": 28,
+    }
