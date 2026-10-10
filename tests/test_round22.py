@@ -84,10 +84,7 @@ def test_legacy_no_is_read_by_its_reason():
     assert custom_facts._diet_answer("no", "Vegetable dish", "halal", True) == "no"
 
 
-def test_alcohol_makes_halal_a_question_and_veg_fact_is_strict():
-    wine = Dish(id="w", name_en="Drunken Tofu in Shaoxing Wine", price=10, category="stir_fry")
-    assert custom_facts.derived(wine, "halal")[0] == "possible"
-    assert custom_facts.derived(_pork("Mystery", contains_pork=True), "kosher")[0] == "likely"
+def test_veg_fact_is_strict():
     assert (
         custom_facts.derived(Dish(id="c", name_en="Chicken", price=9), "vegetarian")[0] == "likely"
     )

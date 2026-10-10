@@ -54,23 +54,55 @@ DIET_FIELDS = {
 _PORK_STRICT = {"halal", "kosher"}  # custom diets at least as strict as no pork (QA r22)
 
 
+_RANK = {"conflict": 2, "requires_confirmation": 1, "validated_under_known_data": 0}
+
+
+def _merge(a: dict, b: dict) -> dict:
+    return {
+        "status": max(a["status"], b["status"], key=_RANK.get),
+        "reasons": list(dict.fromkeys(a["reasons"] + b["reasons"])),
+        "blocking": list(dict.fromkeys(a["blocking"] + b["blocking"])),
+        "eligible": a["eligible"] and b["eligible"],
+    }
+
+
 def assessment(dish: Dish, diner: DinerProfile) -> dict:
-    """The diner's own rules, made at least as strict as the rules they imply (QA r22 OA-1):
-    halal and kosher are never looser than no pork (kosher also than a shellfish allergy);
-    vegetarian and vegan never looser than no pork and no beef. Strictest result wins."""
+    """The diner's rules. Vegetarian and vegan are never looser than no pork and no beef.
+    Halal and kosher (QA r23, kept simple): ok only if the dish is vegetarian by its facts;
+    "no" if it is "no" for no pork; otherwise ask the server. The AI's answer is not used."""
+    strict = [t for t in diner.other_diets if t.lower().strip() in _PORK_STRICT]
+    rest = diner.model_copy(
+        update={"other_diets": [t for t in diner.other_diets if t not in strict]}
+    )
+    out = _with_veg_floor(dish, rest)
+    for term in strict:
+        out = _merge(out, _halal_kosher(dish, diner, term))
+    return out
+
+
+def _halal_kosher(dish: Dish, diner: DinerProfile, term: str) -> dict:
+    pork = _assess(dish, DinerProfile(id=diner.id, name=diner.name, diets=[Diet.NO_PORK]))
+    if not pork["eligible"]:
+        why = [f"Breaks {term}: {r}" for r in pork["blocking"]] or [f"Breaks {term}"]
+        return {"status": "conflict", "reasons": why, "blocking": why, "eligible": False}
+    veg = _with_veg_floor(dish, DinerProfile(id=diner.id, name=diner.name, diets=[Diet.VEGETARIAN]))
+    if veg["status"] == "validated_under_known_data":
+        return {
+            "status": "validated_under_known_data",
+            "reasons": [],
+            "blocking": [],
+            "eligible": True,
+        }
+    q = [f"Confirm {term.replace(' ', '_')} preparation"]
+    return {"status": "requires_confirmation", "reasons": q, "blocking": [], "eligible": True}
+
+
+def _with_veg_floor(dish: Dish, diner: DinerProfile) -> dict:
     base = _assess(dish, diner)
-    terms = {t.lower().strip() for t in diner.other_diets}
-    diets: set = set()
-    allergies: set = set()
-    if terms & _PORK_STRICT:
-        diets.add(Diet.NO_PORK)
-    if "kosher" in terms:
-        allergies.add(Allergen.SHELLFISH)
-    if {Diet.VEGETARIAN, Diet.VEGAN} & set(diner.diets):
-        diets |= {Diet.NO_PORK, Diet.NO_BEEF}
-    diets -= set(diner.diets)
-    allergies -= set(diner.allergies)
-    if not diets and not allergies:
+    if not {Diet.VEGETARIAN, Diet.VEGAN} & set(diner.diets):
+        return base
+    diets = {Diet.NO_PORK, Diet.NO_BEEF} - set(diner.diets)
+    if not diets:
         return base
     # a dish labeled vegetarian has no pork or beef unless something says it may
     if dish.is_vegetarian is True or dish.is_vegan is True:
@@ -80,20 +112,8 @@ def assessment(dish: Dish, diner: DinerProfile) -> dict:
                 "contains_beef": False if dish.contains_beef is None else dish.contains_beef,
             }
         )
-    implied = _assess(
-        dish,
-        DinerProfile(
-            id=diner.id, name=diner.name, diets=sorted(diets), allergies=sorted(allergies)
-        ),
-    )
-    rank = {"conflict": 2, "requires_confirmation": 1, "validated_under_known_data": 0}
-    worst = max(base["status"], implied["status"], key=rank.get)
-    return {
-        "status": worst,
-        "reasons": list(dict.fromkeys(base["reasons"] + implied["reasons"])),
-        "blocking": list(dict.fromkeys(base["blocking"] + implied["blocking"])),
-        "eligible": base["eligible"] and implied["eligible"],
-    }
+    implied = _assess(dish, DinerProfile(id=diner.id, name=diner.name, diets=sorted(diets)))
+    return _merge(base, implied)
 
 
 def _assess(dish: Dish, diner: DinerProfile) -> dict:
@@ -174,14 +194,8 @@ def _assess(dish: Dish, diner: DinerProfile) -> dict:
     for term in diner.other_diets:
         flag = custom.get(("diet", term))
         answer = flag.answer if flag else "unknown"
-        if (
-            term.lower().strip() in _PORK_STRICT
-            and answer != "likely"
-            and _plainly_fits(dish, term)
-        ):
-            answer = "no"  # no meat, no alcohol: nothing to certify (QA r22, Tomato & Egg)
         if answer == "likely":
-            conflicts.append(f"Breaks {term}" + (" (on the menu)" if flag.printed else ""))
+            conflicts.append(f"Breaks {term}" + (" (on the menu)" if flag and flag.printed else ""))
         elif answer == "possible":
             ask.append(f"Confirm {term.replace(' ', '_')} preparation")
         elif answer != "no":
@@ -608,11 +622,3 @@ def risks(dish: Dish, diners: list[DinerProfile]) -> list[Risk]:
             continue
         kept.append(Risk(r.about.replace("_", " "), names, r.words, r.question))
     return kept
-
-
-def _plainly_fits(dish: Dish, term: str) -> bool:
-    """A labeled-vegetarian dish with no alcohol (and, for kosher, no shellfish) needs no
-    halal/kosher question; pork risk is still judged by the implied no-pork rule."""
-    from michelin.plan import custom_facts
-
-    return dish.is_vegetarian is True and custom_facts.derived(dish, term) is None

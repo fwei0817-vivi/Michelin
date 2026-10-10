@@ -46,6 +46,29 @@ _VEG_TERMS = {"vegetarian", "vegan", "veggie", "plant based", "plant-based"}
 
 
 def derived(dish: Dish, term: str) -> tuple[str, str] | None:
+    """The strongest code judgment: printed words and the facts' named ingredients count in
+    full; ingredients the facts only call possible ("meat or meat stock") cap at a question
+    (QA r23: chicken broth in Bok Choy, Egg Drop Soup)."""
+    sure = [i.name for i in dish.main_ingredients if i.tier.value != "unknown"]
+    maybe = [i.name for i in dish.main_ingredients if i.tier.value == "unknown"]
+    got = _derived(dish, term, " ".join([kw_text(dish), *sure]))
+    if got:
+        return got
+    got = _derived(
+        dish.model_copy(update={"contains_pork": None, "contains_beef": None, "allergens": []}),
+        term,
+        " ".join(maybe),
+    )
+    return ("possible", got[1]) if got else None
+
+
+def kw_text(dish: Dish) -> str:
+    from michelin import keywords as kw
+
+    return kw.dish_text(dish)
+
+
+def _derived(dish: Dish, term: str, text: str) -> tuple[str, str] | None:
     """(answer, why) from the dish's facts and printed words, or None (QA r21 OA-1b):
     pork => breaks halal, kosher and vegetarian; any meat or seafood => breaks vegetarian;
     alcohol => halal might break; meat => halal/kosher might break (certification)."""
@@ -53,7 +76,6 @@ def derived(dish: Dish, term: str) -> tuple[str, str] | None:
     from michelin.schemas import Allergen, EvidenceTier
 
     t = term.lower().strip()
-    text = kw.dish_text(dish)
     pork = dish.contains_pork is True or bool(kw.found("pork", text))
     beef = dish.contains_beef is True or bool(kw.found("beef", text))
     meat = bool(kw.found("meat", text))
@@ -67,21 +89,14 @@ def derived(dish: Dish, term: str) -> tuple[str, str] | None:
         for a, c in ((Allergen.FISH, "fish"), (Allergen.SHELLFISH, "shellfish"))
         if kw.found(c, text)
     }
-    if t in ("halal", "kosher"):
-        if pork:
-            return "likely", "contains pork"
-        if t == "kosher" and Allergen.SHELLFISH in sea:
-            return "likely", "contains shellfish"
-        if t == "halal" and re.search(_ALCOHOL, text, re.IGNORECASE):
-            return "possible", "may be cooked with alcohol"
-        if beef or meat:
-            return "possible", "ask if the meat is " + t
-        return None
+    # halal and kosher are judged in edibility.assessment from vegetarian / no pork (r23)
     if t in _VEG_TERMS or t == "pescatarian":
         if pork or beef or meat or dish.is_vegetarian is False and t != "pescatarian":
             return "likely", "contains meat"
         if t != "pescatarian" and sea:
             return "likely", "contains seafood"
+        if kw.found("stock", text):
+            return "possible", "may be cooked with meat stock"
     return None
 
 

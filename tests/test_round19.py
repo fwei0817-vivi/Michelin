@@ -95,7 +95,9 @@ def test_yukino_table_taste_conflicts_never_listed(cafe_mandarin):
                 assert p.id not in fw and p.name not in r.split(";")[0], (d.id, r)
         if spice.level(d) >= 2:
             assert not {"li", "kevin"} & fw, d.id
-            assert "Not for Li and Kevin, who avoid heat" in (spice.heat_note(d, YUKINO) or ""), d.id
+            assert "Not for Li and Kevin, who avoid heat" in (spice.heat_note(d, YUKINO) or ""), (
+                d.id
+            )
         if r.startswith("Everyone can share this"):
             assert fw == {p.id for p in YUKINO}, (d.id, r)
         if spice.level(d) == 1 and {"li", "kevin"} <= fw:

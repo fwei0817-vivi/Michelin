@@ -40,7 +40,21 @@ def halal_possible(monkeypatch):
     # plainly vegetarian dish is halal without asking, so switch that shortcut off here
     from michelin.plan import edibility
 
-    monkeypatch.setattr(edibility, "_plainly_fits", lambda dish, term: False)
+    real = edibility._halal_kosher
+
+    def ask(dish, diner, term):  # every dish needs the server for her (unless pork says no)
+        out = real(dish, diner, term)
+        if out["status"] == "validated_under_known_data":
+            q = [f"Confirm {term} preparation"]
+            return {
+                "status": "requires_confirmation",
+                "reasons": q,
+                "blocking": [],
+                "eligible": True,
+            }
+        return out
+
+    monkeypatch.setattr(edibility, "_halal_kosher", ask)
 
 
 def check_subtitle(text, menu, req, ids):
