@@ -17,7 +17,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 
-from michelin import llm
+from michelin import explain, llm
 from michelin.plan import ai_text, llm_planner
 from michelin.plan.budget import cents, subtotal_cap, totals
 from michelin.plan.edibility import assessment, diner_status, edible_by, risks
@@ -399,6 +399,8 @@ def _to_plan(
 
     def kept(i):  # an earlier reason only if still true on the new order
         if i.dish_id == new_id:
+            if not ai_text.ai_prose():  # QA r17: a reason, not the swap notice
+                return explain.reason_for(menu.dish(i.dish_id), i.quantity, request)
             return str(answer.get("reason") or "")[:200] or i.reason  # the code's swap line
         if not ai_text.ai_prose():
             return i.reason  # code-written for the new order (QA r16)

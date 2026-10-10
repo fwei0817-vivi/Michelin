@@ -330,23 +330,55 @@ def _all_well_served(dishes, diners) -> bool:
     )
 
 
+def _topic(diner, reasons: list[str]) -> str:
+    """What the server must confirm for this diner, in their own words ("halal")."""
+    low = " ".join(r for r in reasons if r).lower().replace("_", " ")
+    rules = [getattr(x, "value", x) for x in list(diner.diets or []) + list(diner.allergies or [])]
+    rules += list(getattr(diner, "other_allergies", None) or []) + list(
+        getattr(diner, "other_diets", None) or []
+    )
+    hit = [str(r).replace("_", " ") for r in rules if str(r).replace("_", " ").lower() in low]
+    return ", ".join(dict.fromkeys(hit))
+
+
 def code_summary(menu, request, items) -> str:
-    """A true one-liner when the AI's summary fails (or there is none)."""
+    """A true one-liner about the order. Counts only dishes each diner can eat without
+    asking ("ok" in diner_status, QA r17); anyone with none is named honestly."""
     shared = [
         menu.dish(i.dish_id) for i in items if menu.dish(i.dish_id).category.value != "staple"
     ]
-    counts = {p.id: sum(p.id in edible_by(d, [p]) for d in shared) for p in request.diners}
-    low = min(counts.values(), default=0)
+    st = [diner_status(d, request.diners) for d in shared]
+    ok = {p.id: sum(s[p.id]["status"] == "ok" for s in st) for p in request.diners}
     top = max((_spice(d) for d in shared), default=0)
     heat = ["nothing spicy", "at most a little spicy", "up to spicy", "up to very spicy"][
         min(top, 3)
     ]
-    who = (
-        "everyone has at least " + (f"{low} dishes" if low != 1 else "one dish") + " they can eat"
-        if low
-        else "not everyone has a dish they can eat"
-    )
-    return f"{len(shared)} dish{'es' if len(shared) != 1 else ''} to share; {who}; {heat}."
+
+    def n_dishes(n):
+        return f"{n} dishes" if n != 1 else "one dish"
+
+    stuck = [p for p in request.diners if ok[p.id] == 0]
+    rest = [p for p in request.diners if ok[p.id] > 0]
+    parts = []
+    if not stuck:
+        parts.append(f"everyone has at least {n_dishes(min(ok.values(), default=0))} they can eat")
+    else:
+        if rest:
+            low = min(ok[p.id] for p in rest)
+            who = "everyone else has" if len(rest) > 1 else f"{rest[0].name or rest[0].id} has"
+            parts.append(f"{who} at least {n_dishes(low)} they can eat")
+        for p in stuck:
+            name = p.name or p.id
+            asks = [s[p.id]["reason"] for s in st if s[p.id]["status"] == "needs_confirm"]
+            if asks:
+                t = _topic(p, asks)
+                parts.append(
+                    f"{name}'s dishes need a quick check with the server" + (f" ({t})" if t else "")
+                )
+            else:
+                parts.append(f"{name} has no dish they can eat")
+    n = len(shared)
+    return f"{n} dish{'es' if n != 1 else ''} to share; " + "; ".join(parts) + f"; {heat}."
 
 
 def reason(text: object, dish, menu, request, n: int = 0, shown: bool = False) -> str | None:

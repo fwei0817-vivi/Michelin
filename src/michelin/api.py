@@ -358,7 +358,7 @@ def with_status(plan: Plan, menu: Menu, diners) -> Plan:
                 i.model_copy(
                     update={
                         "status": diner_status(menu.dish(i.dish_id), diners),
-                        "veg_tag": veg_tag(menu.dish(i.dish_id)),
+                        "veg_tag": veg_tag(menu.dish(i.dish_id), diners),
                     }
                 )
                 for i in plan.items
@@ -830,7 +830,7 @@ def evaluate_menu(req: EvaluateRequest) -> dict:
             "assessments": {p.id: assessment(d, p) for p in req.diners},
             "questions": open_questions(d, req.diners),
             "status": diner_status(d, req.diners),
-            "veg_tag": veg_tag(d),
+            "veg_tag": veg_tag(d, req.diners),
         }
         for d in menu.dishes
     }

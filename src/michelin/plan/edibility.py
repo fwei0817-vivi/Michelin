@@ -196,14 +196,16 @@ def diner_status(dish: Dish, diners: list[DinerProfile]) -> dict[str, dict]:
     return out
 
 
-def veg_tag(dish: Dish) -> str | None:
+def veg_tag(dish: Dish, diners: list[DinerProfile] | None = None) -> str | None:
     """The vegetarian/vegan tag the cards show (QA r16), from the backend's own diet check
     for a diner with only that diet, so another diner's halal or allergy never changes it:
     "vegan"/"vegetarian" (settled), "ask_vegan"/"ask_vegetarian" (the server must confirm),
     or None (no tag)."""
     if dish.is_vegetarian is not True:
         return None
-    diet = Diet.VEGAN if dish.is_vegan is True else Diet.VEGETARIAN
+    # QA r17: "vegan" only when a vegan diner is at the table; vegetarians see "vegetarian"
+    vegan_here = diners is None or any(Diet.VEGAN in (p.diets or []) for p in diners)
+    diet = Diet.VEGAN if dish.is_vegan is True and vegan_here else Diet.VEGETARIAN
     probe = DinerProfile(id="_veg", name="_veg", diets=[diet])
     status = diner_status(dish, [probe])["_veg"]["status"]
     if status == "no":
