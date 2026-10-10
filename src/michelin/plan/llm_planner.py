@@ -759,6 +759,7 @@ def enough_check(menu: Menu, request: TableRequest, items) -> Check:
 
 
 THIN = 2  # a diner with fewer non-rice dishes than this is under-served
+ENOUGH_FIX = True  # the enough-food retry + code top-up; most older tests switch it off
 COVERAGE_NUDGE = True  # tests of other behaviour switch this off (conftest)
 
 
@@ -840,6 +841,24 @@ def _fix_text(menu: Menu, request: TableRequest, fix: CoverageFix) -> str:
         + ". Favour the least-served diners: return the full corrected order in the same "
         "format (this change, or a better one that passes every rule)."
     )
+
+
+def _apply_top_up(answer: dict, added, dropped, menu: Menu, request: TableRequest) -> dict:
+    rows = [
+        r
+        for r in answer.get("dishes", [])
+        if isinstance(r, dict) and r.get("dish_id") not in set(dropped)
+    ]
+    for i in added:
+        rows.append(
+            {
+                "dish_id": i,
+                "reason": "",
+                "for": for_whom(menu.dish(i), request.diners),
+                "server_question": "",
+            }
+        )
+    return {**answer, "dishes": rows}
 
 
 def _apply_fix(answer: dict, fix: CoverageFix, menu: Menu, request: TableRequest) -> dict:
@@ -1279,10 +1298,10 @@ def _plan(menu, request, client=None, cache_path=None, feedback=None) -> Outcome
                 text, used, answer, items, _ = first_ok
                 problems = []
             first_ok = None
-        elif not problems and not enough_asked and attempt < MAX_RETRIES:
+        elif ENOUGH_FIX and not problems and not enough_asked and attempt < MAX_RETRIES:
             dishes_now = [menu.dish(i.dish_id) for i in items]
             short = enough.gaps(dishes_now, request.diners)
-            if short and enough.feasible(menu, request):
+            if short and enough.top_up(menu, request, items) is not None:  # improvable
                 enough_asked = True
                 first_ok = (text, used, answer, items, enough.deficit(dishes_now, request.diners))
                 example = enough.cheapest(menu, request)
@@ -1322,8 +1341,17 @@ def _plan(menu, request, client=None, cache_path=None, feedback=None) -> Outcome
             )
         if not problems:
             calls = attempt + 1
-            fix = coverage_fix(menu, request, items) if COVERAGE_NUDGE else None
             note = ""
+            topped = enough.top_up(menu, request, items) if ENOUGH_FIX else None
+            if topped is not None:  # QA r20: the code meets the rule itself when it can
+                _, added, dropped = topped
+                answer2 = _apply_top_up(answer, added, dropped, menu, request)
+                problems2, items2 = check(menu, request, answer2, staples)
+                if not problems2:  # never ship an order that fails a rule
+                    answer, items = answer2, items2
+                    names = ", ".join(menu.dish(i).name_en or i for i in added)
+                    note = f" The rules added {names} so there is enough food."
+            fix = coverage_fix(menu, request, items) if COVERAGE_NUDGE else None
             if fix is not None:
                 # QA r5 #8: a valid in-budget change serves a least-served diner better.
                 # Ask once with that hint; if the answer is not at least as even, make the

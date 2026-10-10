@@ -18,7 +18,10 @@ from michelin.schemas import DishCategory
 
 log = logging.getLogger("michelin")
 ROOT = Path(__file__).resolve().parents[3]
+# Committed answers (read only at runtime) and this machine's own additions (untracked),
+# so running the app never changes a committed file (QA r20).
 CACHE_PATH = Path(os.environ.get("MICHELIN_COURSE_CACHE", ROOT / "data/facts/dish_course.json"))
+LOCAL_PATH = Path(os.environ.get("MICHELIN_COURSE_LOCAL", ROOT / "data/local/dish_course.json"))
 VERSION = "1"  # the 2026-10-10 "unknown rather than guess" wording only clarifies v1
 _STARTER = re.compile(
     r"dumpling|wonton|wanton|potsticker|spring roll|egg roll|fantail|\bbuns?\b|shumai|饺|馄饨|春卷",
@@ -59,19 +62,24 @@ def _key(d) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()[:24]
 
 
-def _load() -> dict:
+def _read(path: Path) -> dict:
     try:
-        return json.loads(CACHE_PATH.read_text())
+        return json.loads(path.read_text())
     except (OSError, ValueError):
         return {}
 
 
+def _load() -> dict:
+    return {**_read(LOCAL_PATH), **_read(CACHE_PATH)}  # committed answers win
+
+
 def _save(new: dict) -> None:
-    cache = {**_load(), **new}
-    CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    tmp = CACHE_PATH.with_suffix(".tmp")
+    """Runtime additions go to the untracked local cache only."""
+    cache = {**_read(LOCAL_PATH), **new}
+    LOCAL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    tmp = LOCAL_PATH.with_suffix(".tmp")
     tmp.write_text(json.dumps(cache, ensure_ascii=False, indent=1, sort_keys=True))
-    tmp.replace(CACHE_PATH)
+    tmp.replace(LOCAL_PATH)
 
 
 def _ask(batch, client=None) -> dict:
@@ -123,7 +131,7 @@ def _ask(batch, client=None) -> dict:
 
 def annotate(dishes: list, client=None) -> list:
     cache = _load()
-    unclear = [d for d in dishes if d.category not in CLEAR]
+    unclear = [d for d in dishes if d.category not in CLEAR and _by_name(d) is None]
     missing = list({_key(d): d for d in unclear if _key(d) not in cache}.values())
     if missing and (llm.provider() is not None or client is not None):
         new = {}
@@ -143,11 +151,31 @@ def annotate(dishes: list, client=None) -> list:
     return [d.model_copy(update={"course": _course(d, cache)}) for d in dishes]
 
 
+_NOODLE = re.compile(
+    r"noodle|\bmein\b|chow fun|mei fun|ho fun|fried rice|udon|\bpho\b|炒饭|面(?!筋|包|粉)|河粉|米粉|米线|粉丝",
+    re.IGNORECASE,
+)
+_COLD_NOODLE = re.compile(r"\bcold\b|凉", re.IGNORECASE)
+
+
+def _by_name(d) -> str | None:
+    """Rice and noodle dishes are staples by name (code, no AI); cold noodles are cold."""
+    if d.course == "staple":  # set by dish_facts.plain_rice_only (printed "staple")
+        return "staple"
+    text = f"{d.name_en or ''} {d.name_zh or ''}"
+    if d.category in CLEAR or not _NOODLE.search(text):
+        return None
+    return "cold" if _COLD_NOODLE.search(text) else "staple"
+
+
 def _course(d, cache) -> str:
     """Fried rice, lo mein, chow mein, chow fun, mei fun are staples by name (code, no AI),
     unless printed as cold or soup; plain rice keeps category "staple"."""
     from michelin.plan.validation import staple_kind
 
+    named = _by_name(d)
+    if named:
+        return named
     c = course_of(d.category, (cache.get(_key(d)) or {}).get("course"))
     # printed as a cold appetizer but a hot starter by name or section -> side (spot check)
     text = f"{d.name_en or ''} {d.name_zh or ''}"

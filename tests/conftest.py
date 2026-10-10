@@ -90,6 +90,7 @@ def pytest_configure(config):
         "markers", "real_llm_path: use the real planner model call (tests pass their own fake)"
     )
     config.addinivalue_line("markers", "coverage: keep the planner's coverage retry on")
+    config.addinivalue_line("markers", "enough: keep the enough-food retry and code top-up on")
 
 
 def _oracle_answer(menu, request):
@@ -146,6 +147,8 @@ def oracle_planner(request, monkeypatch, tmp_path):
 
     monkeypatch.setattr(llm_planner, "CACHE_PATH", tmp_path / "llm_plans.json")
     llm_planner._memory.clear()
+    if not request.node.get_closest_marker("enough"):  # the enough-food fix has its own tests
+        monkeypatch.setattr(llm_planner, "ENOUGH_FIX", False)
     if request.node.get_closest_marker("real_llm_path"):
         # Fakes with a fixed list of answers: the coverage retry (one extra call) is tested
         # on its own (marker "coverage").
@@ -173,4 +176,5 @@ def recorded_courses(monkeypatch, tmp_path):
     path = tmp_path / "dish_course.json"
     shutil.copy(ROOT / "data/facts/dish_course.json", path)
     monkeypatch.setattr(courses, "CACHE_PATH", path)
+    monkeypatch.setattr(courses, "LOCAL_PATH", tmp_path / "dish_course.local.json")
     monkeypatch.setattr(courses, "_ask", lambda batch, client=None: {})

@@ -52,12 +52,13 @@ def reason_for(dish, quantity: int, request: TableRequest) -> str:
         line += f"; not for {_join([name[i] for i in blocked])}"
     if hot:
         line += f"; too spicy for {_join([name[i] for i in hot])}"
-    if little:
-        line += f"; a little spicy for {_join([name[i] for i in little])}"
-    line += "."
     heat = spice.label(dish)
-    if heat:
-        line += f" {heat}."
+    if little:  # the spice said once (QA r20)
+        line += f"; a little spicy for {_join([name[i] for i in little])}."
+    else:
+        line += "."
+        if heat:
+            line += f" {heat}."
     return line
 
 

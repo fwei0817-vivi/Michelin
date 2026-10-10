@@ -21,3 +21,15 @@ export function coverageLabel(items: { status?: DinerStatusMap }[], diners: { id
   if (askOnly.length) return { passed: true, label: `Everyone has a dish, ${names(askOnly)} only if the server confirms` };
   return { passed: true, label: "Everyone has a dish they can eat" };
 }
+
+/** Checks that only warn: they are shown, never block the order ticket (QA r20 D-7). */
+export const WARN_CHECKS = new Set(["enough"]);
+
+/** Why the order ticket is blocked, or null. Only hard failures block, and always say why. */
+export function orderBlock(p: { checks: { name: string; passed: boolean; detail?: string }[] } | null, stale: boolean, loading: boolean): string | null {
+  if (!p) return "No order yet.";
+  if (loading) return "Updating the order…";
+  if (stale) return "The order is out of date; update it first.";
+  const hard = p.checks.find((c) => !c.passed && !WARN_CHECKS.has(c.name));
+  return hard ? `Can't show the ticket: ${hard.detail || hard.name}` : null;
+}

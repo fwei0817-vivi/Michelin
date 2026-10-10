@@ -18,10 +18,26 @@ _AVOIDS = re.compile(
 )
 
 
+# Dishes known to be spicy wherever they are cooked (QA r20: Kung Pao, Mapo were "a little").
+_KNOWN = re.compile(
+    r"kung ?pao|gong ?bao|ma ?po|dan ?dan|chong ?qing|la ?zi ji|sichuan boiled|water[- ]boiled|"
+    r"hot pot|mala|ma la|宫保|宮保|麻婆|担担|擔擔|辣子鸡|辣子雞|水煮|麻辣",
+    re.IGNORECASE,
+)
+
+
+def known(dish) -> int:
+    text = f"{dish.name_en or ''} {dish.name_zh or ''} {dish.family_name or ''}"
+    if _KNOWN.search(text) and not re.search(r"\bmild\b|不辣", text, re.IGNORECASE):
+        return 2
+    return 0
+
+
 def level(dish) -> int:
+    """Printed peppers, the AI's facts and known dishes: whichever is hottest."""
     if dish is None:
         return 0
-    return min(max(dish.spice_level or 0, dish.menu_spice or 0, 0), 3)
+    return min(max(dish.spice_level or 0, dish.menu_spice or 0, known(dish), 0), 3)
 
 
 def label(dish) -> str | None:

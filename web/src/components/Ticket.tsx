@@ -61,13 +61,14 @@ interface Props {
   onRefine: (chips: FeedbackChip[], text: string) => void;
   onOrder: () => void;
   canOrder: boolean;
+  orderBlocked?: string | null;
   onParty: () => void;
 }
 
 // One printed pepper is "a little spicy", never "mild" (QA r8): viewers see the 🌶 on the menu.
 const SPICE = ["", "A little spicy", "Spicy", "Very spicy"];
 
-export function Ticket({ menu, plan, diners, settings, source, sourceNote, locked, stale, loading, onLock, onSwap, onAiSwap, swapping, onRemove, onAdd, onRefine, onOrder, canOrder, onParty }: Props) {
+export function Ticket({ menu, plan, diners, settings, source, sourceNote, locked, stale, loading, onLock, onSwap, onAiSwap, swapping, onRemove, onAdd, onRefine, onOrder, canOrder, orderBlocked, onParty }: Props) {
   const [filter, setFilter] = useState("all");
   const [open, setOpen] = useState<string[]>([]);
   const [refining, setRefining] = useState(false);
@@ -252,9 +253,10 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
               {questions} {questions === 1 ? "question" : "questions"} for your server
             </a>
           )}
-          <button className="btn btn-light" onClick={onOrder} disabled={!canOrder}>
+          <button className="btn btn-light" onClick={onOrder} disabled={!canOrder} title={orderBlocked ?? undefined}>
             View order ticket
           </button>
+          {!canOrder && orderBlocked && <p className="bill-note" role="status">{orderBlocked}</p>}
           <p className="bill-note">Confirm fees and serving sizes with your server. Nothing is ordered from here.</p>
           <button className="text-button light" onClick={onParty}>
             Edit people and budget
@@ -269,7 +271,7 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
           </strong>
           <small>{money(plan.total, cur)} for the table</small>
         </div>
-        <button className="btn btn-light" disabled={!canOrder} onClick={onOrder}>
+        <button className="btn btn-light" disabled={!canOrder} onClick={onOrder} title={orderBlocked ?? undefined} aria-label={orderBlocked ? `Order ticket: ${orderBlocked}` : undefined}>
           Order ticket
         </button>
       </div>

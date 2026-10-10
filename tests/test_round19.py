@@ -52,12 +52,20 @@ def _listed(reason, diners):
 
 def test_demo_courses_need_no_ai(cafe_mandarin):
     cache = courses._load()
-    unclear = [d for d in cafe_mandarin.dishes if d.category not in courses.CLEAR]
+    unclear = [
+        d
+        for d in cafe_mandarin.dishes
+        if d.category not in courses.CLEAR and courses._by_name(d) is None
+    ]
     assert unclear and all(courses._key(d) in cache for d in unclear)
     atlas = dish_facts.prepare(
         Menu.model_validate_json((ROOT / "data/menus/atlas_kitchen.json").read_text())
     )
-    assert all(courses._key(d) in cache for d in atlas.dishes if d.category not in courses.CLEAR)
+    assert all(
+        courses._key(d) in cache
+        for d in atlas.dishes
+        if d.category not in courses.CLEAR and courses._by_name(d) is None
+    )
     assert not [d for d in cafe_mandarin.dishes if d.course == "unknown"]
 
 
@@ -66,8 +74,9 @@ def test_one_spice_source_for_tag_and_reason(cafe_mandarin):
     for d in cafe_mandarin.dishes:
         r = explain.reason_for(d, 1, req)
         lab = spice.label(d)
-        if lab:
-            assert r.endswith(f" {lab}."), (d.id, r)
+        if lab:  # said once: as the closing label, or "a little spicy for X" (r20)
+            assert r.endswith(f" {lab}.") or f"{lab.lower()} for " in r, (d.id, r)
+            assert r.lower().replace("too spicy", "").count(lab.lower()) == 1, (d.id, r)
         for other in spice.LABELS[1:]:
             if other != lab:
                 assert not r.endswith(f" {other}."), (d.id, r)
@@ -96,7 +105,7 @@ def test_yukino_table_taste_conflicts_never_listed(cafe_mandarin):
 def test_hot_sour_soup_tag_reason_agree(cafe_mandarin):
     d = cafe_mandarin.dish("hot_sour_soup")
     r = explain.reason_for(d, 1, _req(YUKINO))
-    assert spice.label(d) in r
+    assert spice.label(d).lower() in r.lower()
     assert ("Spicy." in r) == (spice.label(d) == "Spicy")
 
 
@@ -172,20 +181,23 @@ def test_enough_rule_and_honest_line():
     assert enough.tally([m.dish(i.dish_id) for i in thin], diners).hot == 0
     assert enough.feasible(m, req)
     line = enough.honest_line(m, req, thin)
-    assert line.startswith("This order has only 0 hot dishes for 2 people"), line
+    assert line.startswith("This order has no hot dishes for 2 people"), line
     assert line in ai_text.code_summary(m, req, thin)
     full = [PlanItem(dish_id=i, quantity=1) for i in ("tofu", "noodle", "cold1")]
     assert enough.honest_line(m, req, full) is None
     poor = _req(diners, 5)
     assert not enough.feasible(m, poor)
     line = enough.honest_line(m, poor, thin)
-    assert line.startswith("At this budget only") and "per person would cover" in line, line
+    assert line.startswith("This order has no hot dishes") and line.endswith(
+        "about $20 per person would cover it."
+    ), line
     need = enough.budget_needed(m, poor)
     assert enough.feasible(m, _req(diners, need))
     check = llm_planner.enough_check(m, poor, thin)
     assert not check.passed and check.detail == line
 
 
+@pytest.mark.enough
 def test_planner_retries_once_for_enough_food(monkeypatch, tmp_path):
     m = _menu(
         [

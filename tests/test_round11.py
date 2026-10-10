@@ -61,7 +61,7 @@ def test_r11_repro_less_spicy_on_a_gentle_hand_edited_order_is_already_gentle(de
     # user swapped Sesame (Tofu) for Cucumber Salad (Spicy Chili Oil), then pressed less spicy.
     current = [
         "cucumber_salad_garlic",
-        "cucumber_salad_spicy_chili_oil",
+        "sichuan_crispy_eggplant",  # a little spicy (r20: chili-oil cucumber is now Spicy)
         "hong_kong_rice_noodle",
         "tomato_egg",
     ]

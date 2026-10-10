@@ -73,6 +73,18 @@ SCHEMA = {
     "properties": {
         "restaurant_name": {"type": "string"},
         "legend": {"type": "string"},
+        # QA r20: lets the page say when only part of a menu was read (schema only, so the
+        # committed reads keep their cache key)
+        "currency": {
+            "type": "string",
+            "description": "ISO code of the menu's prices as printed or implied (USD, CNY, "
+            "HKD, ...); USD if unclear.",
+        },
+        "printed_dish_count": {
+            "type": "integer",
+            "description": "How many priced dishes are printed on these pages in total, "
+            "including any you could not read.",
+        },
         "dishes": {
             "type": "array",
             "items": {
@@ -522,10 +534,19 @@ READ_CACHE = Path(
 )
 
 
+_ADVISORY = ("printed_dish_count", "currency")  # notes only; they never change the dishes
+
+
+def _key_schema() -> dict:
+    """The schema as it was for the committed reads: advisory fields leave the key alone."""
+    props = {k: v for k, v in SCHEMA["properties"].items() if k not in _ADVISORY}
+    return {**SCHEMA, "properties": props}
+
+
 def read_key(files: list[bytes]) -> str:
     """The uploaded files' ordered content hashes plus the reading prompt's version."""
     prompt = hashlib.sha256(
-        (PROMPT + PAGES + json.dumps(SCHEMA, sort_keys=True)).encode()
+        (PROMPT + PAGES + json.dumps(_key_schema(), sort_keys=True)).encode()
     ).hexdigest()[:12]
     hashes = [hashlib.sha256(f).hexdigest() for f in files]
     return hashlib.sha256(f"{READ_VERSION}|{prompt}|{'|'.join(hashes)}".encode()).hexdigest()[:32]
@@ -549,6 +570,31 @@ def _save_read(key: str, read: dict) -> None:
         logging.getLogger("michelin").warning("Could not save the menu read", exc_info=True)
 
 
+LAST_PRINTED: dict = {}  # read key -> how many dishes the model saw printed (or None)
+LAST_CURRENCY: dict = {}  # read key -> a non-USD currency the menu is priced in (or None)
+
+
+def currency_note(key: str | None) -> str:
+    cur = LAST_CURRENCY.get(key or "")
+    if not cur:
+        return ""
+    return (
+        f" Prices on this menu look like {cur}, not US dollars; the app does its budget, tax "
+        "and tip math as if they were dollars."
+    )
+
+
+def partial_note(read: int, key: str | None) -> str:
+    """' Only 18 of about 110 dishes on this menu were read…' when the read is short."""
+    printed = LAST_PRINTED.get(key or "")
+    if isinstance(printed, int) and printed >= 8 and read < 0.8 * printed:
+        return (
+            f" Only {read} of about {printed} dishes on this menu were read; the rest are "
+            "missing. Try clearer photos of each page, or add dishes by hand."
+        )
+    return ""
+
+
 def read_menu_pages(
     pages: list[tuple[bytes, str]], client=None, key: str | None = None
 ) -> tuple[list[Dish], str | None, str, str]:
@@ -557,6 +603,8 @@ def read_menu_pages(
     With a `key` (see read_key) the same upload is read once and then served from cache."""
     hit = cached_read(key) if key else None
     if hit is not None:
+        LAST_PRINTED[key] = hit.get("printed_dish_count")
+        LAST_CURRENCY[key] = hit.get("currency")
         name = nice_name(str(hit.get("restaurant_name") or "")) or None
         return (
             rows_to_dishes(hit["rows"]),
@@ -571,9 +619,15 @@ def read_menu_pages(
         batches = [[p] for p in pages]
     rows: list = []
     names, legends, used = [], [], ""
+    printed = None
+    currency = None
     for batch in batches:
         body, used = _ask(batch, client)
         rows += body.get("dishes") or []
+        cur = str(body.get("currency") or "").upper().strip()
+        currency = cur if cur and cur != "USD" else currency
+        n = body.get("printed_dish_count")
+        printed = (printed or 0) + n if isinstance(n, int) and n > 0 else printed
         names.append(str(body.get("restaurant_name") or "").strip())
         legends.append(str(body.get("legend") or "").strip())
     name = nice_name(next((n for n in names if n), "")) or None
@@ -587,6 +641,10 @@ def read_menu_pages(
                 "legend": legend,
                 "model": used,
                 "version": READ_VERSION,
+                "printed_dish_count": printed,
+                "currency": currency,
             },
         )
+    LAST_PRINTED[key or ""] = printed
+    LAST_CURRENCY[key or ""] = currency
     return rows_to_dishes(rows), name, used, legend

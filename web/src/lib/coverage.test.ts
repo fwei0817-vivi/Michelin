@@ -1,4 +1,4 @@
-import { coverageLabel, dinerCounts } from "./coverage";
+import { coverageLabel, dinerCounts, orderBlock } from "./coverage";
 
 const ok = { status: "ok" as const, reason: null };
 const ask = { status: "needs_confirm" as const, reason: "halal" };
@@ -21,4 +21,8 @@ eq(coverageLabel([{}], diners).passed, false, "missing status is not a pass");
 const hot = { status: "ok" as const, reason: null, taste: "too_spicy" as const };
 eq(coverageLabel([{ status: { ben: ok, mia: hot } }], diners), { passed: false, label: "Mia has nothing to eat" }, "too spicy not counted");
 eq(dinerCounts([{ status: { ben: ok, mia: hot } }, { status: { ben: ok, mia: ok } }], ["mia"]), { mia: { ok: 1, confirm: 0 } }, "count skips too spicy");
+// QA r20 D-7: an enough-food miss warns but never blocks the ticket; a hard failure says why
+eq(orderBlock({ checks: [{ name: "enough", passed: false, detail: "x" }] }, false, false), null, "enough never blocks");
+eq(orderBlock({ checks: [{ name: "budget", passed: false, detail: "Over budget by $3." }] }, false, false), "Can't show the ticket: Over budget by $3.", "hard check blocks with reason");
+eq(orderBlock(null, false, false), "No order yet.", "no plan");
 if (fails) throw new Error(`${fails} coverage test(s) failed`);

@@ -166,6 +166,14 @@ def assessment(dish: Dish, diner: DinerProfile) -> dict:
             unknown.append(f"Confirm {diet.value} preparation")
         elif value != required:
             conflicts.append(f"Conflicts with {diet.value}")
+    # QA r20 WM-1: the English and Chinese names describe different dishes (a misread):
+    # what is in it is uncertain, so anyone with an allergy or diet must ask, never "ok".
+    restricted = diner.allergies or diner.diets or diner.other_allergies or diner.other_diets
+    if getattr(dish, "names_clash", None) and restricted and not conflicts:
+        ask.append(
+            "The menu's English and Chinese names don't match; ask what this dish is and "
+            "what is in it"
+        )
     return {
         "status": "conflict"
         if conflicts

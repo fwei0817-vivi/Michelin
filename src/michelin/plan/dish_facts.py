@@ -74,6 +74,7 @@ For every dish return:
 - "category": the menu section it belongs to; keep the given category unless it is
   "other". "staple" means plain steamed rice served per person ONLY; noodles, pancakes,
   dumplings and fried rice are shared dishes, never "staple".
+Judge each dish by what it normally is, from its names in every language given (the Chinese name often says more than the English), not only the printed description: e.g. 潮州粉果 (Chiu Chow dumpling) usually has peanuts and dried shrimp; 馬拉糕 is an egg sponge cake. If the English and Chinese names seem to be different dishes, mark the allergens of both at least "possible".
 Allergen rule: if any common recipe variant of the dish contains an allergen (as an
 ingredient, a sauce or paste, or a garnish), mark it at least "possible". Refined frying
 oil and a shared fryer are not ingredients: do not flag peanut or shellfish for them alone.
@@ -746,6 +747,19 @@ def course_of(category: DishCategory, ai: str | None) -> str:
     return ai if ai in COURSES else "unknown"
 
 
+def is_plain_rice(dish: Dish) -> bool:
+    return bool(_PLAIN_RICE.search(dish.name_en or "") or _PLAIN_RICE.search(dish.name_zh or ""))
+
+
+def plain_rice_only(dish: Dish) -> Dish:
+    """Category "staple" means plain rice, added per person (2026-10-10 QA r20 DT-1): a
+    printed "staple" that is noodles or fried rice (Dan Dan Noodle) is a shared dish, so it
+    counts as food and can be picked from the menu. Its course says "staple"."""
+    if dish.category == DishCategory.STAPLE and not is_plain_rice(dish):
+        return dish.model_copy(update={"category": DishCategory.OTHER, "course": "staple"})
+    return dish
+
+
 def _category(dish: Dish, ai: str | None) -> DishCategory:
     """The printed category wins; the AI only fills in "other". It may call a dish a
     per-person "staple" only if it is plain rice (QA r5: not Scallion Pancake or Dan Dan)."""
@@ -890,7 +904,11 @@ def apply(dish: Dish, facts: dict | None) -> Dish:
             "contains_beef": None if beef is None else beef == "yes",
             "is_vegetarian": is_veg,
             "is_vegan": is_vegan,
-            "spice_level": dish.menu_spice if dish.menu_spice is not None else facts.get("spice"),
+            # printed peppers or the AI's culinary knowledge, whichever is hotter (QA r20)
+            "spice_level": max(
+                (v for v in (dish.menu_spice, facts.get("spice")) if isinstance(v, int)),
+                default=None,
+            ),
             "confirm_with_staff": list(dict.fromkeys(questions))[:6],
             # The printed category wins; the AI only fills in "other" (e.g. imported rice).
             "category": _category(dish, facts.get("category")),
@@ -974,7 +992,10 @@ def prepare(menu: Menu, client=None, diners=None) -> Menu:
             log.warning("Dish facts failed: %s: %s", type(exc).__name__, str(exc)[:300])
             break
     index = alt_index(cache)
-    dishes = [apply(d, lookup(cache, d, index)) for d in plain.dishes]
+    dishes = [plain_rice_only(apply(d, lookup(cache, d, index))) for d in plain.dishes]
+    from michelin.plan.names import mismatch  # misread name pairs (QA r20 WM-1)
+
+    dishes = [d.model_copy(update={"names_clash": mismatch(d.name_en, d.name_zh)}) for d in dishes]
     from michelin.plan import courses  # the course of each dish (2026-10-10)
 
     dishes = courses.annotate(dishes, client)

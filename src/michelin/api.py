@@ -702,6 +702,16 @@ def _choices_notice(dishes: list, legend: str) -> str:
     return out
 
 
+def _clash_notice(dishes) -> str:
+    n = sum(bool(getattr(d, "names_clash", None)) for d in dishes)
+    if not n:
+        return ""
+    return (
+        f" {n} dish{'es have' if n != 1 else ' has'} English and Chinese names that don't "
+        "match (a misread?); anyone with an allergy or diet is asked to check with the server."
+    )
+
+
 @app.post("/api/menu/parse")
 def parse_menu(req: ParseRequest) -> dict:
     import logging
@@ -747,6 +757,9 @@ def parse_menu(req: ParseRequest) -> dict:
                 "notice": _parse_notice("gemini", facts, vision_model=used_model)
                 + (f" Read {len(pages)} pages as one menu." if len(pages) > 1 else "")
                 + _choices_notice(dishes, legend)
+                + vision.partial_note(len(dishes), key)
+                + vision.currency_note(key)
+                + _clash_notice(labeled)
                 + (
                     f" The {'photo' if len(pages) == 1 else 'menu'} lists "
                     f"{dropped + MAX_MENU_DISHES} dishes; only the first "

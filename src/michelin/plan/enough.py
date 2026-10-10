@@ -118,11 +118,29 @@ def _deficit_v(vecs, n) -> int:
 _CHEAP: dict = {}
 
 
+def _pool(menu, request):
+    excluded = set(request.excluded_dish_ids)
+    return [
+        d
+        for d in menu.dishes
+        if d.category.value != "staple"
+        and d.price is not None
+        and d.id not in excluded
+        and edible_by(d, request.diners)
+    ]
+
+
+def best_possible(menu, request) -> int:
+    """The smallest deficit this menu allows at any price (e.g. nothing on it is 'ok' for a
+    diner): the rule asks for this much, not the impossible."""
+    pool = _pool(menu, request)
+    return _deficit_v([_vec(d, request.diners) for d in pool], request.n_diners)
+
+
 def cheapest(menu, request, start_ids=()) -> tuple[list, float] | None:
-    """A greedy cheap order meeting the rule, starting from kept dishes: (dishes, menu
-    subtotal incl. rice), or None if the menu cannot meet it at any price."""
+    """A greedy cheap order reaching the best this menu allows, from kept dishes: (dishes,
+    menu subtotal incl. rice). None only if the menu has no priced dish at all."""
     key = (
-        id(menu),
         menu.model_dump_json(include={"dishes"}).__hash__(),
         request.model_dump_json().__hash__(),
         tuple(start_ids),
@@ -130,22 +148,16 @@ def cheapest(menu, request, start_ids=()) -> tuple[list, float] | None:
     if key in _CHEAP:
         return _CHEAP[key]
     diners, n = request.diners, request.n_diners
-    excluded = set(request.excluded_dish_ids)
     known = {d.id: d for d in menu.dishes}
     chosen = [known[i] for i in dict.fromkeys([*request.locked_dish_ids, *start_ids]) if i in known]
-    pool = [
-        d
-        for d in menu.dishes
-        if d.category.value != "staple" and d.price is not None and d.id not in excluded
-    ]
+    pool = _pool(menu, request)
+    if not pool:
+        return None
     vec = {d.id: _vec(d, diners) for d in [*pool, *chosen]}
+    target = _deficit_v([vec[d.id] for d in pool], n)
     cur_v = [vec[d.id] for d in chosen if d.category.value != "staple"]
     cur = _deficit_v(cur_v, n)
-    result = None
-    while True:
-        if cur == 0:
-            result = (chosen, sum(d.price or 0 for d in chosen) + _rice(menu, request))
-            break
+    while cur > target:
         best = None
         ids = {d.id for d in chosen}
         for d in pool:
@@ -161,14 +173,19 @@ def cheapest(menu, request, start_ids=()) -> tuple[list, float] | None:
         chosen.append(best[1])
         cur_v.append(vec[best[1].id])
         cur -= best[2]
+    result = (chosen, sum(d.price or 0 for d in chosen) + _rice(menu, request))
     if len(_CHEAP) > 256:
         _CHEAP.clear()
     _CHEAP[key] = result
     return result
 
 
+def _cap(request) -> float:
+    return subtotal_cap(request.all_in_budget, 1, request.tax_rate, request.tip_rate)
+
+
 def budget_needed(menu, request) -> float | None:
-    """The per-person all-in budget (whole dollars) that would buy an order meeting the rule."""
+    """The per-person all-in budget (whole dollars) that would buy the best order."""
     found = cheapest(menu, request)
     if found is None:
         return None
@@ -177,38 +194,122 @@ def budget_needed(menu, request) -> float | None:
 
 
 def feasible(menu, request) -> bool:
+    """The best this menu allows fits the budget."""
     found = cheapest(menu, request)
-    if found is None:
-        return False
-    cap = subtotal_cap(request.all_in_budget, 1, request.tax_rate, request.tip_rate)
-    return found[1] <= cap + 1e-6
+    return found is not None and found[1] <= _cap(request) + 1e-6
+
+
+def top_up(menu, request, items):
+    """Code's own fix after the AI (QA r20): add, or swap in for a dish that is not kept,
+    the cheapest suitable dishes until the rule is met as far as this menu and budget allow.
+    Every step must pass validate_order (allergies, diets, budget, kept dishes). Returns
+    (new items, added ids, dropped ids) or None when nothing improves."""
+    from michelin.plan.validation import family_repeats, validate_order
+    from michelin.schemas import PlanItem
+
+    target = best_possible(menu, request)
+    cur_items = list(items)
+    added, dropped = [], []
+    locked = set(request.locked_dish_ids)
+    pool = _pool(menu, request)
+    n = request.n_diners
+    vec = {d.id: _vec(d, request.diners) for d in pool}
+
+    def v(i):
+        d = menu.dish(i)
+        return vec.get(i) or _vec(d, request.diners) if d.category.value != "staple" else None
+
+    for _ in range(2 * n + 2):
+        vs = {i.dish_id: v(i.dish_id) for i in cur_items}
+        base = [x for x in vs.values() if x is not None]
+        cur = _deficit_v(base, n)
+        if cur <= target:
+            break
+        have = set(vs)
+        sub0 = sum((menu.dish(i.dish_id).price or 0) * i.quantity for i in cur_items)
+        cands = []
+        for d in pool:
+            if d.id in have:
+                continue
+            new = _deficit_v([*base, vec[d.id]], n)
+            if new < cur:
+                cands.append(((new, sub0 + d.price, 0), d.id, None))
+            for x in cur_items:
+                if x.dish_id in locked or vs[x.dish_id] is None:
+                    continue
+                rest = [y for k, y in vs.items() if k != x.dish_id and y is not None]
+                new = _deficit_v([*rest, vec[d.id]], n)
+                if new < cur:
+                    price = sub0 - (menu.dish(x.dish_id).price or 0) * x.quantity + d.price
+                    cands.append(((new, price, 1), d.id, x.dish_id))
+        cands.sort(key=lambda c: c[0])
+        best = None
+        for _k, add, drop in cands[:60]:
+            option = [i for i in cur_items if i.dish_id != drop] + [
+                PlanItem(dish_id=add, quantity=1)
+            ]
+            if family_repeats(menu, request, [i.dish_id for i in option]):
+                continue
+            if validate_order(menu, request, option)["valid"]:
+                best = (option, add, drop)
+                break
+        if best is None:
+            break
+        cur_items, add, drop = best
+        added.append(add)
+        if drop:
+            dropped.append(drop)
+    if not added:
+        return None
+    return cur_items, added, dropped
+
+
+def _plural(n, word):
+    return f"{n} {word}{'es' if word.endswith('sh') and n != 1 else ('s' if n != 1 else '')}"
 
 
 def honest_line(menu, request, items) -> str | None:
-    """None when the order meets the rule; otherwise one plain sentence for the page."""
+    """None when the order meets the rule; otherwise plain sentences: what is missing for
+    whom, then the cause (this menu, or the budget) (QA r20: one sentence per message)."""
     dishes = [menu.dish(i.dish_id) for i in items]
     if deficit(dishes, request.diners) == 0:
         return None
     t = tally(dishes, request.diners)
-    short = [p for p in request.diners if t.good[p.id] < 2 or t.good_hot[p.id] < 1]
-    parts = []
+    pool = _pool(menu, request)
+    out = []
     if t.hot < request.n_diners:
-        parts.append(f"{t.hot} hot dish{'es' if t.hot != 1 else ''} for {request.n_diners} people")
-    for p in short:
+        out.append(
+            f"This order has no hot dishes for {request.n_diners} people."
+            if t.hot == 0
+            else f"This order has only {_plural(t.hot, 'hot dish')} for {request.n_diners} people."
+        )
+    menu_short = []
+    for p in request.diners:
         g, gh = t.good[p.id], t.good_hot[p.id]
+        if g >= 2 and gh >= 1:
+            continue
         name = p.name or p.id
-        if g < 2:
-            parts.append(
-                f"{name} has only {g} dish{'es' if g != 1 else ''} they can eat without asking"
-                + (f" ({gh} hot)" if g else "")
-            )
+        on_menu = sum(good_for(d, p) for d in pool)
+        hot_on_menu = sum(good_for(d, p) and is_hot(d) for d in pool)
+        if g == 0:
+            out.append(f"{name} has no dish they can eat without asking the server.")
+        elif g < 2:
+            out.append(f"{name} has only 1 dish they can eat without asking the server.")
         else:
-            parts.append(f"{name} has no hot dish they can eat without asking")
-    need = budget_needed(menu, request)
-    lead = "At this budget only " if not feasible(menu, request) else "This order has only "
-    line = lead + "; ".join(parts) + "."
-    if need is not None and not feasible(menu, request):
-        line += f" About ${need:.0f} per person would cover enough hot dishes for everyone."
-    elif need is None:
-        line += " This menu has no order that covers everyone that way."
-    return line
+            out.append(f"{name} has no hot dish they can eat without asking the server.")
+        if on_menu < 2 or (gh < 1 and hot_on_menu == 0):
+            menu_short.append(name)
+    if menu_short:
+        who = (
+            menu_short[0]
+            if len(menu_short) == 1
+            else ", ".join(menu_short[:-1]) + " and " + menu_short[-1]
+        )
+        out.append(f"This menu has too few dishes {who} can eat without asking.")
+    if not feasible(menu, request):
+        need = budget_needed(menu, request)
+        if need is not None:
+            out.append(
+                f"The budget is too tight for more: about ${need:.0f} per person would cover it."
+            )
+    return " ".join(out)

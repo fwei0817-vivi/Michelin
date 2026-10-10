@@ -79,6 +79,7 @@ def test_staple_by_name_is_a_staple():
     assert courses._course(d, {}) == "cold"
 
 
+@pytest.mark.enough
 def test_still_short_after_retry_says_exactly_what_is_missing(monkeypatch, tmp_path):
     from test_round19 import _d, _menu, _req
 
@@ -114,10 +115,19 @@ def test_still_short_after_retry_says_exactly_what_is_missing(monkeypatch, tmp_p
     monkeypatch.setattr(llm_planner, "COVERAGE_NUDGE", False)
     monkeypatch.setattr(llm_planner, "enabled", lambda: True)
     out = llm_planner.plan(m, _req(diners, 60), cache_path=tmp_path / "c.json")
-    assert len(calls) == 2 and out.plan is not None  # one retry, then the order is kept
+    # one AI retry, then the code adds the cheapest suitable hot dish itself (QA r20)
+    assert len(calls) == 2 and out.plan is not None
+    assert "The rules added" in out.note, out.note
+    assert next(c for c in out.plan.checks if c.name == "enough").passed
+    # too tight for more: kept, and the page says what is missing and why
+    llm_planner._memory.clear()
+    calls.clear()
+    out = llm_planner.plan(m, _req(diners, 16), cache_path=tmp_path / "d.json")
     check = next(c for c in out.plan.checks if c.name == "enough")
     assert not check.passed
-    assert check.detail == "This order has only 1 hot dish for 2 people.", check.detail
+    assert check.detail.startswith("This order has only 1 hot dish for 2 people."), check.detail
+    assert "The budget is too tight for more" in check.detail
+    assert check.detail in out.plan.summary
     # a diner short of dishes is named with exactly what they lack
     from michelin.plan import enough
 

@@ -169,6 +169,8 @@ class Dish(BaseModel):
     # The course (2026-10-10, AI dish facts + printed category): hot_main, staple (fried
     # rice/noodles; plain rice is category "staple"), cold, soup, dessert, side, unknown.
     course: str | None = None
+    # plan.names.mismatch: the English and Chinese names state different things (a misread)
+    names_clash: list[str] = Field(default_factory=list)
     # The AI's answer for a diner's own allergy or diet ("mango", "halal"); set by the server.
     custom_flags: list[CustomFlag] = Field(default_factory=list)
 
