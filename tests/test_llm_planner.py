@@ -57,7 +57,7 @@ def setup():
     assert good["dishes"], "a valid order must exist for this group"
     for row in good["dishes"]:
         row["reason"] = f"AI reason for {row['dish_id']}"
-    good["server_questions"] = ["Is the broth made with pork?"]
+    good["server_questions"] = ["Are the scallion pancakes made with lard or other pork fat?"]
     return menu, request, good
 
 
@@ -75,7 +75,9 @@ def test_valid_answer_becomes_the_plan(setup, tmp_path):
     assert out.plan and out.attempts == 1 and len(fake.calls) == 1
     reasons = {i.dish_id: i.reason for i in out.plan.items}
     assert all(reasons[r["dish_id"]] == r["reason"] for r in good["dishes"])
-    assert "Is the broth made with pork?" in out.plan.confirm_with_staff
+    assert (
+        "Are the scallion pancakes made with lard or other pork fat?" in out.plan.confirm_with_staff
+    )
     assert out.plan.total <= request.all_in_budget
     call = fake.calls[0]
     assert call["model"] == "gemini-3.8-flash"

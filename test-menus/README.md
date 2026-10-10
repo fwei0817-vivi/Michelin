@@ -151,3 +151,24 @@ peanut dish was offered to the peanut diner.
 Uploading the PDF itself gives the same 4 JPEG pages: the server renders it with
 `pdftoppm`, so the server needs poppler-utils, which is now in the Dockerfile.
 
+
+## Allergy-safety recheck (2026-10-09, evening)
+
+This is the same tricky table (peanut / shellfish / vegetarian / no pork, $40 a head), on the
+saved photo reads. Facts were asked again with the new rules: every allergen has to be
+answered, and the description and variant are sent too. The table counts the dishes each
+person can eat, out of all non-rice dishes. "Before" means the facts saved from the earlier
+live run, checked with the old code. For Cafe Mandarin, that is the count logged at 08:35.
+
+| Menu | Dishes | Alice (peanut) before → after | Sam (shellfish) | Ben (vegetarian) | Cai (no pork) | Plan after |
+|---|---|---|---|---|---|---|
+| Cafe Mandarin | 54 | 45 → 48 | 36 → 37 | 18 → 16 | 43 → 37 | valid, 4 dishes, $81.20 |
+| Hunan Slurp | 35 | 34 → 34 | 34 → 34 | 6 → 5 | 21 → 19 | valid, 4 dishes, $98.96 |
+| Hwa Yuan | 53 | 46 → 46 | 42 → 28 | 13 → 12 | 39 → 38 | valid, 5 dishes, $115.46 |
+| Nom Wah | 48 | 46 → 48 | 28 → 25 | 13 → 11 | 31 → 32 | valid, 3 dishes, $29.05 |
+| Shanghai 21 | 45 | 40 → not run | 38 → not run | 14 → not run | 26 → not run | not run (budget) |
+| Wo Hop | 48 | 41 → not run | 28 → not run | 6 → not run | 38 → not run | not run (budget) |
+
+The 4 menus that were run cost $0.130 in all (OpenRouter, `google/gemini-3.5-flash-lite`).
+Facts took 21–32 s per menu and each plan about 2 s. Shanghai 21 and Wo Hop were skipped to
+stay under the $0.15 cap.

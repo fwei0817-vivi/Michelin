@@ -65,15 +65,11 @@ def _load() -> dict:
         return {}
 
 
-def _save(cache: dict) -> None:
-    try:
-        path = cache_path()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(".tmp")
-        tmp.write_text(json.dumps(cache, ensure_ascii=False, indent=1, sort_keys=True))
-        tmp.replace(path)
-    except OSError:
-        log.warning("Could not write the custom facts cache", exc_info=True)
+def _save(new: dict) -> dict:
+    """Only this run's answers, merged by key into the file under its lock."""
+    from michelin.plan import dish_facts
+
+    return dish_facts.save_merged(cache_path(), new, lambda old, v: v)
 
 
 def _text(dish: Dish) -> str:
@@ -163,6 +159,7 @@ def annotate(dishes: list[Dish], diners: list[DinerProfile], client=None) -> lis
             try:
                 text, used = _ask(batch, allergies, diets, client)
                 ids = {d.id: d for d in batch}
+                new: dict = {}
                 for row in json.loads(text or "{}").get("dishes", []):
                     dish = ids.get(row.get("id")) if isinstance(row, dict) else None
                     if not dish:
@@ -173,13 +170,13 @@ def annotate(dishes: list[Dish], diners: list[DinerProfile], client=None) -> lis
                                 continue
                             term = str(a.get("item") or "")
                             if (kind, term) in need:
-                                cache[_key(dish, kind, term)] = {
+                                new[_key(dish, kind, term)] = {
                                     "name": dish.name_en or dish.name_zh,
                                     "term": term,
                                     "answer": a["answer"],
                                     "why": str(a.get("why") or "")[:120],
                                 }
-                _save(cache)
+                cache = {**cache, **_save(new)}
                 log.info(
                     "Custom facts (%d terms) for %d dishes from %s", len(need), len(batch), used
                 )

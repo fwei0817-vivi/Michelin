@@ -503,7 +503,11 @@ def _to_plan(menu: Menu, request: TableRequest, answer: dict, items: list) -> Pl
     ]
     asked = server_questions(answer, selected, request)
     items = [i.model_copy(update={"server_question": asked.get(i.dish_id)}) for i in items]
-    extra = [str(q).strip()[:200] for q in answer.get("server_questions") or [] if str(q).strip()]
+    extra = [
+        q
+        for q in (str(q).strip()[:200] for q in answer.get("server_questions") or [])
+        if q and meal_question_ok(q, selected, request.diners)
+    ]
     checks = [
         Check(name="ai", passed=True, detail="Dishes chosen by the AI, then checked by the rules."),
         Check(
@@ -587,6 +591,36 @@ def _off_topic(text: str, dish, diners, flagged) -> bool:
         ):
             return True
     return False
+
+
+def meal_question_ok(text: str, selected, diners) -> bool:
+    """The AI's extra questions for the whole meal pass the same checks as a dish's question
+    (review #5): no misstated allergy or diet, nobody named who has nothing to ask about, and no
+    allergy/diet concern that no flagged risk on the chosen dishes involves."""
+    if _misstates(text, diners):
+        return False
+    flagged = [r for d, _ in selected for r in risks(d, diners)]
+    low = humanize(text).lower()
+    concerned = {n for r in flagged for n in r.names}
+    for p in diners:
+        if (
+            p.name
+            and re.search(rf"\b{re.escape(p.name.lower())}\b", low)
+            and p.name not in concerned
+        ):
+            return False
+    allowed = {w for r in flagged for w in r.words} | {
+        w for r in flagged for w in re.findall(r"[a-z]+", r.about.lower())
+    }
+    from michelin.plan.edibility import _SYNONYMS  # lard is pork, oyster sauce is shellfish
+
+    allowed |= {s for w in list(allowed) for s in _SYNONYMS.get(w, [])}
+    for term in _CONCERNS:
+        if re.search(rf"\b{term}s?\b", low) and not any(
+            term == w or w.startswith(term) or term.startswith(w) for w in allowed if len(w) > 2
+        ):
+            return False
+    return True
 
 
 def _misstates(text: str, diners) -> bool:

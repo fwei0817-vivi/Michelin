@@ -3,7 +3,7 @@ import { ArrowLeftRight, Check, CheckCircle2, CircleHelp, FileImage, Flame, Leaf
 import { evaluateMenu, parseMenu, getPreparedInputs, extractMenu } from "../api";
 import { CATEGORY_LABEL, MARK_LABEL, currencySymbol, dishName, flagWording, groupFamilies, listNames, markWording, money, niceName, siblings } from "../lib/format";
 import { photoFor } from "../lib/dishPhotos";
-import { concernedBy, mayHideMeat } from "../lib/dietary";
+import { concernedBy, fitsChip, mayHideMeat, vegChip } from "../lib/dietary";
 import type { DinerProfile, Dish, Eligibility, Menu, MenuSummary, Plan, PreparedInput } from "../types";
 import { DishEditor } from "./DishEditor";
 import { Sheet } from "./Sheet";
@@ -484,6 +484,7 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                 const notFor = e ? diners.filter((p) => !e.edible_by.includes(p.id)) : [];
                 // Diners who can eat it only if the server confirms (e.g. "Pat: may have pork, ask").
                 const askFor = e ? diners.filter((p) => e.edible_by.includes(p.id) && e.assessments?.[p.id]?.status === "requires_confirmation") : [];
+                const unsure = mayHideMeat(d) || askFor.length > 0;
                 const over = plan && budget != null && d.price != null && !onSlip.has(d.id) ? overBudget(plan.subtotal + d.price * qty - (oldDish?.price ?? 0) * (oldDish ? oldQuantity : 0), tax, tip, budget) : 0;
                 const canPick = !!e && e.edible_by.length > 0 && d.price != null && menu.verified && diners.length > 0 && over <= 0;
                 return (
@@ -499,9 +500,9 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                           <span>{CATEGORY_LABEL[d.category] ?? d.category}</span>
                           {d.family_id && <span className="tag-family" title={`One of ${others.length + 1} choices on the menu line ${d.family_name ?? ""}`}>{others.length + 1} choices of {d.family_name}</span>}
                           {(d.menu_marks ?? []).map((m) => <span key={m} className="tag-mark" title={MARK_LABEL[m]?.title}>Menu: {MARK_LABEL[m]?.short ?? m}</span>)}
-                          {d.is_vegetarian === true && <span className={mayHideMeat(d) ? "tag-ask" : ""}><Leaf size={12} />{d.is_vegan ? "Vegan" : "Vegetarian"}{mayHideMeat(d) ? "? ask" : ""}</span>}
+                          {d.is_vegetarian === true && <span className={unsure ? "tag-ask" : ""}><Leaf size={12} />{vegChip(d, unsure)}</span>}
                           {d.spice_level != null && d.spice_level > 0 && <span><Flame size={12} />{SPICE[d.spice_level]}</span>}
-                          {e && diners.length > 0 && notFor.length === 0 && <span title="Matches every diner's recorded requirements"><Users size={12} />Matches all {diners.length}{mayHideMeat(d) ? " if confirmed" : ""}</span>}
+                          {e && diners.length > 0 && notFor.length === 0 && <span className={unsure ? "tag-ask" : ""} title={unsure ? "Allowed for everyone only once the server confirms" : "Matches every diner's recorded requirements"}><Users size={12} />{fitsChip(diners.length, unsure)}</span>}
                         </div>
                         {!e ? (
                           <p className="helper">Checking diner requirements…</p>

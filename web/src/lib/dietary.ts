@@ -1,20 +1,38 @@
 import type { DinerProfile, Dish } from "../types";
 import { ALLERGEN_LABEL, avoidsHeat, listNames } from "./format";
 
+import KEYWORDS from "./keywords.json";
+
+// The one shared keyword list (src/michelin/data/keywords.json; this copy is kept identical by
+// tests/test_keywords.py): squid is shellfish, satay peanut, soy sauce soy and wheat, 五花肉 pork.
+type Entry = { en?: string[]; zh?: string[]; negatable?: boolean };
+const NOT = "(?<!no )(?<!w/o )(?<!without )(?<!vegetarian )(?<!vegan )(?<!mock )(?<!faux )(?<!imitation )";
+export function keyword(concept: string): RegExp {
+  const e = (KEYWORDS as unknown as Record<string, Entry>)[concept];
+  const parts: string[] = [];
+  if (e.en?.length) parts.push(`${e.negatable ? NOT : ""}\\b(?:${e.en.join("|")})\\b`);
+  if (e.zh?.length) parts.push(e.zh.join("|"));
+  return new RegExp(parts.join("|"), "i");
+}
+const VEG = ["vegetarian", "vegan"];
 // Which allergies and diets an ingredient word can matter to.
 const CONCERN: [RegExp, string[]][] = [
-  [/pork|lard|bacon|ham\b/i, ["no_pork", "vegetarian", "vegan"]],
-  [/beef/i, ["no_beef", "vegetarian", "vegan"]],
-  [/chicken|duck|lamb|meat|broth|stock|gelatin/i, ["vegetarian", "vegan"]],
-  [/shrimp|prawn|crab|oyster|scallop|shellfish|lobster|clam|mussel/i, ["shellfish", "vegetarian", "vegan"]],
-  [/fish|anchov/i, ["fish", "vegetarian", "vegan"]],
-  [/egg/i, ["egg", "vegan"]],
-  [/milk|butter|cream|cheese|dairy/i, ["dairy", "vegan"]],
-  [/peanut/i, ["peanut"]],
-  [/sesame/i, ["sesame"]],
-  [/cashew|almond|walnut|pecan|pistachio|tree nut/i, ["tree_nut"]],
-  [/soy|tofu/i, ["soy"]],
-  [/wheat|flour|gluten|noodle/i, ["wheat"]],
+  [keyword("pork"), ["no_pork", ...VEG]],
+  [keyword("beef"), ["no_beef", ...VEG]],
+  [keyword("meat"), VEG],
+  [keyword("stock"), VEG],
+  [keyword("shellfish"), ["shellfish", ...VEG]],
+  [keyword("fish"), ["fish", ...VEG]],
+  [keyword("egg"), ["egg", "vegan"]],
+  [keyword("dairy"), ["dairy", "vegan"]],
+  [keyword("peanut"), ["peanut"]],
+  [keyword("sesame"), ["sesame"]],
+  [keyword("tree_nut"), ["tree_nut"]],
+  [keyword("soy"), ["soy"]],
+  [keyword("wheat"), ["wheat"]],
+  [/tree nut/i, ["tree_nut"]],
+  [/dairy/i, ["dairy", "vegan"]],
+  [/noodle/i, ["wheat"]],
 ];
 
 /** The diners an ingredient (e.g. "pork fat", "bamboo shoots") matters to; [] for nobody. */
@@ -53,10 +71,19 @@ export function heatNote(dish: Dish, diners: DinerProfile[]): string | null {
 }
 
 // Ingredients that would break a vegetarian, no-pork or no-beef diet if the kitchen uses them.
-const ANIMAL = /pork|lard|bacon|ham\b|beef|chicken|duck|meat|fish|anchov|shrimp|prawn|oyster|crab|broth|stock|gelatin|egg/i;
+const ANIMAL = ["pork", "beef", "meat", "stock", "fish", "shellfish", "egg"].map(keyword);
 
 /** The dish may hide an animal ingredient (e.g. minced pork in yu-xiang eggplant, lard in a
- * pancake): a "Vegan"/"Matches all" chip must then say it still needs asking. */
+ * pancake, 肉末): a "Vegan"/"Matches all" chip must then not be shown as settled. */
 export function mayHideMeat(dish: Dish): boolean {
-  return dish.main_ingredients.some(i => i.tier !== "menu" && ANIMAL.test(i.name));
+  return dish.main_ingredients.some(i => i.tier !== "menu" && ANIMAL.some(re => re.test(i.name)));
+}
+
+/** Chip text: never "Vegetarian" or "Matches all" while something still needs asking. */
+export function vegChip(dish: Dish, unsure: boolean): string {
+  const diet = dish.is_vegan ? "vegan" : "vegetarian";
+  return unsure ? `Ask if ${diet}` : diet === "vegan" ? "Vegan" : "Vegetarian";
+}
+export function fitsChip(n: number, unsure: boolean): string {
+  return unsure ? `Fits all ${n} only if the server confirms` : `Matches all ${n}`;
 }

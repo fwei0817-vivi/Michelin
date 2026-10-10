@@ -138,15 +138,20 @@ def test_vp_means_vegetarian_only_if_ordered_that_way():
     assert edible_by(tofu, [SAM]) == []
 
 
-def test_printed_v_beats_the_guess_but_printed_meat_beats_v():
-    """Cafe Mandarin marks Hot & Sour Soup "V"; the keyword floor said pork. A "V" next to
-    printed pork belly is still pork (safety first)."""
-    pork_guess = {**VEG, "pork": "yes", "vegetarian": "no", "vegan": "no"}
-    pork_guess["ingredients"] = [{"name": "pork", "certainty": "likely"}]
-    soup = dish_facts.apply(_dish("Hot & Sour Soup", ["vegetarian"]), pork_guess)
+def test_printed_v_beats_the_floor_but_never_the_ais_meat_or_printed_meat():
+    """Cafe Mandarin marks Hot & Sour Soup "V"; the code's keyword floor says pork: the mark
+    wins, with a question. If the AI itself says pork "yes" (review #1, 2026-10-09), the mark
+    or the AI is wrong: pork stays, the diet is unknown, nobody avoiding pork gets it. A "V"
+    next to printed pork belly is still pork (safety first)."""
+    soup = dish_facts.apply(_dish("Hot & Sour Soup", ["vegetarian"]), VEG)
     assert soup.is_vegetarian is True and soup.contains_pork is False
     assert edible_by(soup, [BEN, CAI]) == ["ben", "cai"]
     assert any("pork" in q for q in open_questions(soup, [BEN, CAI]))  # still asked
+    pork_guess = {**VEG, "pork": "yes", "vegetarian": "no", "vegan": "no"}
+    pork_guess["ingredients"] = [{"name": "pork", "certainty": "likely"}]
+    sure = dish_facts.apply(_dish("Hot & Sour Soup", ["vegetarian"]), pork_guess)
+    assert sure.contains_pork is True and sure.is_vegetarian is not True
+    assert edible_by(sure, [BEN, CAI]) == []
     belly = dish_facts.apply(
         _dish("Hunan Wild Mushroom (w/ Pork Belly)", ["vegetarian"], "Pork Belly | Chili Oil"),
         VEG,
@@ -173,6 +178,7 @@ def test_menu_peppers_set_the_heat():
 
 MEAT = {"ingredients": [], "allergens": [], "pork": "no", "beef": "no", "spice": 1}
 MEAT |= {"vegetarian": "no", "vegan": "no"}
+MEAT["absent"] = ["tree_nut", "shellfish", "fish", "egg", "dairy", "soy", "wheat", "sesame"]
 
 
 def _menu():

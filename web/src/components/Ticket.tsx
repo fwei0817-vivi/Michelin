@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowLeftRight, Check, ChevronDown, CircleHelp, Flame, Leaf, ListChecks, LockKeyhole, Plus, RefreshCw, Sparkles, Trash2, UnlockKeyhole, UserX, Users, X } from "lucide-react";
 import { CATEGORY_LABEL, MARK_LABEL, checkLabel, currencySymbol, dishName, flagWording, listNames, money } from "../lib/format";
-import { dishQuestions, heatNote, mayHideMeat } from "../lib/dietary";
+import { dishQuestions, fitsChip, heatNote, mayHideMeat, vegChip } from "../lib/dietary";
 import { photoFor } from "../lib/dishPhotos";
 import { Coverage } from "./Coverage";
 import type { DinerProfile, DiningSettings, Dish, FeedbackChip, Menu, Plan, PlanItem } from "../types";
@@ -290,7 +290,7 @@ function DishCard({ item, dish, diners, cur, kept, ai, expanded, disabled, onTog
   const heat = heatNote(dish, diners.filter((p) => item.edible_by.includes(p.id)));
   // AI plans carry one rule-checked question per dish; other plans use the templates.
   const questions = ai && item.server_question !== undefined ? (item.server_question ? [item.server_question] : []) : dishQuestions(dish, diners);
-  const unsure = mayHideMeat(dish);
+  const unsure = mayHideMeat(dish) || questions.length > 0;
   const photo = photoFor(dish);
   const panelId = `dish-panel-${dish.id}`;
   return (
@@ -321,7 +321,7 @@ function DishCard({ item, dish, diners, cur, kept, ai, expanded, disabled, onTog
         {dish.is_vegetarian === true && (
           <span className={unsure ? "tag-ask" : ""} title={unsure ? "May hide meat or lard; ask the kitchen" : undefined}>
             <Leaf size={12} />
-            {dish.is_vegan ? "Vegan" : "Vegetarian"}{unsure ? "? ask" : ""}
+            {vegChip(dish, unsure)}
           </span>
         )}
         {dish.spice_level != null && dish.spice_level > 0 && (
@@ -333,9 +333,9 @@ function DishCard({ item, dish, diners, cur, kept, ai, expanded, disabled, onTog
         {(dish.menu_marks ?? []).map((m) => <span key={m} className="tag-mark" title={MARK_LABEL[m]?.title}>Menu: {MARK_LABEL[m]?.short ?? m}</span>)}
         {dish.cooking_method && <span>{dish.cooking_method.replaceAll("_", " ")}</span>}
         {notFor.length === 0 && (
-          <span title="Matches every diner's recorded requirements" className={unsure ? "tag-ask" : ""}>
+          <span title={unsure ? "Allowed for everyone only once the server answers the questions below" : "Matches every diner's recorded requirements"} className={unsure ? "tag-ask" : ""}>
             <Users size={12} />
-            Matches all {diners.length}{unsure ? " if confirmed" : ""}
+            {fitsChip(diners.length, unsure)}
           </span>
         )}
       </div>

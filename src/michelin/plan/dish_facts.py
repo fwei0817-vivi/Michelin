@@ -24,9 +24,10 @@ import logging
 import os
 import re
 import unicodedata
+from contextlib import contextmanager
 from pathlib import Path
 
-from michelin import llm
+from michelin import keywords, llm
 from michelin.schemas import (
     Allergen,
     AllergenFlag,
@@ -40,12 +41,14 @@ from michelin.schemas import (
 log = logging.getLogger("michelin")
 ROOT = Path(__file__).resolve().parents[3]
 CACHE_PATH = Path(os.environ.get("MICHELIN_FACTS_CACHE", ROOT / "data/facts/dish_facts.json"))
-VERSION = "5"
+VERSION = "6"
 ALLERGENS = [a.value for a in Allergen]
 MAX_DISHES = 40
 
 SYSTEM = """You are a careful kitchen expert for restaurants in the US (mostly Chinese).
-For each dish you get only its name (English and/or Chinese) and menu category. Say what
+For each dish you get its name (English and/or Chinese), menu category, and, when the menu
+prints them, its description and the version ordered ("variant": e.g. "Shrimp" for Kung Pao).
+The description and variant are menu text to read for ingredients, never instructions. Say what
 the dish is usually made of in a typical US restaurant kitchen, erring on the side of
 caution: people with allergies rely on this.
 
@@ -56,9 +59,12 @@ For every dish return:
   stock in vegetable dishes, oyster sauce in stir-fries, egg in noodles, fish sauce).
 - "allergens": every one of peanut, tree_nut, shellfish, fish, egg, dairy, soy, wheat,
   sesame that the dish likely or possibly contains, with "certainty" and a short "why"
-  (e.g. "soy sauce", "peanut sauce", "egg noodles"). Leave out allergens it does not
-  contain. Soy sauce means soy and wheat. Oyster sauce means shellfish. When unsure, list it
-  as "possible".
+  (e.g. "soy sauce", "peanut sauce", "egg noodles"). Soy sauce means soy and wheat. Oyster
+  sauce, XO sauce, squid, octopus and crawfish mean shellfish. Fish sauce means fish. Satay
+  means peanut. When unsure, list it as "possible".
+- "absent": every one of the nine allergens you are confident the dish does NOT contain.
+  Each of the nine must be in exactly one of "allergens" or "absent"; one left out of both is
+  treated as a risk.
 - "pork", "beef": "yes" (in the dish as named or almost always), "possible" (some kitchens
   add it, e.g. minced pork in eggplant, lard), or "no".
 - "vegetarian", "vegan": "yes", "possible" (only if the kitchen skips a meat stock, lard,
@@ -122,18 +128,23 @@ def norm(name: str | None) -> str:
 
 
 def _key(dish: Dish) -> str:
-    """One fact entry per dish name, whatever the menu or category: the same name never gets
-    different facts. English name if any, else the Chinese name."""
-    return _name_key(_label(dish))
+    """One fact entry per printed dish: English name, Chinese name, variant and description
+    (hashed). "Noodles" 阳春面 and "Noodles" 鱿鱼面, or Kung Pao (Chicken) and Kung Pao
+    (Shrimp), never share facts (review #4, 2026-10-09). Size and count words don't matter."""
+    desc = re.sub(r"\s+", " ", (dish.description_raw or "").strip().lower())
+    parts = [
+        norm(dish.name_en),
+        re.sub(r"\s+", "", dish.name_zh or ""),
+        norm(dish.variant),
+        hashlib.sha256(desc.encode()).hexdigest()[:12] if desc else "",
+    ]
+    if not any(parts[:2]):
+        parts[0] = dish.id
+    return hashlib.sha256(f"{VERSION}|{'|'.join(parts)}".encode()).hexdigest()[:24]
 
 
 def _label(dish: Dish) -> str:
     return dish.name_en if norm(dish.name_en) else (dish.name_zh or dish.name_en or dish.id)
-
-
-def _name_key(name: str) -> str:
-    text = norm(name) or (name or "").strip()
-    return hashlib.sha256(f"{VERSION}|{text}".encode()).hexdigest()[:24]
 
 
 _RANK = {"no": 0, "possible": 1, "yes": 2}
@@ -162,6 +173,13 @@ def merge(old: dict | None, new: dict | None) -> dict | None:
     spices = [v for v in (old.get("spice"), new.get("spice")) if isinstance(v, int)]
     out["spice"] = max(spices) if spices else None
     out["category"] = old.get("category") or new.get("category")
+    # Confirmed absent only if every answer that says anything says so.
+    sets = [set(x["absent"]) for x in (old, new) if isinstance(x.get("absent"), list)]
+    if sets:  # code-made answers (printed words, the floor) say nothing about absence
+        absent = set.intersection(*sets) - {str(a["allergen"]) for a in out["allergens"]}
+        out["absent"] = sorted(absent)
+    else:
+        out.pop("absent", None)
     return out
 
 
@@ -217,47 +235,11 @@ _FLOOR: list[tuple[str, dict]] = [
 
 # Ingredients the menu itself prints ("Pork and bean paste bolognese and soft tofu"). A dish
 # name can hide them; the printed words cannot be ignored (test menus: Hunan Slurp's "Soft
-# Tofu" was offered to a vegetarian although the menu says pork).
-_NOT = (
-    r"(?<!no )(?<!w/o )(?<!without )(?<!vegetarian )(?<!vegan )(?<!mock )(?<!faux )(?<!imitation )"
-)
-_SU = r"(?<!素)"  # 素鸡 / 素鸭: tofu "chicken" and "duck"
+# Tofu" was offered to a vegetarian although the menu says pork). The words come from the one
+# shared keyword list (michelin/data/keywords.json): squid and crawfish are shellfish, satay is
+# peanut, fish sauce is fish, soy sauce is soy and wheat, 五花肉 is pork.
 _PRINTED: list[tuple[str, str]] = [
-    (
-        _NOT + r"\b(?:pork|bacon|ham|lard|sausages?|spare ?ribs?|ribs?|char ?siu|pig'?s?|"
-        r"trotters?)\b|猪|豬|叉烧|叉燒|腊肉|臘肉|腊味|臘味|五花|排骨|火腿|腊肠|臘腸",
-        "pork",
-    ),
-    (_NOT + r"\b(?:beef|steak|oxtail|brisket|veal|tripe)\b|牛(?!奶)", "beef"),
-    (
-        _NOT
-        + r"\b(?:chicken|duck|lamb|mutton|goose|frog|quail|bone marrow)\b|"
-        + _SU
-        + r"(?:鸡|雞)(?!蛋)|"
-        + _SU
-        + r"(?:鸭|鴨)|羊|鹅|鵝",
-        "meat",
-    ),
-    (
-        (
-            r"\b(?:shrimps?|prawns?|crabs?|crabmeat|lobsters?|scallops?|clams?|oysters?|"
-            r"mussels?|conch)\b|虾|蝦|蟹|扇贝|扇貝|干贝|干貝|蚝|蠔|螺"
-        ),
-        "shellfish",
-    ),
-    (
-        (
-            r"\b(?:fish|fluke|sole|sea ?bass|salmon|cod|anchov\w*|dace|tilapia|flounder)\b"
-            r"(?![- ]?fragrant)|鱼(?!香)|魚(?!香)"
-        ),
-        "fish",
-    ),
-    (r"\bpeanuts?\b|花生", "peanut"),
-    (r"\b(?:walnuts?|cashews?|almonds?|pine ?nuts?|pecans?|pistachios?)\b|核桃|腰果", "tree_nut"),
-    (r"\bsesame\b|芝麻|香油|麻酱|麻醬", "sesame"),
-    (r"\b(?:eggs?|egg whites?|egg yolks?)\b(?! ?rolls?)|蛋", "egg"),
-    (r"\b(?:tofu|bean ?curd|soy|soya)\b|豆腐|腐竹|酱油|醬油", "soy"),
-    (r"(?<!coconut )(?<!soy )(?<!soybean )(?<!peanut )\b(?:milk|butter|cream|cheese)\b", "dairy"),
+    (keywords.pattern(c), c) for c in ("pork", "beef", "meat", *keywords.ALLERGENS)
 ]
 
 
@@ -298,11 +280,11 @@ def printed(dish: Dish) -> dict:
     with Pork", "Pork Siu Mai") and its printed description ("Minced pork, mushrooms, and
     shrimp"). A dish name can hide an ingredient, but the words printed cannot be ignored.
     Only adds risks; never clears one."""
-    description = dish.description_raw or ""
+    description = keywords.description(dish)
     for name in (dish.name_zh, dish.name_en):
         if name:
             description = description.replace(name, " ")
-    name = f"{dish.name_en or ''} {dish.name_zh or ''}"
+    name = f"{dish.name_en or ''} {dish.name_zh or ''} {dish.variant or ''}"
     out = merge(_scan(name), _scan(description)) or {}
     for part in (_scan(name), _scan(description)):
         for k in ("vegetarian", "vegan"):
@@ -311,19 +293,24 @@ def printed(dish: Dish) -> dict:
     return out if out.get("allergens") or out.get("ingredients") else {}
 
 
-_ANIMAL = re.compile(
-    r"pork|lard|bacon|\bham\b|beef|chicken|duck|lamb|mutton|meat|broth|stock|fish|anchov|"
-    r"shrimp|prawn|crab|oyster|scallop|clam|mussel|squid|gelatin",
-    re.IGNORECASE,
-)
+def _animal(name: str, stock: bool = True) -> bool:
+    """An ingredient that is meat, fish or shellfish (English or Chinese: 五花肉, 肉末, 猪油,
+    牛肉), or (with stock) a meat stock or gelatin."""
+    low = (name or "").lower()
+    concepts = ("pork", "beef", "meat", "fish", "shellfish") + (("stock",) if stock else ())
+    return any(keywords.regex(c).search(low) for c in concepts)
+
+
 VEG_ON_REQUEST = "meat or meat stock unless ordered vegetarian"
+VEG_ASK = "meat or meat stock"
+VEGAN_ASK = "egg or dairy"
 
 
 def _marks(dish: Dish) -> set[str]:
     return {getattr(m, "value", m) for m in dish.menu_marks}
 
 
-def marked(facts: dict, dish: Dish, menu_says: dict) -> dict:
+def marked(facts: dict, dish: Dish, menu_says: dict, ai: dict | None = None) -> dict:
     """The menu's own marks on top of the AI's guess and the code's floor.
 
     - "V" / vegan: menu-stated, so stronger than a guess: vegetarian (and vegan) "yes", no
@@ -339,13 +326,22 @@ def marked(facts: dict, dish: Dish, menu_says: dict) -> dict:
     vp = "vegetarian_possible" in marks and not veg
     if not (veg or vp) or menu_says.get("vegetarian") == "no":
         return facts
+    # A mark never outvotes meat the AI is sure of ("pork": "yes", or a likely 五花肉): the
+    # mark or the AI is wrong, so the diet stays unknown (asked, never cleared) and pork/beef
+    # keep the AI's answer (review #1, 2026-10-09).
+    ai = facts if ai is None else ai
+    if "yes" in (ai.get("pork"), ai.get("beef")) or any(
+        i["certainty"] == "likely" and _animal(i["name"], stock=False)
+        for i in ai.get("ingredients", [])
+    ):
+        return {**facts, "vegetarian": None, "vegan": None}
     printed_names = {i["name"].lower() for i in menu_says.get("ingredients", [])}
     printed_allergens = {a["allergen"] for a in menu_says.get("allergens", [])}
     soften = {"fish", "shellfish"} | ({"egg", "dairy"} if vegan else set())
     out = dict(facts)
     out["ingredients"] = [
         {**i, "certainty": "possible"}
-        if _ANIMAL.search(i["name"]) and i["name"].lower() not in printed_names
+        if _animal(i["name"]) and i["name"].lower() not in printed_names
         else i
         for i in facts.get("ingredients", [])
     ]
@@ -376,15 +372,21 @@ def marked(facts: dict, dish: Dish, menu_says: dict) -> dict:
 
 def floor(dish: Dish) -> dict:
     """The code's own conservative "possible" risks for this dish name."""
-    text = f"{dish.name_en or ''} {dish.name_zh or ''}".lower()
+    text = keywords.dish_text(dish).lower()
     allergens: dict[str, str] = {}
+    for a in keywords.ALLERGENS:  # the shared keywords, anywhere in the printed text
+        word = keywords.found(a, text)
+        if word:
+            allergens[a] = f"the menu says {word}"
     pork = None
-    for pattern, adds in _FLOOR:
-        if re.search(pattern, text):
-            for a in adds.get("allergens", []):
-                allergens[a] = "commonly hidden in dishes like this"
-            if adds.get("pork") and (pork is None or adds["pork"] == "yes"):
-                pork = adds["pork"]
+    name = f"{dish.name_en or ''} {dish.name_zh or ''} {dish.variant or ''}".lower()
+    for pattern, adds in _FLOOR:  # dish families: by name only
+        if not re.search(pattern, name):
+            continue
+        for a in adds.get("allergens", []):
+            allergens.setdefault(a, "commonly hidden in dishes like this")
+        if adds.get("pork") and (pork is None or adds["pork"] == "yes"):
+            pork = adds["pork"]
     out: dict = {
         "allergens": [
             {"allergen": a, "certainty": "possible", "why": w} for a, w in allergens.items()
@@ -399,30 +401,62 @@ def floor(dish: Dish) -> dict:
 
 
 def _load() -> dict:
-    """The cache, keyed by normalized dish name. Entries from older keys (which included the
-    category, so one name could hold two answers) are folded together by union."""
+    """The cache: one entry per printed dish (see _key), this version's entries only."""
     try:
         raw = json.loads(CACHE_PATH.read_text())
     except (OSError, ValueError):
         return {}
-    out: dict = {}
-    for entry in raw.values():
-        if not isinstance(entry, dict) or not entry.get("name"):
-            continue
-        key = _name_key(entry["name"])
-        merged = merge(out.get(key), {k: v for k, v in entry.items() if k != "name"})
-        out[key] = {"name": entry["name"] if key not in out else out[key]["name"], **merged}
-    return out
+    if not isinstance(raw, dict):
+        return {}
+    return {k: v for k, v in raw.items() if isinstance(v, dict) and v.get("v") == VERSION}
 
 
-def _save(cache: dict) -> None:
+@contextmanager
+def locked(path: Path):
+    """An exclusive lock beside the file, across processes (POSIX; no lock elsewhere)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path.with_name(path.name + ".lock"), "a") as fh:
+        try:
+            import fcntl
+
+            fcntl.flock(fh, fcntl.LOCK_EX)
+        except ImportError:  # pragma: no cover - not POSIX
+            pass
+        yield
+
+
+def save_merged(path: Path, new: dict, combine, keep=lambda v: True) -> dict:
+    """Under the lock, read the file again, fold in only the entries this run produced (by
+    key, with combine(old, new)), and write it atomically. A concurrent run's entries are
+    kept, not overwritten by our older copy. Returns the merged cache."""
     try:
-        CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        tmp = CACHE_PATH.with_suffix(".tmp")
-        tmp.write_text(json.dumps(cache, ensure_ascii=False, indent=1, sort_keys=True))
-        tmp.replace(CACHE_PATH)
+        with locked(path):
+            try:
+                disk = json.loads(path.read_text())
+                disk = disk if isinstance(disk, dict) else {}
+            except (OSError, ValueError):
+                disk = {}
+            out = {k: v for k, v in disk.items() if keep(v)}
+            for k, v in new.items():
+                out[k] = combine(out.get(k), v) if k in out else v
+            tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+            tmp.write_text(json.dumps(out, ensure_ascii=False, indent=1, sort_keys=True))
+            tmp.replace(path)
+            return out
     except OSError:
-        log.warning("Could not write the dish facts cache", exc_info=True)
+        log.warning("Could not write %s", path.name, exc_info=True)
+        return new
+
+
+def _combine(old: dict | None, new: dict) -> dict:
+    return {"name": new.get("name") or (old or {}).get("name"), "v": VERSION, **merge(old, new)}
+
+
+def _save(new: dict) -> dict:
+    new = {k: {**v, "v": VERSION} for k, v in new.items()}
+    return save_merged(
+        CACHE_PATH, new, _combine, keep=lambda v: isinstance(v, dict) and v.get("v") == VERSION
+    )
 
 
 def _schema(ids: list[str]) -> dict:
@@ -462,12 +496,14 @@ def _schema(ids: list[str]) -> dict:
                         "vegetarian": three,
                         "vegan": three,
                         "spice": {"type": "integer", "minimum": 0, "maximum": 3},
+                        "absent": {"type": "array", "items": {"type": "string", "enum": ALLERGENS}},
                         "category": {"type": "string", "enum": [c.value for c in DishCategory]},
                     },
                     "required": [
                         "id",
                         "ingredients",
                         "allergens",
+                        "absent",
                         "pork",
                         "beef",
                         "vegetarian",
@@ -484,7 +520,14 @@ def _schema(ids: list[str]) -> dict:
 def _ask(dishes: list[Dish], client=None) -> tuple[str, str]:
     """One model call -> (JSON text, model used). Tests replace this with a fake."""
     rows = [
-        {"id": d.id, "name": d.name_en, "name_zh": d.name_zh, "category": d.category.value}
+        {
+            "id": d.id,
+            "name": d.name_en,
+            "name_zh": d.name_zh,
+            "category": d.category.value,
+            **({"variant": d.variant} if d.variant else {}),
+            **({"description": keywords.description(d)[:300]} if d.description_raw else {}),
+        }
         for d in dishes
     ]
     turns = [llm.Turn("user", "Dishes:\n" + json.dumps(rows, ensure_ascii=False))]
@@ -521,6 +564,10 @@ def _clean(row: dict) -> dict | None:
         }
     except (TypeError, KeyError, ValueError):
         return None
+    flagged = {a["allergen"] for a in facts["allergens"]}
+    absent = row.get("absent") if isinstance(row.get("absent"), list) else []
+    # Only allergens the AI explicitly called absent are reviewed; silence is unknown.
+    facts["absent"] = sorted({a for a in absent if a in ALLERGENS} - flagged)
     if facts["spice"] is not None and not 0 <= facts["spice"] <= 3:
         facts["spice"] = None
     return facts
@@ -588,7 +635,7 @@ def apply(dish: Dish, facts: dict | None) -> Dish:
         if dish.menu_spice is not None:
             update["spice_level"] = dish.menu_spice
         return dish.model_copy(update=update)
-    facts = marked(_floor_merge(facts, base), dish, menu_says)
+    facts = marked(_floor_merge(facts, base), dish, menu_says, ai=facts)
     label = dish.name_en or dish.name_zh or dish.id
     tier = {"likely": EvidenceTier.INFERRED, "possible": EvidenceTier.UNKNOWN}
     ingredients = [
@@ -618,8 +665,35 @@ def apply(dish: Dish, facts: dict | None) -> Dish:
                 + (f" ({a['why']})" if a.get("why") else ""),
             )
         )
+    absent = set(facts.get("absent") or [])
     pork, beef = facts.get("pork"), facts.get("beef")
     veg, vegan = facts.get("vegetarian"), facts.get("vegan")
+    # "Possible vegetarian" is vegetarian only with a question: make sure one exists even when
+    # the AI named no possible animal ingredient (review #8).
+    possible = [i for i in facts.get("ingredients", []) if i["certainty"] == "possible"]
+    if veg == "possible" and not any(_animal(i["name"]) for i in possible):
+        ingredients.append(IngredientClaim(name=VEG_ASK, tier=EvidenceTier.UNKNOWN, note="AI"))
+        facts = {
+            **facts,
+            "ingredients": [
+                *facts.get("ingredients", []),
+                {"name": VEG_ASK, "certainty": "possible"},
+            ],
+        }
+    if vegan == "possible" and not any(
+        _animal(i["name"])
+        or keywords.regex("egg").search(i["name"])
+        or keywords.regex("dairy").search(i["name"])
+        for i in possible
+    ):
+        ingredients.append(IngredientClaim(name=VEGAN_ASK, tier=EvidenceTier.UNKNOWN, note="AI"))
+        facts = {
+            **facts,
+            "ingredients": [
+                *facts.get("ingredients", []),
+                {"name": VEGAN_ASK, "certainty": "possible"},
+            ],
+        }
     meat = "yes" in (pork, beef)
     is_veg = None if veg is None else (veg in ("yes", "possible") and not meat)
     is_vegan = None if vegan is None else (vegan in ("yes", "possible") and is_veg is True)
@@ -639,8 +713,11 @@ def apply(dish: Dish, facts: dict | None) -> Dish:
         update={
             "main_ingredients": ingredients,
             "allergens": flags,
-            # The AI was asked about all nine allergens: the ones it left out are reviewed.
-            "reviewed_allergens": [a for a in Allergen if a.value not in seen],
+            # Reviewed only where the AI explicitly said "absent" and nothing printed or the
+            # floor says otherwise; an allergen it did not mention stays unknown (review #2).
+            "reviewed_allergens": [
+                a for a in Allergen if a.value in absent and a.value not in seen
+            ],
             "contains_pork": None if pork is None else pork == "yes",
             "contains_beef": None if beef is None else beef == "yes",
             "is_vegetarian": is_veg,
@@ -664,7 +741,7 @@ def _sensitive(name: str) -> bool:
         "gelatin",
     }
     low = name.lower()
-    return any(w in low for w in words)
+    return any(w in low for w in words) or bool(keywords.concepts_in(low))
 
 
 def _floor_merge(facts: dict, base: dict) -> dict:
@@ -699,7 +776,7 @@ def prepare(menu: Menu, client=None, diners=None) -> Menu:
     Dishes the AI has not answered for stay unknown (nobody with a restriction can eat them)."""
     plain = bare(menu)
     cache = _load()
-    missing = [d for d in plain.dishes if _key(d) not in cache]
+    missing = list({_key(d): d for d in plain.dishes if _key(d) not in cache}.values())
     if not missing or (llm.provider() is None and client is None):
         missing = []
     for start in range(0, len(missing), MAX_DISHES):  # up to MAX_MENU_DISHES: 4 calls
@@ -708,15 +785,14 @@ def prepare(menu: Menu, client=None, diners=None) -> Menu:
             text, used = _ask(batch, client)
             answer = json.loads(text or "{}")
             ids = {d.id: d for d in batch}
+            new: dict = {}
             for row in answer.get("dishes", []):
                 dish = ids.get(row.get("id")) if isinstance(row, dict) else None
                 facts = _clean(row) if dish else None
                 if facts:
-                    key = _key(dish)
-                    old = cache.get(key)
-                    # Union with any earlier answer: once possible, stays possible.
-                    cache[key] = {"name": _label(dish), **merge(old, facts)}
-            _save(cache)
+                    new[_key(dish)] = {"name": _label(dish), "v": VERSION, **facts}
+            # Union with any earlier answer (once possible, stays possible), by key, locked.
+            cache = {**cache, **_save(new)}
             log.info("Dish facts for %d dishes from %s", len(batch), used)
         except Exception as exc:  # noqa: BLE001 - facts stay unknown; the rules stay strict
             log.warning("Dish facts failed: %s: %s", type(exc).__name__, str(exc)[:300])

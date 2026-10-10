@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from michelin import keywords
 from michelin.schemas import Allergen, Diet, DinerProfile, Dish, EvidenceTier
 
 BLOCKING_TIERS = {EvidenceTier.MENU, EvidenceTier.INFERRED}
@@ -59,30 +60,33 @@ def assessment(dish: Dish, diner: DinerProfile) -> dict:
       ingredient (unknown tier). Eligible, with a question for the server.
     """
     conflicts, unknown, ask = [], [], []
-    # A small explicit vocabulary is contradiction detection, not an ingredient
-    # extractor. Unrecognized text never establishes absence or safety.
+    # The shared keyword list (michelin/data/keywords.json) is contradiction detection, not
+    # an ingredient extractor. Unrecognized text never establishes absence or safety.
+    veg = {Diet.VEGETARIAN, Diet.VEGAN}
     terms = {
-        "pork": (
-            r"\bpork\b|\blard\b|\bbacon\b|\bham\b|猪肉|猪油",
-            {Diet.VEGETARIAN, Diet.VEGAN, Diet.NO_PORK},
-            set(),
-        ),
-        "beef": (r"\bbeef\b|牛肉", {Diet.VEGETARIAN, Diet.VEGAN, Diet.NO_BEEF}, set()),
-        "chicken": (r"\bchicken\b|鸡肉", {Diet.VEGETARIAN, Diet.VEGAN}, set()),
-        "fish": (r"\bfish\b|\btilapia\b", {Diet.VEGETARIAN, Diet.VEGAN}, {Allergen.FISH}),
-        "shellfish": (
-            r"\bshrimp\b|\bprawn\b|\bcrab\b|\boyster sauce\b",
-            {Diet.VEGETARIAN, Diet.VEGAN},
-            {Allergen.SHELLFISH},
-        ),
-        "egg": (r"\beggs?\b", {Diet.VEGAN}, {Allergen.EGG}),
-        "dairy": (r"\bmilk\b|\bbutter\b|\bcheese\b", {Diet.VEGAN}, {Allergen.DAIRY}),
-        "sesame": (r"\bsesame\b", set(), {Allergen.SESAME}),
-        "peanut": (r"\bpeanuts?\b", set(), {Allergen.PEANUT}),
+        "pork": (keywords.regex("pork"), veg | {Diet.NO_PORK}, set()),
+        "beef": (keywords.regex("beef"), veg | {Diet.NO_BEEF}, set()),
+        "meat": (keywords.regex("meat"), veg, set()),
+        "meat stock": (keywords.regex("stock"), veg, set()),
+        "fish": (keywords.regex("fish"), veg, {Allergen.FISH}),
+        "shellfish": (keywords.regex("shellfish"), veg, {Allergen.SHELLFISH}),
+        "egg": (keywords.regex("egg"), {Diet.VEGAN}, {Allergen.EGG}),
+        "dairy": (keywords.regex("dairy"), {Diet.VEGAN}, {Allergen.DAIRY}),
+        "sesame": (keywords.regex("sesame"), set(), {Allergen.SESAME}),
+        "peanut": (keywords.regex("peanut"), set(), {Allergen.PEANUT}),
+        "tree nut": (keywords.regex("tree_nut"), set(), {Allergen.TREE_NUT}),
+        "soy": (keywords.regex("soy"), set(), {Allergen.SOY}),
+        "wheat": (keywords.regex("wheat"), set(), {Allergen.WHEAT}),
     }
+    # Words printed on the menu (names, description, variant) for this diner's allergens.
+    printed_text = keywords.dish_text(dish).lower()
+    for allergen in diner.allergies:
+        word = keywords.found(allergen.value, printed_text)
+        if word:
+            conflicts.append(f"Recorded or inferred {allergen.value} ingredient ({word})")
     for claim in dish.main_ingredients:
         for label, (pattern, diets, allergens) in terms.items():
-            if re.search(pattern, claim.name, re.IGNORECASE) and (
+            if pattern.search(claim.name) and (
                 diets.intersection(diner.diets) or allergens.intersection(diner.allergies)
             ):
                 # Substitutions/negations need review; do not certify an omission.

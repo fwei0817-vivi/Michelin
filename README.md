@@ -226,6 +226,18 @@ replacement is **not** durable by default; persisting history across containers 
 explicit persistent volume at `MICHELIN_PROFILE_DB`. No such volume or production service
 has been provisioned. Test histories use temporary databases and no real diner data.
 
+## Allergy-safety fixes from the code review (2026-10-09)
+
+| Rule | Behavior |
+|---|---|
+| Allergens the AI did not mention | The facts call must place each of the nine allergens in `allergens` (likely/possible) or `absent`. Only an explicit `absent` makes it reviewed; silence stays unknown, so an allergic diner is not offered the dish. |
+| One keyword list | `src/michelin/data/keywords.json` (copied to `web/src/lib/keywords.json`; a test keeps them identical) feeds the printed-word scan, the floor, `edibility.py` and `dietary.ts`. It scans the English and Chinese names, the description and the variant. Squid, octopus, calamari, cuttlefish, crawfish, crayfish, lobster, clam, mussel, scallop, oyster sauce, XO, 鱿鱼 and 小龙虾 mean shellfish. Satay and 沙爹 mean peanut. Fish sauce and 鱼露 mean fish. Soy sauce and 酱油 mean soy and wheat. 五花肉, 肉末, 猪油 and 牛肉 are meat. |
+| V / vegan marks | A mark still beats the code's own name guess. It never overrides the AI's pork/beef "yes" or a likely meat ingredient (English or Chinese). In that case pork/beef stay "yes" and the diet stays unknown, so the dish is not offered and the diner is asked instead. |
+| "Possibly vegetarian" | It always comes with a server question. A card with an open question shows "Ask if vegetarian" and "Fits all N only if the server confirms", never "Vegetarian" or "Matches all". |
+| Facts cache | The cache key covers the English name, the Chinese name, the variant and a hash of the description. The description and variant are also sent to the model. Saves take a file lock, re-read the file and merge by key, so two runs can't overwrite each other. |
+| AI's whole-meal questions | They pass the same checks as dish questions: no misstated allergy or diet, no diner with nothing to ask about, and no concern the chosen dishes don't raise. |
+| Custom allergies | Unchanged: "possible" or no answer means the dish is allowed with a question. |
+
 ## Use prepared model responses now; replace the provider later
 
 Menu import now offers **assistant-prepared responses** for Café China and CHILI. The server
