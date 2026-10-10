@@ -63,7 +63,8 @@ interface Props {
   onParty: () => void;
 }
 
-const SPICE = ["", "Mild", "Medium", "Hot"];
+// One printed pepper is "a little spicy", never "mild" (QA r8): viewers see the 🌶 on the menu.
+const SPICE = ["", "A little spicy", "Spicy", "Very spicy"];
 
 export function Ticket({ menu, plan, diners, settings, source, sourceNote, locked, stale, loading, onLock, onSwap, onAiSwap, swapping, onRemove, onAdd, onRefine, onOrder, canOrder, onParty }: Props) {
   const [filter, setFilter] = useState("all");

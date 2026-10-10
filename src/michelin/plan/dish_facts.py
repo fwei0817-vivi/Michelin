@@ -41,7 +41,7 @@ from michelin.schemas import (
 log = logging.getLogger("michelin")
 ROOT = Path(__file__).resolve().parents[3]
 CACHE_PATH = Path(os.environ.get("MICHELIN_FACTS_CACHE", ROOT / "data/facts/dish_facts.json"))
-VERSION = "6"
+VERSION = "7"  # bump on any change to the facts prompt or how facts are judged
 ALLERGENS = [a.value for a in Allergen]
 MAX_DISHES = 40
 
@@ -127,20 +127,124 @@ def norm(name: str | None) -> str:
     )
 
 
+def _zh(text: str | None) -> str:
+    """Only the Chinese characters: "宫保鸡 / 牛" and "宫保鸡/牛 " read the same."""
+    return re.sub(r"[^\u3400-\u9fff]", "", text or "")
+
+
+_DESC_STOP = {
+    "with",
+    "and",
+    "the",
+    "our",
+    "served",
+    "choice",
+    "style",
+    "fresh",
+    "house",
+    "made",
+    "in",
+    "of",
+    "on",
+    "or",
+    "a",
+    "an",
+    "w",
+    "topped",
+    "over",
+    "side",
+    "your",
+    "dish",
+}
+
+
+_OPTION_WORDS = {
+    "chicken",
+    "beef",
+    "pork",
+    "shrimp",
+    "tofu",
+    "vegetable",
+    "veggie",
+    "combo",
+    "lamb",
+    "fish",
+    "duck",
+    "seafood",
+    "squid",
+    "scallop",
+    "mixed",
+    "house",
+}
+
+
+def _desc_words(dish: Dish) -> list[str]:
+    """The description's own words, normalised (case, punctuation, plurals, order, the dish
+    name itself), so two reads of one printed line agree while "Greens, garlic" and
+    "Greens, XO sauce" still differ."""
+    own = set(norm(dish.name_en).split()) | set(norm(dish.variant).split())
+    words = set(norm(dish.description_raw).split()) - own - _DESC_STOP
+    if dish.variant:  # a version's text often repeats the other options ("Chicken | Beef")
+        words -= _OPTION_WORDS
+    return sorted(w for w in words if len(w) >= 3 and not w.isdigit())
+
+
 def _key(dish: Dish) -> str:
-    """One fact entry per printed dish: English name, Chinese name, variant and description
-    (hashed). "Noodles" 阳春面 and "Noodles" 鱿鱼面, or Kung Pao (Chicken) and Kung Pao
-    (Shrimp), never share facts (review #4, 2026-10-09). Size and count words don't matter."""
-    desc = re.sub(r"\s+", " ", (dish.description_raw or "").strip().lower())
+    """One fact entry per printed dish: English name, Chinese name and variant, normalised so
+    a re-read of the same menu finds it again (QA r8: hashing the description missed 88 of
+    100 versions). "Noodles" 阳春面 and "Noodles" 鱿鱼面, or Kung Pao (Chicken) and Kung Pao
+    (Shrimp), still never share facts (review #4). Size and count words don't matter. The
+    VERSION is part of the key and of every entry: changing the facts prompt or how facts are
+    judged must bump it, and old entries then miss."""
+    words = " ".join(_desc_words(dish))
     parts = [
         norm(dish.name_en),
-        re.sub(r"\s+", "", dish.name_zh or ""),
+        _zh(dish.name_zh),
         norm(dish.variant),
-        hashlib.sha256(desc.encode()).hexdigest()[:12] if desc else "",
+        hashlib.sha256(words.encode()).hexdigest()[:12] if words else "",
     ]
     if not any(parts[:2]):
         parts[0] = dish.id
     return hashlib.sha256(f"{VERSION}|{'|'.join(parts)}".encode()).hexdigest()[:24]
+
+
+def _alt(dish: Dish) -> str:
+    """The fallback match: English name and variant only (the Chinese name a read may drop
+    or garble). Used only when it points at exactly one cached dish with a compatible
+    Chinese name."""
+    parts = [norm(dish.name_en) or dish.id, norm(dish.variant)]
+    return hashlib.sha256(f"{VERSION}|alt|{'|'.join(parts)}".encode()).hexdigest()[:24]
+
+
+def lookup(cache: dict, dish: Dish, index: dict | None = None) -> dict | None:
+    """The dish's cached facts: by its key, else by name + variant when exactly one cached
+    dish fits: the Chinese names agree (one is empty or contains the other) and this read's
+    description names no ingredient concern the cached one did not (XO sauce, peanuts...)."""
+    hit = cache.get(_key(dish))
+    if hit is not None or not norm(dish.name_en):
+        return hit
+    if index is None:
+        index = alt_index(cache)
+    mine = set(_desc_words(dish))
+    fits = []
+    for k in index.get(_alt(dish), []):
+        entry = cache[k]
+        a, b = _zh(dish.name_zh), _zh(entry.get("zh"))
+        if a and b and a not in b and b not in a:
+            continue
+        extra = mine - set(entry.get("words") or [])
+        if extra and keywords.concepts_in(" ".join(extra)):
+            continue
+        fits.append(entry)
+    return fits[0] if len(fits) == 1 else None
+
+
+def alt_index(cache: dict) -> dict:
+    out: dict[str, list[str]] = {}
+    for k, v in cache.items():
+        if isinstance(v, dict) and v.get("alt"):
+            out.setdefault(v["alt"], []).append(k)
+    return out
 
 
 def _label(dish: Dish) -> str:
@@ -449,7 +553,11 @@ def save_merged(path: Path, new: dict, combine, keep=lambda v: True) -> dict:
 
 
 def _combine(old: dict | None, new: dict) -> dict:
-    return {"name": new.get("name") or (old or {}).get("name"), "v": VERSION, **merge(old, new)}
+    old = old or {}
+    extra = {
+        k: new.get(k) or old.get(k) for k in ("alt", "zh", "words") if new.get(k) or old.get(k)
+    }
+    return {"name": new.get("name") or old.get("name"), "v": VERSION, **extra, **merge(old, new)}
 
 
 def _save(new: dict) -> dict:
@@ -776,7 +884,8 @@ def prepare(menu: Menu, client=None, diners=None) -> Menu:
     Dishes the AI has not answered for stay unknown (nobody with a restriction can eat them)."""
     plain = bare(menu)
     cache = _load()
-    missing = list({_key(d): d for d in plain.dishes if _key(d) not in cache}.values())
+    index = alt_index(cache)
+    missing = list({_key(d): d for d in plain.dishes if lookup(cache, d, index) is None}.values())
     if not missing or (llm.provider() is None and client is None):
         missing = []
     for start in range(0, len(missing), MAX_DISHES):  # up to MAX_MENU_DISHES: 4 calls
@@ -790,14 +899,22 @@ def prepare(menu: Menu, client=None, diners=None) -> Menu:
                 dish = ids.get(row.get("id")) if isinstance(row, dict) else None
                 facts = _clean(row) if dish else None
                 if facts:
-                    new[_key(dish)] = {"name": _label(dish), "v": VERSION, **facts}
+                    new[_key(dish)] = {
+                        "name": _label(dish),
+                        "v": VERSION,
+                        "alt": _alt(dish),
+                        "zh": _zh(dish.name_zh),
+                        "words": _desc_words(dish),
+                        **facts,
+                    }
             # Union with any earlier answer (once possible, stays possible), by key, locked.
             cache = {**cache, **_save(new)}
             log.info("Dish facts for %d dishes from %s", len(batch), used)
         except Exception as exc:  # noqa: BLE001 - facts stay unknown; the rules stay strict
             log.warning("Dish facts failed: %s: %s", type(exc).__name__, str(exc)[:300])
             break
-    dishes = [apply(d, cache.get(_key(d))) for d in plain.dishes]
+    index = alt_index(cache)
+    dishes = [apply(d, lookup(cache, d, index)) for d in plain.dishes]
     if diners:  # the table's own allergies and diets ("mango", "halal"), asked per term
         from michelin.plan import custom_facts
 
@@ -815,4 +932,5 @@ def coverage(menu: Menu) -> tuple[int, int]:
     """How many of the menu's dishes have AI facts (cached), of how many."""
     cache = _load()
     dishes = bare(menu).dishes
-    return sum(_key(d) in cache for d in dishes), len(dishes)
+    index = alt_index(cache)
+    return sum(lookup(cache, d, index) is not None for d in dishes), len(dishes)

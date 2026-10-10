@@ -262,6 +262,14 @@ def _line(
         # It named someone the rules say cannot eat this dish, or can only if the server
         # confirms ("especially Cai" on a dish that may hide Cai's allergen).
         why = None
+    named = {
+        p.id
+        for p in request.diners
+        if p.name and why and re.search(rf"\b{re.escape(p.name)}\b", why, re.IGNORECASE)
+    }
+    claims = r"\b(can|could) (?:eat|have)|\bsuits?\b|\bfor\b"
+    if why and len(named) >= 2 and named != ok and re.search(claims, why, re.IGNORECASE):
+        why = None  # "Ben and Cai can eat it" when all four can undersells it (QA r8)
     if why and (len(why.split()) > 10 or re.search(r"[;:]|\$\d", why)):
         why = None  # one short clause only; the price part is computed below
     if not why:

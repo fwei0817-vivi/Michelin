@@ -212,7 +212,7 @@ def test_unchanged_order_says_plainly_that_nothing_changed(fake):
     r = post({"chips": ["less_spicy"], "current": CURRENT})
     assert (
         r["change_note"]
-        == "Couldn't make it less spicy: the AI kept the same order. Its spiciest dish is hot."
+        == "Couldn't make it less spicy: the AI kept the same order. Its spiciest dish is very spicy."
     )
 
 
@@ -225,7 +225,7 @@ def test_less_spicy_on_an_already_mild_order_needs_no_ai_call(fake):
     ]
     r = post({"chips": ["less_spicy"], "current": mild})
     assert f.calls == [] and r["kind"] == "plan"
-    assert r["change_note"] == "Already mild: no dish is hotter than a 1." and r["changes"] == []
+    assert r["change_note"] == refine.ALREADY_MILD and r["changes"] == []
     assert sorted(i["dish_id"] for i in r["plan"]["items"]) == sorted(i["dish_id"] for i in mild)
     assert (
         refine.unmet(["less_spicy"], MENU, [("hot_and_sour_soup", 1)], [("hot_and_sour_soup", 1)])

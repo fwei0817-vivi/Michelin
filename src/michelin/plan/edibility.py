@@ -235,15 +235,20 @@ def open_questions(dish: Dish, diners: list[DinerProfile]) -> list[str]:
         if not m or not diners or any(_matters(_words(m.group(1)), p) for p in diners):
             questions.append(q)
     # One question per dish and concern, naming everyone it matters for (names, not ids).
+    # A diner the dish already excludes is not asked about ("Yu Xiang (Pork) (for Ben): is
+    # it vegetarian?", QA r8 note 8).
+    eaters = {p.id for p in diners if assessment(dish, p)["status"] != "conflict"}
     who: dict[str, list[str]] = {}
     for person in diners:
+        if person.id not in eaters:
+            continue
         for r in assessment(dish, person)["reasons"]:
             if r.startswith("Confirm"):
                 who.setdefault(r, []).append(person.name or person.id)
     label = dish.name_en or dish.name_zh or dish.id
     questions.extend(f"{label} (for {', '.join(names)}): {natural(r)}" for r, names in who.items())
     for f in dish.allergens:
-        names = [p.name or p.id for p in diners if f.allergen in p.allergies]
+        names = [p.name or p.id for p in diners if f.allergen in p.allergies and p.id in eaters]
         if f.tier == EvidenceTier.UNKNOWN and names:
             q = f"{label} (for {', '.join(names)}): " + natural(
                 f"Confirm {f.allergen.value}, including sauces and cross-contact"
@@ -360,25 +365,62 @@ def _join(items: list[str], last: str) -> str:
     return items[0] if len(items) == 1 else f"{', '.join(items[:-1])} {last} {items[-1]}"
 
 
+# Diets are asked as "is it halal?", never as an ingredient ("any pork or halal in it", QA r8).
+_DIET_WORDS = {"vegetarian", "vegan", "halal", "kosher", "pescatarian", "jain"}
+
+
+def _is_diet(term: str) -> bool:
+    t = term.lower().strip()
+    return t in _DIET_WORDS or t.endswith(("-free", " free", "friendly", "certified"))
+
+
 def ask_server(dish: Dish, flagged: list[Risk], follow_up: bool = False) -> str:
     """One plain sentence a diner could say to the server, covering these risks:
     "Is there any pork or lard in the Scallion Pancake (for David and Tom)?" As a follow-up
-    to a question that already names the dish: "Also, is there any pork in it (for Cai)?" """
+    to a question that already names the dish: "Also, is there any pork in it (for Cai)?"
+    Diets get their own clause: "Is there any pork in the Fried Rice (for Ben), and is it
+    halal (for Mia)?" """
     label = dish.name_en or dish.name_zh or dish.id
-    things = list(dict.fromkeys(r.about.replace("_", " ") for r in flagged))
-    things = [t for t in things if t != "spice level"]
-    things = [t for t in things if not any(t != o and t in o.split(" ") for o in things)]
-    spice = any(r.about == "spice level" for r in flagged)
-    names = list(dict.fromkeys(n for r in flagged for n in r.names))
+
+    def about(r: Risk) -> str:
+        t = r.about.replace("_", " ").strip()
+        return t[3:] if t.lower().startswith("no ") and not _is_diet(t) else t
+
+    spice = [r for r in flagged if r.about == "spice level"]
+    rest = [r for r in flagged if r.about != "spice level"]
+    ingr = [r for r in rest if not _is_diet(about(r))]
+    diet = [r for r in rest if _is_diet(about(r))]
+
+    def names(rs: list[Risk]) -> list[str]:
+        return list(dict.fromkeys(n for r in rs for n in r.names))
+
+    def things(rs: list[Risk]) -> list[str]:
+        ts = list(dict.fromkeys(about(r) for r in rs))
+        return [t for t in ts if not any(t != o and t in o.split(" ") for o in ts)]
+
     where = "it" if follow_up else f"the {label}"
-    if things:
-        text = f"Is there any {_join(things, 'or')} in {where}"
-        text += ", and how spicy is it" if spice else ""
-    else:
-        text = f"How spicy is {where}"
-    if follow_up:
-        text = "Also, " + text[0].lower() + text[1:]
-    return text + (f" (for {_join(names, 'and')})" if names else "") + "?"
+    clauses: list[tuple[str, list[str]]] = []
+    if ingr:
+        clauses.append((f"is there any {_join(things(ingr), 'or')} in {where}", names(ingr)))
+    if diet:
+        subject = "it" if clauses else where
+        clauses.append((f"is {subject} {_join(things(diet), 'and')}", names(diet)))
+    if spice:
+        clauses.append(("how spicy is it" if clauses else f"how spicy is {where}", names(spice)))
+    if not clauses:
+        clauses.append((f"is there anything to check in {where}", []))
+    every = names(flagged)
+    split = len({tuple(n) for _, n in clauses if n}) > 1
+    parts = []
+    for text, who in clauses:
+        if split and who:
+            text += f" (for {_join(who, 'and')})"
+        parts.append(text)
+    text = ", and ".join(parts)
+    if not split and every:
+        text += f" (for {_join(every, 'and')})"
+    text = ("Also, " + text) if follow_up else text[0].upper() + text[1:]
+    return text + "?"
 
 
 def risks(dish: Dish, diners: list[DinerProfile]) -> list[Risk]:

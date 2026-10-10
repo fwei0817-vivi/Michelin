@@ -45,7 +45,7 @@ from michelin.plan.edibility import (
     risks,
 )
 from michelin.plan.score import variety_score
-from michelin.plan.validation import family_repeats, validate_order
+from michelin.plan.validation import family_repeats, staple_repeats, validate_order
 from michelin.schemas import (
     PREFERENCE_TEXT,
     Check,
@@ -308,8 +308,11 @@ def _schema(ids: list[str], diner_ids: list[str]) -> dict:
     }
 
 
-def check(menu: Menu, request: TableRequest, answer: dict, staples) -> tuple[list[str], list]:
-    """(violations, items). Items include the server-added rice."""
+def check(
+    menu: Menu, request: TableRequest, answer: dict, staples, repeats: bool = True
+) -> tuple[list[str], list]:
+    """(violations, items). Items include the server-added rice. `repeats=False` skips the
+    "two fried rices" taste rule (the rules' own fallback must never fail on it)."""
     known = {d.id: d for d in menu.dishes}
     allowed = {d.id for d in menu.dishes if d.category.value != "staple"}
     names = {p.id: p.name for p in request.diners}
@@ -338,6 +341,8 @@ def check(menu: Menu, request: TableRequest, answer: dict, staples) -> tuple[lis
                 )
         items.append(PlanItem(dish_id=dish_id, quantity=1))
     problems += family_repeats(menu, request, [i.dish_id for i in items])
+    if repeats:
+        problems += staple_repeats(menu, request, [i.dish_id for i in items])
     items += [PlanItem(dish_id=d.id, quantity=request.n_diners) for d in staples]
     report = validate_order(menu, request, items)
     for reason in report["reasons"]:
@@ -752,7 +757,8 @@ def coverage_fix(menu: Menu, request: TableRequest, items) -> CoverageFix | None
             after = spread(menu, request, option)
             if after <= now or not validate_order(menu, request, option)["valid"]:
                 continue
-            if family_repeats(menu, request, [i.dish_id for i in option]):
+            ids = [i.dish_id for i in option]
+            if family_repeats(menu, request, ids) or staple_repeats(menu, request, ids):
                 continue
             subtotal = sum(cents(known[i.dish_id].price) * i.quantity for i in option)
             key = (after, drop is not None, -subtotal)  # most even, then a swap, then cheaper
@@ -804,13 +810,13 @@ def fallback(menu: Menu, request: TableRequest) -> tuple[dict, list] | None:
         if d.category.value != "staple"
     ]
     answer = {"dishes": rows, "server_questions": [], "summary": ""}
-    problems, items = check(menu, request, answer, _staples(menu, request))
+    problems, items = check(menu, request, answer, _staples(menu, request), repeats=False)
     if problems:
         return None
     fix = coverage_fix(menu, request, items)
     if fix is not None:
         answer = _apply_fix(answer, fix, menu, request)
-        problems, fixed = check(menu, request, answer, _staples(menu, request))
+        problems, fixed = check(menu, request, answer, _staples(menu, request), repeats=False)
         if not problems:
             items = fixed
     return answer, items
@@ -986,7 +992,7 @@ def _already_mild(menu: Menu, request: TableRequest, feedback) -> Outcome | None
         ],
         "server_questions": [],
     }
-    problems, items = check(menu, request, answer, _staples(menu, request))
+    problems, items = check(menu, request, answer, _staples(menu, request), repeats=False)
     if problems:
         return None  # the current order no longer passes: let the AI revise it
     return Outcome(

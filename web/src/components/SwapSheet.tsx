@@ -59,7 +59,8 @@ function usePreviews(files: File[]): string[] {
   }, [files]);
   return urls;
 }
-const SPICE = ["", "Mild", "Medium", "Hot"];
+// One printed pepper is "a little spicy", never "mild" (QA r8): viewers see the 🌶 on the menu.
+const SPICE = ["", "A little spicy", "Spicy", "Very spicy"];
 // Animal products and allergens that a dish name often does not reveal.
 const HIDDEN = /pork|lard|beef|chicken|duck|lamb|meat|broth|stock|shrimp|prawn|crab|oyster|fish|anchov|scallop|egg|milk|butter|cream|cheese|peanut|sesame|nut/i;
 

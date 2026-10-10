@@ -5,6 +5,7 @@ with tax and tip, and every diner able to eat at least one chosen dish. How many
 order is the AI's call; there is no portion or per-person dish-count rule (2026-10-09).
 """
 
+import re
 from dataclasses import asdict
 
 from michelin.plan.budget import cents, totals
@@ -52,6 +53,59 @@ def family_repeats(menu: Menu, request: TableRequest, dish_ids) -> list[str]:
             out.append(
                 f"{both} are two versions of {name}, and one feeds nobody the other doesn't; "
                 "order just one of them."
+            )
+    return out
+
+
+_STAPLE_KINDS = {
+    "fried rice": r"fried rice|炒饭",
+    "lo mein": r"lo mein|捞面",
+    "chow mein": r"chow mein|炒面",
+    "chow fun": r"chow fun|mei fun|炒河粉|炒米粉",
+}
+
+
+def staple_kind(dish) -> str | None:
+    """'Pineapple Fried Rice' and 'Yang Chow Fried Rice' are both fried rice."""
+    text = f"{dish.family_name or ''} {dish.name_en or ''} {dish.name_zh or ''}".lower()
+    return next((k for k, pat in _STAPLE_KINDS.items() if re.search(pat, text)), None)
+
+
+def staple_repeats(menu: Menu, request: TableRequest, dish_ids) -> list[str]:
+    """Two fried rices (QA r8) read as a repetitive order and crowd out a dish for someone
+    else: a second one of the same kind only when it feeds someone the first cannot."""
+    known = {d.id: d for d in menu.dishes}
+    groups: dict[str, list] = {}
+    for i in dict.fromkeys(dish_ids):
+        d = known.get(i)
+        kind = staple_kind(d) if d is not None else None
+        if kind:
+            groups.setdefault(kind, []).append(d)
+    out = []
+    for kind, dishes in groups.items():
+        fams = {d.family_id for d in dishes}
+        if len(dishes) < 2 or (len(fams) == 1 and None not in fams):
+            continue  # versions of one line are handled by family_repeats
+        sets = [set(edible_by(d, request.diners)) for d in dishes]
+        union = set().union(*sets)
+        others = [set().union(*(s for j, s in enumerate(sets) if j != k)) for k in range(len(sets))]
+        top = max(d.price or 0 for d in dishes)
+        chosen = set(dish_ids)
+        alternative = any(
+            d.id not in chosen
+            and d.id not in set(request.excluded_dish_ids)
+            and d.price is not None
+            and d.price <= top
+            and d.category.value != "staple"
+            and staple_kind(d) != kind
+            and edible_by(d, request.diners)
+            for d in menu.dishes
+        )
+        if alternative and any(o >= union for o in others):
+            both = " and ".join(d.name_en or d.id for d in dishes)
+            out.append(
+                f"{both} are both {kind}, and one feeds nobody the other doesn't; keep one and "
+                "pick a different kind of dish, ideally one the least-served diner can eat."
             )
     return out
 

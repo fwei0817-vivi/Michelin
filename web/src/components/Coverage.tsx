@@ -11,7 +11,7 @@ export function Coverage({ menu, plan, diners }: { menu: Menu; plan: Plan; diner
     <section className="sheet who" aria-labelledby="who-heading">
       <h2 id="who-heading">Who can eat what</h2>
       <p className="who-caption">
-        Counted from recorded allergies and diets, rice and noodles not included.
+        Counted from recorded allergies and diets. Plain rice is not counted; fried rice and noodle dishes are.
       </p>
       <ul className="who-list">
         {diners.map((p) => {
@@ -46,7 +46,7 @@ export function Coverage({ menu, plan, diners }: { menu: Menu; plan: Plan; diner
                       ))}
                     </ul>
                   ) : (
-                    <p>No matching dishes besides rice and noodles.</p>
+                    <p>No matching dishes besides plain rice.</p>
                   )}
                 </div>
               </details>

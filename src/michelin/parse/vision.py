@@ -245,12 +245,41 @@ def _choice_line(text: str) -> list[tuple[str, float]]:
     (Beef, 2), (Shrimp, 4), (Tofu, 0)]: each surcharge stays with the option it is printed
     next to. Chinese-only parts are skipped; fewer than two options means no choice line."""
     t = re.sub(r"^.*?\bchoice of\b[:\s]*", "", str(text or ""), flags=re.IGNORECASE | re.DOTALL)
+    t = re.sub(r"\bw/\s*", "with ", t, flags=re.IGNORECASE)  # "Steamed w/ Ginger" is one option
     out = []
     for part in re.split(r"\s*[|｜/,]\s*|\s+or\s+", t):
         m = re.fullmatch(r"\s*([A-Za-z][A-Za-z '&.-]*?)\s*(\+\s*\$?\s*\d+(?:\.\d{1,2})?)?\s*", part)
         if m:
             out.append((m[1].strip(), _up(m[2]) or 0.0))
     return out if len(out) >= 2 else []
+
+
+def _with(text) -> str:
+    return re.sub(r"\bw/\s*", "with ", str(text or ""), flags=re.IGNORECASE)
+
+
+_DANGLING = re.compile(r"\s+(?:w|with|and|or|&|in)\s*/?\s*$", re.IGNORECASE)
+
+
+def clean_choices(choices: list[dict]) -> list[dict]:
+    """A choice cut at "w/" ("Steamed w" + "Ginger Scallion", QA r8 MO-1) is joined back to
+    the option it belongs to, and a repeated option is kept once."""
+    out: list[dict] = []
+    pending: dict | None = None
+    for c in choices:
+        c = dict(c)
+        name = str(c.get("name_en") or "").strip()
+        if pending is not None:
+            c["name_en"] = f"{_DANGLING.sub('', str(pending['name_en']))} with {name}"
+            pending = None
+            name = c["name_en"]
+        if _DANGLING.search(name):
+            pending = c
+            continue
+        if any(_same(o.get("name_en")) == _same(name) for o in out):
+            continue
+        out.append(c)
+    return out
 
 
 def _priced_choices(row: dict, name: str, price: float | None, choices: list[dict]) -> list[dict]:
@@ -303,12 +332,17 @@ def _priced_choices(row: dict, name: str, price: float | None, choices: list[dic
     line = _choice_line(row.get("choice_text") or "")
     if not line:
         m = _CHOICE_LINE.search(str(row.get("description") or ""))
-        line = _choice_line(m[0].split("\n")[0]) if m else []
+        # A choice line wrapped onto the next line ("Choice of Steamed\nw/ Ginger ...").
+        text = re.sub(r"\n\s*(?=w/|[a-z/|])", " ", m[0]) if m else ""
+        line = _choice_line(text.split("\n")[0]) if m else []
     if line:
         printed = {_same(n): up for n, up in line}
-        names = {_same(c.get("name_en")) for c in choices}
-        if not choices or names <= set(printed):
-            zh = {_same(c.get("name_en")): c.get("name_zh") for c in choices}
+        names = {_same(_with(c.get("name_en"))) for c in choices}
+        whole = " ".join(printed)
+        # The printed line wins when every model option is (part of) a printed one: a split
+        # "Steamed" + "Ginger Scallion" is the printed "Steamed w/ Ginger Scallion" (QA r8).
+        if not choices or names <= set(printed) or all(n and n in whole for n in names):
+            zh = {_same(_with(c.get("name_en"))): c.get("name_zh") for c in choices}
             return [
                 {"name_en": n, "name_zh": zh.get(_same(n)), "price": round(price + up, 2)}
                 for n, up in line
@@ -377,7 +411,9 @@ def rows_to_dishes(rows: list[dict]) -> list[Dish]:
         ]
         if not name:
             continue
-        choices = _fill_choices(name, price, _priced_choices(row, name, price, choices))
+        choices = clean_choices(choices)
+        choices = clean_choices(_priced_choices(row, name, price, choices))
+        choices = _fill_choices(name, price, choices)
         if len(choices) < 2:
             if price is None:
                 continue

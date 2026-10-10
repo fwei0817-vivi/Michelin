@@ -108,7 +108,7 @@ GOAL_TEXT = {
 }
 
 
-ALREADY_MILD = "Already mild: no dish is hotter than a 1."
+ALREADY_MILD = "Already gentle: nothing here is more than a little spicy."
 
 
 def already_mild(menu: Menu, before, locked=()) -> bool:
@@ -197,7 +197,7 @@ def honest_note(chips: list[str], d: dict, menu: Menu | None = None, after=()) -
         if "less_spicy" in chips and menu is not None:
             known = {x.id: x for x in menu.dishes}
             top = max((_spice(known[i]) for i, _ in after if i in known), default=0)
-            extra = f" Its spiciest dish is {['not spicy', 'mild', 'medium', 'hot'][min(top, 3)]}."
+            extra = f" Its spiciest dish is {['not spicy', 'a little spicy', 'spicy', 'very spicy'][min(top, 3)]}."
         return f"Couldn't {goals}: the AI kept the same order.{extra}"
     return (
         f"Couldn't fully {goals} within everyone's allergies, diets, kept dishes and the "
@@ -298,9 +298,56 @@ def note_ok(note: str, d: dict) -> bool:
         # A dish the note names must really have been added, removed or changed.
         if len(name) >= 5 and name.lower() in low and dish_id not in moved:
             return False
+    if not _names_match(low, d):
+        return False
     if re.search(r"\$\s*(\d+(?:\.\d+)?)", low):
         claimed = float(re.search(r"\$\s*(\d+(?:\.\d+)?)", low).group(1))
         if abs(claimed - abs(d["price"])) > 0.5:
+            return False
+    return True
+
+
+_GENERIC = {
+    "dish",
+    "dishes",
+    "spicy",
+    "mild",
+    "milder",
+    "sauce",
+    "with",
+    "style",
+    "special",
+    "house",
+    "plate",
+    "order",
+    "one",
+    "ones",
+    "the",
+    "and",
+    "for",
+    "less",
+    "more",
+    "small",
+    "large",
+}
+
+
+def _tokens(name: str) -> set[str]:
+    return {w for w in re.findall(r"[a-z]+", name.lower()) if len(w) >= 4 and w not in _GENERIC}
+
+
+def _names_match(low: str, d: dict) -> bool:
+    """Words of dish names in the note must point at dishes that really moved (QA r8 AD-1:
+    "swapped the spicy cucumber for a garlic one" when Garlic Cucumber was already on the
+    order and Chilled Zucchini was the one added)."""
+    said = set(re.findall(r"[a-z]+", low))
+    moved = {*d["added"], *d["removed"], *d["more"], *d["fewer"]}
+    names = d.get("names", {})
+    moved_words = set().union(*(_tokens(names.get(i, "")) for i in moved)) if moved else set()
+    for dish_id, name in names.items():
+        if dish_id in moved:
+            continue
+        if (_tokens(name) - moved_words) & said:
             return False
     return True
 
