@@ -450,10 +450,24 @@ def swap(menu: Menu, request: TableRequest, plan: Plan, old_id: str, client=None
     payload = brief(menu, request, plan, old_id)
     old_name = payload["replace"]["name"]
     manual = "Pick a replacement from the menu instead."
-    if not llm_planner.enabled() and client is None:
-        return SwapOutcome(None, f"No AI model is configured on this server. {manual}")
     if not payload["candidates"]:
         return SwapOutcome(None, f"No other dish on this menu can replace {old_name}. {manual}")
+    # Cached by the whole brief (current order, kept/removed, diners, budget, menu) and the
+    # prompt (2026-10-10): the same swap again needs no AI call.
+    key = "swap:" + llm_planner._key(
+        {"swap": payload, "old": old_id, "prompt": SYSTEM}, llm.model("plan")
+    )
+    stored = llm_planner._cache_get(key, llm_planner.CACHE_PATH)
+    if stored:
+        answer = stored["answer"]
+        problems, items = check(menu, request, plan, old_id, answer)
+        if not problems:
+            new_id = answer["dish_id"]
+            reason = _line(menu, request, old_id, new_id, str(answer.get("reason") or "")[:120])
+            new_plan = _to_plan(menu, request, plan, old_id, {**answer, "reason": reason}, items)
+            return SwapOutcome(new_plan, reason, new_id, reason, 0, [], stored.get("model"))
+    if not llm_planner.enabled() and client is None:
+        return SwapOutcome(None, f"No AI model is configured on this server. {manual}")
     schema = _schema([c["id"] for c in payload["candidates"]])
     turns = [llm.Turn("user", "Brief:\n" + json.dumps(payload, ensure_ascii=False))]
     history: list[list[str]] = []
@@ -502,6 +516,7 @@ def swap(menu: Menu, request: TableRequest, plan: Plan, old_id: str, client=None
             if problems or covers(first[0]) > covers(answer):
                 problems, (answer, items) = [], first  # the nudge did not help; first pick stands
         if not problems:
+            llm_planner._cache_put(key, {"model": used, "answer": answer}, llm_planner.CACHE_PATH)
             new_id = answer["dish_id"]
             reason = _line(menu, request, old_id, new_id, str(answer.get("reason") or "")[:120])
             answer = {**answer, "reason": reason}

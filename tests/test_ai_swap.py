@@ -218,6 +218,8 @@ def test_swap_endpoint(table, monkeypatch):
         and "checked by the rules" in data["source_note"]
     )
     assert len(data["plan"]["items"]) == len(plan.items)
+    llm_planner._memory.clear()  # 2026-10-10: swaps are cached; forget the good one
+    llm_planner.CACHE_PATH.unlink(missing_ok=True)
     monkeypatch.setattr(ai_swap, "_ask", Fake({"dish_id": "x"}, {"dish_id": "y"}))
     data = client.post("/api/plan/swap", json=body).json()
     assert data["kind"] == "failed" and "from the menu" in data["message"]

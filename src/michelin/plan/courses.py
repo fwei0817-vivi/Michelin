@@ -134,9 +134,15 @@ def annotate(dishes: list, client=None) -> list:
         if new:
             _save(new)
             cache = {**cache, **new}
-    return [
-        d.model_copy(
-            update={"course": course_of(d.category, (cache.get(_key(d)) or {}).get("course"))}
-        )
-        for d in dishes
-    ]
+    return [d.model_copy(update={"course": _course(d, cache)}) for d in dishes]
+
+
+def _course(d, cache) -> str:
+    """Fried rice, lo mein, chow mein, chow fun, mei fun are staples by name (code, no AI),
+    unless printed as cold or soup; plain rice keeps category "staple"."""
+    from michelin.plan.validation import staple_kind
+
+    c = course_of(d.category, (cache.get(_key(d)) or {}).get("course"))
+    if c in ("hot_main", "side", "unknown") and staple_kind(d):
+        return "staple"
+    return c

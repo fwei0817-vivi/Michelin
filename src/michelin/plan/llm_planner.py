@@ -1166,11 +1166,6 @@ def _plan(menu, request, client=None, cache_path=None, feedback=None) -> Outcome
     empty = nothing_for(menu, request)
     if empty is not None:
         return Outcome(None, empty, "Someone has nothing to eat on this menu.", 0, [])
-    if not enabled() and client is None:
-        return _unavailable(
-            "Recommendations need an AI model, and none is configured on this server. "
-            "Set OPENROUTER_API_KEY or GEMINI_API_KEY (see the README)."
-        )
     try:
         hint = rules_hints.analyse(menu, request)
     except Exception:  # hints are optional help, never a reason to fail
@@ -1204,8 +1199,10 @@ def _plan(menu, request, client=None, cache_path=None, feedback=None) -> Outcome
         )
     staples = _staples(menu, request)
     model_id = llm.model("plan")
-    key = _key(payload, model_id)
-    stored = None if feedback is not None else _cache_get(key, cache_path)
+    # Refines are cached too (2026-10-10): the payload carries the current order, the
+    # chips/free text, diners, budget and menu; the revise prompt is part of the key.
+    key = _key({**payload, "revise": refine.REVISE} if feedback is not None else payload, model_id)
+    stored = _cache_get(key, cache_path)
     if stored:
         problems, items = check(menu, request, stored["answer"], staples)
         if not problems:
@@ -1214,7 +1211,13 @@ def _plan(menu, request, client=None, cache_path=None, feedback=None) -> Outcome
                 None,
                 f"AI plan by {llm.label(stored['model'])}, checked by the rules (cached).",
                 cached=True,
+                answer=stored["answer"],
             )
+    if not enabled() and client is None:
+        return _unavailable(
+            "Recommendations need an AI model, and none is configured on this server. "
+            "Set OPENROUTER_API_KEY or GEMINI_API_KEY (see the README)."
+        )
     ids = [d["id"] for d in payload["dishes"]]
     schema = _schema(ids, [p.id for p in request.diners])
     if feedback is not None:

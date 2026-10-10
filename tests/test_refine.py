@@ -131,7 +131,7 @@ def test_feedback_bypasses_the_cache_and_is_part_of_its_key(fake):
     assert len(f.calls) == 1  # a plain refresh is cached
     post({"text": "more veg please", "current": CURRENT})
     post({"text": "more veg please", "current": CURRENT})
-    assert len(f.calls) == 3  # every refinement asks the model again
+    assert len(f.calls) == 2  # 2026-10-10: the same refinement again is cached too
     a = llm_planner._key({"x": 1, "feedback": ["a"]}, "m")
     assert a != llm_planner._key({"x": 1, "feedback": ["b"]}, "m")
 
