@@ -435,9 +435,13 @@ def _summary_after(menu: Menu, request: TableRequest, plan: Plan, old_id, out: P
     by the one gate, QA r12); otherwise the code's own line about the new order."""
     if not ai_text.ai_prose():
         return ai_text.code_summary(menu, request, out.items)  # QA r16: code only
-    return ai_text.summary(
-        plan.summary, menu, request, out.items, shown=True
-    ) or ai_text.code_summary(menu, request, out.items)
+    return ai_text.with_enough(
+        ai_text.summary(plan.summary, menu, request, out.items, shown=True)
+        or ai_text.code_summary(menu, request, out.items),
+        menu,
+        request,
+        out.items,
+    )
 
 
 def _ask(turns: list, schema: dict, client):

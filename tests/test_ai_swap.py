@@ -376,7 +376,7 @@ def test_summary_stays_visible_after_a_swap(table):
     old, new, _ = _target_and_candidate(menu, request, plan)
     kept = plan.model_copy(update={"summary": "A balanced spread the whole table can share."})
     out = ai_swap.manual(menu, request, kept, old, new)
-    assert out.plan.summary == "A balanced spread the whole table can share."
+    assert out.plan.summary.startswith("A balanced spread the whole table can share.")  # + any enough-food line
     named = plan.model_copy(update={"summary": f"Built around {menu.dish(old).name_en}."})
     out = ai_swap.manual(menu, request, named, old, new)
     assert out.plan.summary and menu.dish(old).name_en not in out.plan.summary

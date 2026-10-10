@@ -9,6 +9,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 from pathlib import Path
 
 from michelin import llm
@@ -18,7 +19,11 @@ from michelin.schemas import DishCategory
 log = logging.getLogger("michelin")
 ROOT = Path(__file__).resolve().parents[3]
 CACHE_PATH = Path(os.environ.get("MICHELIN_COURSE_CACHE", ROOT / "data/facts/dish_course.json"))
-VERSION = "1"  # bump on any change to the prompt
+VERSION = "1"  # the 2026-10-10 "unknown rather than guess" wording only clarifies v1
+_STARTER = re.compile(
+    r"dumpling|wonton|wanton|potsticker|spring roll|egg roll|fantail|\bbuns?\b|shumai|饺|馄饨|春卷",
+    re.IGNORECASE,
+)  # bump on any change to the prompt
 BATCH = 80
 CLEAR = {
     DishCategory.COLD_APPETIZER,
@@ -35,7 +40,8 @@ SYSTEM = """For each dish on a Chinese restaurant menu, say how it eats as part 
 "cold": cold dishes and salads. "soup". "dessert": desserts and sweet drinks.
 "side": small starters and snacks: dumplings, buns, spring or egg rolls, pancakes,
   wontons, dim sum, spare-rib or wing appetizers, pickles.
-"unknown": you cannot tell from the name, section and description.
+"unknown": the name, section and description give no basis (an unfamiliar or house
+  name with no description). Answer "unknown" rather than guess; it is safe.
 Use the printed section when it says (e.g. "Appetizers" -> side, "Chow Mein" -> staple)."""
 
 
@@ -143,6 +149,10 @@ def _course(d, cache) -> str:
     from michelin.plan.validation import staple_kind
 
     c = course_of(d.category, (cache.get(_key(d)) or {}).get("course"))
+    # printed as a cold appetizer but a hot starter by name or section -> side (spot check)
+    text = f"{d.name_en or ''} {d.name_zh or ''}"
+    if c == "cold" and (_STARTER.search(text) or "hot" in (d.menu_section or "").lower()):
+        return "side"
     if c in ("hot_main", "side", "unknown") and staple_kind(d):
         return "staple"
     return c

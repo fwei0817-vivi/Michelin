@@ -195,10 +195,15 @@ def honest_line(menu, request, items) -> str | None:
     if t.hot < request.n_diners:
         parts.append(f"{t.hot} hot dish{'es' if t.hot != 1 else ''} for {request.n_diners} people")
     for p in short:
-        parts.append(
-            f"{p.name or p.id} has {t.good[p.id]} they can eat without asking "
-            f"({t.good_hot[p.id]} hot)"
-        )
+        g, gh = t.good[p.id], t.good_hot[p.id]
+        name = p.name or p.id
+        if g < 2:
+            parts.append(
+                f"{name} has only {g} dish{'es' if g != 1 else ''} they can eat without asking"
+                + (f" ({gh} hot)" if g else "")
+            )
+        else:
+            parts.append(f"{name} has no hot dish they can eat without asking")
     need = budget_needed(menu, request)
     lead = "At this budget only " if not feasible(menu, request) else "This order has only "
     line = lead + "; ".join(parts) + "."

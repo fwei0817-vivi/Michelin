@@ -393,6 +393,15 @@ def code_summary(menu, request, items) -> str:
     return f"{line} {short}" if short else line
 
 
+def with_enough(text: str, menu, request, items) -> str:
+    """Any summary (the AI's or the code's) ends with the 'enough food' line when the order
+    misses it, so a short order is never shown silently."""
+    from michelin.plan import enough
+
+    short = enough.honest_line(menu, request, items)
+    return f"{text} {short}" if short and short not in text else text
+
+
 def coverage_check(menu, request, items) -> tuple[bool, str]:
     """The plan's coverage check, same rule as code_summary (QA r18): "everyone" only when
     every diner has a dish that is "ok" in diner_status; anyone with only dishes the server

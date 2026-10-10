@@ -75,7 +75,9 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
   const items = plan.items.filter((i) => byId[i.dish_id]);
   // QA r18: the coverage line comes from the backend per-diner status, never "everyone" when someone only has dishes to confirm
   const cov = coverageLabel(items.filter((i) => byId[i.dish_id].category !== "staple"), diners);
-  const label = (c: { name: string; passed: boolean }) => (c.name === "coverage" ? cov.label : checkLabel(c.name, c.passed));
+  // a missed 'enough food' rule says exactly what is missing, never just a label
+  const label = (c: { name: string; passed: boolean; detail?: string }) =>
+    c.name === "coverage" ? cov.label : c.name === "enough" && !c.passed && c.detail ? c.detail.replace(/\.$/, "") : checkLabel(c.name, c.passed);
   const passed = (c: { name: string; passed: boolean }) => (c.name === "coverage" ? c.passed && cov.passed : c.passed);
   const cur = currencySymbol(menu.currency);
   const remaining = settings.budget - plan.per_person;

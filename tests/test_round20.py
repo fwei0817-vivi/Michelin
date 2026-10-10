@@ -77,3 +77,53 @@ def test_staple_by_name_is_a_staple():
     assert courses._course(d, {}) == "staple"
     d = Dish(id="c", name_en="Cold Sesame Noodles", price=8, category="cold_appetizer")
     assert courses._course(d, {}) == "cold"
+
+
+def test_still_short_after_retry_says_exactly_what_is_missing(monkeypatch, tmp_path):
+    from test_round19 import _d, _menu, _req
+
+    from michelin.schemas import DinerProfile, PlanItem
+
+    m = _menu(
+        [
+            _d("cold1", "cold_appetizer", 8),
+            _d("soup1", "soup", 6),
+            _d("tofu", "stir_fry", 14),
+            _d("greens", "stir_fry", 12),
+            _d("noodle", "other", 13, "staple"),
+        ]
+    )
+    diners = [DinerProfile(id="p", name="Pat"), DinerProfile(id="q", name="Quinn")]
+    short = json.dumps(
+        {
+            "dishes": [
+                {"dish_id": i, "reason": "", "for": ["p", "q"], "server_question": ""}
+                for i in ("cold1", "tofu")
+            ],
+            "server_questions": [],
+            "summary": "",
+        }
+    )
+    calls = []
+
+    def fake(turns, schema, menu, request, client):
+        calls.append(1)
+        return short, "fake"
+
+    monkeypatch.setattr(llm_planner, "_ask", fake)
+    monkeypatch.setattr(llm_planner, "COVERAGE_NUDGE", False)
+    monkeypatch.setattr(llm_planner, "enabled", lambda: True)
+    out = llm_planner.plan(m, _req(diners, 60), cache_path=tmp_path / "c.json")
+    assert len(calls) == 2 and out.plan is not None  # one retry, then the order is kept
+    check = next(c for c in out.plan.checks if c.name == "enough")
+    assert not check.passed
+    assert check.detail == "This order has only 1 hot dish for 2 people.", check.detail
+    # a diner short of dishes is named with exactly what they lack
+    from michelin.plan import enough
+
+    items = [PlanItem(dish_id=i, quantity=1) for i in ("cold1", "soup1", "tofu")]
+    line = enough.honest_line(
+        m, _req([*diners, DinerProfile(id="v", name="Val", allergies=["soy"])], 60), items
+    )
+    assert "Val has" in line and "they can eat without asking" in line, line
+    assert check.detail in out.plan.summary  # the subtitle says it too

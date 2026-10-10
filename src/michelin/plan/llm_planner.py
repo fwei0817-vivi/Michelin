@@ -577,8 +577,13 @@ def _to_plan(menu: Menu, request: TableRequest, answer: dict, items: list) -> Pl
             "items": items,
             "checks": checks,
             "confirm_with_staff": [asked[d.id] for d, _ in selected if d.id in asked] + extra[:3],
-            "summary": ai_text.summary(answer.get("summary"), menu, request, items)
-            or ai_text.code_summary(menu, request, items),
+            "summary": ai_text.with_enough(
+                ai_text.summary(answer.get("summary"), menu, request, items)
+                or ai_text.code_summary(menu, request, items),
+                menu,
+                request,
+                items,
+            ),
         }
     )
 
