@@ -116,6 +116,21 @@ def _deficit_v(vecs, n) -> int:
     return out
 
 
+def _parts(vecs, n) -> tuple:
+    """(hot dishes missing for the table, each diner's own shortfall)."""
+    hot = sum(v[0] for v in vecs)
+    per = []
+    for k in range(n):
+        g = sum(v[1][k] for v in vecs)
+        gh = sum(v[1][k] and v[0] for v in vecs)
+        per.append(max(0, 2 - g) + max(0, 1 - gh))
+    return (max(0, n - hot), *per)
+
+
+def _met(cur: tuple, best: tuple) -> bool:
+    return all(c <= b for c, b in zip(cur, best))
+
+
 _CHEAP: dict = {}
 
 
@@ -205,10 +220,10 @@ def top_up(menu, request, items):
     the cheapest suitable dishes until the rule is met as far as this menu and budget allow.
     Every step must pass validate_order (allergies, diets, budget, kept dishes). Returns
     (new items, added ids, dropped ids) or None when nothing improves."""
-    from michelin.plan.validation import family_repeats, validate_order
+    from michelin.plan.validation import family_repeats, staple_repeats, validate_order
     from michelin.schemas import PlanItem
 
-    target = best_possible(menu, request)
+    target_parts = _parts([_vec(d, request.diners) for d in _pool(menu, request)], request.n_diners)
     cur_items = list(items)
     added, dropped = [], []
     locked = set(request.locked_dish_ids)
@@ -224,7 +239,9 @@ def top_up(menu, request, items):
         vs = {i.dish_id: v(i.dish_id) for i in cur_items}
         base = [x for x in vs.values() if x is not None]
         cur = _deficit_v(base, n)
-        if cur <= target:
+        # each part on its own (QA r25): N hot dishes for the table, and each diner's own
+        # minimum; a diner the menu cannot serve never stops the hot-dish count
+        if _met(_parts(base, n), target_parts):
             break
         have = set(vs)
         sub0 = sum((menu.dish(i.dish_id).price or 0) * i.quantity for i in cur_items)
@@ -253,7 +270,10 @@ def top_up(menu, request, items):
             option = [i for i in cur_items if i.dish_id != drop] + [
                 PlanItem(dish_id=add, quantity=1)
             ]
-            if family_repeats(menu, request, [i.dish_id for i in option]):
+            ids = [i.dish_id for i in option]
+            # QA r25 QF-1: the same repeat rules check() applies after the top-up, so a
+            # second fried rice cannot be picked here and then throw the whole top-up away
+            if family_repeats(menu, request, ids) or staple_repeats(menu, request, ids):
                 continue
             if validate_order(menu, request, option)["valid"]:
                 best = (option, add, drop)
@@ -288,6 +308,8 @@ def honest_line(menu, request, items) -> str | None:
             if t.hot == 0
             else f"This order has only {_plural(t.hot, 'hot dish')} for {request.n_diners} people."
         )
+    if t.hot < request.n_diners:
+        out.append(_hot_cause(menu, request, items, dishes, pool))
     menu_short = []
     for p in request.diners:
         g, gh = t.good[p.id], t.good_hot[p.id]
@@ -318,3 +340,31 @@ def honest_line(menu, request, items) -> str | None:
                 f"The budget is too tight for more: about ${need:.0f} per person would cover it."
             )
     return " ".join(out)
+
+
+def _hot_cause(menu, request, items, dishes, pool) -> str:
+    """Why the table is short of hot dishes (QA r25): this menu, the budget, or neither."""
+    have = {d.id for d in dishes}
+    others = [
+        d
+        for d in pool
+        if d.id not in have and is_hot(d) and not any(spice.taste(d, p) for p in request.diners)
+    ]
+    hot_now = sum(is_hot(d) for d in dishes if d.category.value != "staple")
+    if hot_now + len(others) < request.n_diners:
+        return (
+            f"This menu has only {_plural(hot_now + len(others), 'hot dish')} that everyone "
+            "here can share without a heat or allergy problem."
+        )
+    subtotal = sum((menu.dish(i.dish_id).price or 0) * i.quantity for i in items)
+    room = _cap(request) - subtotal
+    cheapest_hot = min(d.price for d in others)
+    if cheapest_hot > room + 1e-6:
+        return (
+            f"The budget leaves ${max(room, 0):.2f} of menu prices, and the cheapest other "
+            f"hot dish costs ${cheapest_hot:.2f}."
+        )
+    return (
+        "Another hot dish fits the budget, but each one would repeat a dish already ordered "
+        "or break a kept dish; add one yourself if you want more."
+    )
