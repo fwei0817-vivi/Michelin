@@ -75,9 +75,10 @@ def test_valid_answer_becomes_the_plan(setup, tmp_path):
     assert out.plan and out.attempts == 1 and len(fake.calls) == 1
     reasons = {i.dish_id: i.reason for i in out.plan.items}
     assert all(reasons[r["dish_id"]] == r["reason"] for r in good["dishes"])
-    assert (
-        "Are the scallion pancakes made with lard or other pork fat?" in out.plan.confirm_with_staff
-    )
+    # QA r11: a meal question naming one dish is dropped; the code's dish question stands.
+    assert out.plan.confirm_with_staff == [
+        "Is there any pork or lard in the Scallion Pancakes (for David and Tom)?"
+    ]
     assert out.plan.total <= request.all_in_budget
     call = fake.calls[0]
     assert call["model"] == "gemini-3.8-flash"

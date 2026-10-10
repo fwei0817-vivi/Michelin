@@ -450,8 +450,8 @@ def rows_to_dishes(rows: list[dict]) -> list[Dish]:
             if cost is None:
                 continue
             tail = re.fullmatch(r"(.+?)\s*\(([^()\d]+)\)", stem)
-            # "Kung Pao Chicken (Spicy)" keeps its printed word: "Kung Pao (Chicken, Spicy)".
-            label = f"{tail[1]} ({option}, {tail[2]})" if tail else f"{stem} ({option})"
+            # "Kung Pao Chicken (Spicy)" keeps its printed word: "Kung Pao Tofu (Spicy)".
+            label = f"{tail[1]} {option} ({tail[2]})" if tail else f"{stem} ({option})"
             label_zh = (
                 f"{base_zh}（{option_zh}）"
                 if base_zh and option_zh and option_zh not in base_zh

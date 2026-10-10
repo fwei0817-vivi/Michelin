@@ -1,0 +1,60 @@
+[
+ {
+  "id": "alice",
+  "name": "Alice",
+  "allergies": [
+   "peanut"
+  ],
+  "diets": [],
+  "other_allergies": [],
+  "other_diets": [],
+  "preferences": [],
+  "notes": "Loves tofu"
+ },
+ {
+  "id": "ben",
+  "name": "Ben",
+  "allergies": [],
+  "diets": [
+   "vegetarian"
+  ],
+  "other_allergies": [],
+  "other_diets": [],
+  "preferences": [
+   "no_spicy"
+  ],
+  "notes": ""
+ },
+ {
+  "id": "cai",
+  "name": "Cai",
+  "allergies": [
+   "shellfish"
+  ],
+  "diets": [
+   "no_pork"
+  ],
+  "other_allergies": [],
+  "other_diets": [],
+  "preferences": [],
+  "notes": ""
+ },
+ {
+  "id": "mia",
+  "name": "Mia",
+  "allergies": [
+   "sesame"
+  ],
+  "diets": [],
+  "other_allergies": [
+   "cilantro"
+  ],
+  "other_diets": [
+   "halal"
+  ],
+  "preferences": [
+   "mild"
+  ],
+  "notes": "Loves noodles"
+ }
+]

@@ -94,7 +94,11 @@ def test_feedback_revises_the_current_order_with_a_checked_note(fake):
         )
     )
     r = post({"chips": ["less_spicy"], "text": "my mom can't do heat", "current": CURRENT})
-    assert r["kind"] == "plan" and r["change_note"] == "Swapped 2 spicy dishes for milder ones."
+    # QA r11: a less-spicy note is always the code's, in the cards' words.
+    assert r["kind"] == "plan" and r["change_note"].startswith(
+        "Swapped Mapo Tofu (very spicy), Kung Pao Chicken (spicy) for Garlic Seasonal Greens "
+        "(not spicy)"
+    )
     assert "Removed Mapo Tofu" in " ".join(r["changes"]) and any(
         c.startswith("Added") for c in r["changes"]
     )
@@ -193,7 +197,10 @@ def test_less_spicy_that_only_adds_a_dish_is_retried_with_the_reason(fake):
     r = post({"chips": ["less_spicy"], "current": CURRENT})
     assert len(f.calls) == 2
     assert "Your last revision did not do this: make it less spicy" in f.calls[1][0][0].text
-    assert r["change_note"] == "Swapped Mapo Tofu for Garlic Seasonal Greens."
+    assert (
+        r["change_note"]
+        == "Swapped Mapo Tofu (very spicy) for Garlic Seasonal Greens (not spicy); $2.00 less in menu prices."
+    )
     assert "Removed Mapo Tofu" in r["changes"]
 
 
@@ -203,16 +210,17 @@ def test_still_not_less_spicy_after_the_retry_says_so_honestly(fake):
     )
     r = post({"chips": ["less_spicy"], "current": CURRENT})
     assert len(f.calls) == 2 and r["kind"] == "plan"
-    assert r["change_note"].startswith("Couldn't fully make it less spicy within")
-    assert "Added Garlic Seasonal Greens" in r["change_note"]
+    # QA r11: the AI's order is discarded; the current order stays, said honestly.
+    assert r["change_note"].startswith("Couldn't make it less spicy within")
+    ids = sorted(i["dish_id"] for i in r["plan"]["items"])
+    assert "garlic_seasonal_greens" not in ids
 
 
 def test_unchanged_order_says_plainly_that_nothing_changed(fake):
     fake(order("mapo_tofu", "kung_pao_chicken", note="Kept all dishes as they are"))
     r = post({"chips": ["less_spicy"], "current": CURRENT})
-    assert (
-        r["change_note"]
-        == "Couldn't make it less spicy: the AI kept the same order. Its spiciest dish is very spicy."
+    assert r["change_note"].startswith("Couldn't make it less spicy") and r["change_note"].endswith(
+        "Its spiciest dish is very spicy."
     )
 
 

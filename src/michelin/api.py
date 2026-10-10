@@ -388,13 +388,14 @@ def plan(req: PlanRequest, x_profile_scope: str | None = Header(default=None)) -
 
     # Recommendations come from the LLM only; the rules below validate, never choose.
     source, source_note = "mock" if MOCK else "ai", None
-    change_note, changes = None, []
+    change_note, changes, kept = None, [], False
     if MOCK:
         result = _mock_solve(menu, request)
     else:
         outcome = llm_planner.plan(menu, request, feedback=req.feedback)
         source_note = outcome.note
         change_note, changes = outcome.change_note, outcome.changes
+        kept = outcome.kept
         if outcome.fallback:
             source = "rules"  # the AI's orders failed; the rules built this one
         result = outcome.plan if outcome.plan is not None else outcome.conflict
@@ -426,7 +427,8 @@ def plan(req: PlanRequest, x_profile_scope: str | None = Header(default=None)) -
         ]:
             raise ValueError("Explanation altered the order")
         report = validate_order(menu, request, result.items)
-        if not report["valid"]:
+        # The user's own order kept as is (QA r11): its failing checks are shown on the plan.
+        if not report["valid"] and not kept:
             return PlanResponse(
                 kind="conflict",
                 subtotal_cap=cap,

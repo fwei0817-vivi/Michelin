@@ -127,6 +127,7 @@ class Outcome:
     answer: dict | None = None  # the model's accepted answer (for the change note)
     change_note: str | None = None  # refinement: what changed, checked against the diff
     changes: list[str] = field(default_factory=list)  # refinement: the code-computed diff
+    kept: bool = False  # the user's own order, returned unchanged (may fail other checks)
 
 
 def enabled() -> bool:
@@ -469,6 +470,18 @@ def _fair_reason(text: str | None, dish, request: TableRequest, n: int = 0) -> s
     return text
 
 
+def _names_a_dish(text: str, dishes) -> bool:
+    """A meal-level question that is really about one dish ("Is the Hong Kong Rice Noodle
+    halal (for Mia)?", QA r11) is dropped: dish questions are the code's, asked only for
+    the diners the dish is counted for."""
+    low = text.lower()
+    for d in dishes:
+        for name in (d.name_en, d.family_name, d.name_zh):
+            if name and len(name) >= 4 and name.lower() in low:
+                return True
+    return False
+
+
 def _to_plan(menu: Menu, request: TableRequest, answer: dict, items: list) -> Plan:
     known = {d.id: d for d in menu.dishes}
     selected = [(known[i.dish_id], i.quantity) for i in items]
@@ -511,7 +524,9 @@ def _to_plan(menu: Menu, request: TableRequest, answer: dict, items: list) -> Pl
     extra = [
         q
         for q in (str(q).strip()[:200] for q in answer.get("server_questions") or [])
-        if q and meal_question_ok(q, selected, request.diners)
+        if q
+        and meal_question_ok(q, selected, request.diners)
+        and not _names_a_dish(q, [d for d, _ in selected])
     ]
     checks = [
         Check(name="ai", passed=True, detail="Dishes chosen by the AI, then checked by the rules."),
@@ -949,8 +964,21 @@ def plan(
             if len(missed2) <= len(missed):
                 outcome, d, missed = second, d2, missed2
         outcome.attempts += 1
+    if "less_spicy" in missed:
+        # The pepper count did not drop (QA r11): the AI's order is discarded, honestly.
+        kept = _keep_current(
+            menu,
+            request,
+            _current_answer(menu, request, feedback),
+            refine.not_less_spicy(menu, before),
+            "the AI's change did not lower the heat",
+        )
+        kept.attempts = outcome.attempts
+        return kept
     ai_note = None if outcome.fallback else (outcome.answer or {}).get("change_note")
     note, from_ai = refine.final_note(ai_note, d)
+    if "less_spicy" in feedback.chips and not missed:
+        note, from_ai = refine.spice_note(d), False  # always the code's, in card words
     if missed:
         after = [(i.dish_id, i.quantity) for i in outcome.plan.items]
         note, from_ai = refine.honest_note(missed, d, menu, after), False
@@ -983,17 +1011,60 @@ def _already_mild(menu: Menu, request: TableRequest, feedback) -> Outcome | None
         ],
         "server_questions": [],
     }
+    return _keep_current(menu, request, answer, refine.ALREADY_MILD, "the order is already mild")
+
+
+def _keep_current(menu: Menu, request: TableRequest, answer: dict, note: str, why: str) -> Outcome:
+    """The user's current order, unchanged, with a code-written note. A hand-edited order that
+    fails another rule (QA r11) still stays: its checks show that problem on their own, and
+    'less spicy' never sends it to the AI."""
     problems, items = check(menu, request, answer, _staples(menu, request), repeats=False)
     if problems:
-        return None  # the current order no longer passes: let the AI revise it
+        note += " Other checks on this order still need attention (see the checks)."
+        known = {d.id: d for d in menu.dishes}
+        items = [
+            PlanItem(dish_id=r["dish_id"], quantity=1)
+            for r in answer["dishes"]
+            if r["dish_id"] in known
+        ] + [PlanItem(dish_id=d.id, quantity=request.n_diners) for d in _staples(menu, request)]
+    plan_ = _to_plan(menu, request, answer, items)
+    if problems:
+        report = validate_order(menu, request, items)
+        detail = "; ".join(r["detail"] for r in report["reasons"]) or "; ".join(problems)
+        plan_ = plan_.model_copy(
+            update={
+                "checks": [
+                    Check(name="rules", passed=False, detail=f"Your edited order: {detail}"),
+                    *plan_.checks[1:],
+                ]
+            }
+        )
     return Outcome(
-        _to_plan(menu, request, answer, items),
+        plan_,
         None,
-        "No AI call: the order is already mild.",
+        f"No AI call: {why}.",
         0,
-        change_note=refine.ALREADY_MILD,
+        change_note=note,
         changes=[],
+        kept=True,
     )
+
+
+def _current_answer(menu: Menu, request: TableRequest, feedback) -> dict:
+    known = {d.id: d for d in menu.dishes}
+    return {
+        "dishes": [
+            {
+                "dish_id": c.dish_id,
+                "reason": "",
+                "for": edible_by(known[c.dish_id], request.diners),
+                "server_question": "",
+            }
+            for c in feedback.current
+            if c.dish_id in known and known[c.dish_id].category.value != "staple"
+        ],
+        "server_questions": [],
+    }
 
 
 def nothing_for(menu: Menu, request: TableRequest) -> Conflict | None:

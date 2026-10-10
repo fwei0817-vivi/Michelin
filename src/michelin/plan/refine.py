@@ -153,12 +153,11 @@ def unmet(
         if chip == "less_spicy":
             if already_mild(menu, before, locked):
                 continue
-            spicy_before = [i for i, _ in fb if _spice(known[i]) > 0]
-            sb = [_spice(known[i]) for i, q in fb for _ in range(q)]
+            # One rule (QA r11): the order's highest pepper level must strictly drop. Fewer
+            # spicy dishes alone does not count (dropping a mild dish keeps the hottest one).
+            sb = [_spice(known[i]) for i, q in fb for _ in range(q)] or [0]
             sa = [_spice(known[i]) for i, q in fa for _ in range(q)] or [0]
-            dropped = max(sa) < max(sb) or sum(sa) / len(sa) < sum(sb) / len(sb)
-            cut = any(i in spicy_before for i in d["removed"] + d["fewer"])
-            if not (dropped and cut):
+            if not max(sa) < max(sb):
                 out.append(chip)
         elif chip in simple and not simple[chip]:
             out.append(chip)
@@ -213,6 +212,41 @@ def changes_list(d: dict) -> list[str]:
     if d["price"]:
         out.append(f"Menu prices ${abs(d['price']):.2f} {'lower' if d['price'] < 0 else 'higher'}")
     return out
+
+
+SPICE_WORDS = ["not spicy", "a little spicy", "spicy", "very spicy"]
+
+
+def not_less_spicy(menu: Menu, before) -> str:
+    known = {x.id: x for x in menu.dishes}
+    top = max((_spice(known[i]) for i, _ in before if i in known), default=0)
+    return (
+        "Couldn't make it less spicy within everyone's allergies, diets, kept dishes and the "
+        f"budget, so the order is unchanged. Its spiciest dish is {SPICE_WORDS[min(top, 3)]}."
+    )
+
+
+def spice_note(d: dict) -> str:
+    """The less-spicy note, from the real changes in the cards' words: "Swapped Cucumber
+    Salad (Spicy Chili Oil) (spicy) for Chilled Zucchini (a little spicy)."."""
+    n, s = d["names"], d.get("spice_of", {})
+
+    def say(i):
+        return f"{n[i]} ({SPICE_WORDS[min(max(s.get(i, 0), 0), 3)]})"
+
+    if d["added"] and d["removed"]:
+        text = f"Swapped {', '.join(map(say, d['removed']))} for {', '.join(map(say, d['added']))}"
+    elif d["removed"]:
+        text = f"Removed {', '.join(map(say, d['removed']))}"
+    elif d["added"]:
+        text = f"Added {', '.join(map(say, d['added']))}"
+    else:
+        return code_note(d)
+    if d["more"] or d["fewer"]:
+        text += "; changed portions"
+    if d["price"]:
+        text += f"; ${abs(d['price']):.2f} {'less' if d['price'] < 0 else 'more'} in menu prices"
+    return text + "."
 
 
 def code_note(d: dict) -> str:

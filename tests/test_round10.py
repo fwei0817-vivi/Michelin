@@ -37,7 +37,7 @@ def test_demo_read_peppers_and_names_follow_the_pdf(monkeypatch):
     for other in ("Steamed w/ Ginger Scallion", "Salt & Pepper", "Sweet & Sour"):
         assert by[f"Fluke Fish Filet ({other})"].menu_spice is None
     kung = [d for d in by.values() if d.family_name == "Kung Pao Chicken (Spicy)"]
-    assert len(kung) == 4 and "Kung Pao (Chicken, Spicy)" in by
+    assert len(kung) == 4 and "Kung Pao Chicken (Spicy)" in by
 
 
 def test_demo_import_needs_no_ai(monkeypatch):
