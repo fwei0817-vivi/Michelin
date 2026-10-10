@@ -78,13 +78,13 @@ def test_only_the_swapped_dish_changes(table, monkeypatch):
         [p.name for p in request.diners if p.id in edible_by(menu.dish(meat), request.diners)]
     )
     line = ai_swap._line(menu, request, old, meat, "it suits all diets")
-    assert "all diets" not in line and f", {who} can eat it, " in line  # no false "everyone"
+    assert "all diets" not in line and f", {who} can eat it" in line  # no false "everyone"
     # QA r3: never name someone the rules say cannot eat the new dish.
     cannot = next(
         p.name for p in request.diners if p.id not in edible_by(menu.dish(meat), request.diners)
     )
     line = ai_swap._line(menu, request, old, meat, f"{cannot} can eat it")
-    assert cannot not in line.split(",", 1)[1] and f", {who} can eat it, " in line
+    assert cannot not in line.split(",", 1)[1] and f", {who} can eat it" in line
     # One short clause: long or priced reasons are replaced by the rule line.
     long = ai_swap._line(
         menu,
@@ -93,7 +93,7 @@ def test_only_the_swapped_dish_changes(table, monkeypatch):
         meat,
         "a rich, warming braise that balances the lighter dishes nicely on the table",
     )
-    assert f", {who} can eat it, " in long
+    assert f", {who} can eat it" in long
     assert ai_swap._line(menu, request, old, new, "Tom likes beef").startswith(
         f"Swapped to {menu.dish(new).name_en}, Tom likes beef, "
     )

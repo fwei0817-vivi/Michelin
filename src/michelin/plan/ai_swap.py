@@ -17,7 +17,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 
-from michelin import llm
+from michelin import keywords, llm
 from michelin.plan import ai_text, llm_planner
 from michelin.plan.budget import cents, subtotal_cap, totals
 from michelin.plan.edibility import assessment, edible_by, risks
@@ -274,6 +274,9 @@ def _line(
         why = None  # one short clause only; the price part is computed below
     if why:
         why = ai_text.swap_clause(why, new, menu, request)  # the one gate (QA r12)
+    unsure = _needs_asking(new, request, ok)
+    if unsure:
+        why = None  # the card says "only if the server confirms"; the hint must too (QA r13)
     if not why:
         who = [p.name for p in request.diners if p.id in ok]
         why = (
@@ -281,12 +284,35 @@ def _line(
             if len(who) == len(request.diners)
             else f"{_join_names(who)} can eat it"
         )
+        if unsure:
+            why += " if the server confirms"
     why = why.strip().rstrip(".")
     first = why.split(" ", 1)[0].rstrip(",")
     if first not in {p.name for p in request.diners}:  # keep names capitalised
         why = why[:1].lower() + why[1:]
     done = "Added" if old_id is None else "Swapped to"
     return f"{done} {_name(new)}, {why}, {_price_note(menu, old_id, new_id)}."
+
+
+def _needs_asking(dish, request: TableRequest, ok: set) -> bool:
+    """Mirrors the swap card's "only if the server confirms" (web dietary.ts): someone it is
+    counted for needs the server to confirm, or a non-menu ingredient may hide meat."""
+    if any(
+        p.id in ok and assessment(dish, p)["status"] == "requires_confirmation"
+        for p in request.diners
+    ):
+        return True
+    animal = re.compile(
+        "|".join(
+            keywords.pattern(c)
+            for c in ("pork", "beef", "meat", "stock", "fish", "shellfish", "egg")
+        ),
+        re.IGNORECASE,
+    )
+    return any(
+        getattr(i.tier, "value", i.tier) != "menu" and animal.search(i.name)
+        for i in dish.main_ingredients
+    )
 
 
 def _join_names(names: list[str]) -> str:

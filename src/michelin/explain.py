@@ -3,6 +3,10 @@
 from michelin.schemas import Menu, Plan, TableRequest
 
 
+def _join(names: list[str]) -> str:
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+
+
 def explain(plan: Plan, menu: Menu, request: TableRequest) -> Plan:
     items = []
     for item in plan.items:
@@ -11,11 +15,9 @@ def explain(plan: Plan, menu: Menu, request: TableRequest) -> Plan:
         if dish.category.value == "staple":
             reason = f"Adds {item.quantity} staple servings to the table."
         elif len(names) == request.n_diners:
-            reason = (
-                "Contributes to every diner's coverage under the recorded dietary requirements."
-            )
+            reason = "A dish everyone can share."
         elif names:
-            reason = f"Adds an option for {', '.join(names)}."
+            reason = f"Gives {_join(names)} another option."
         else:
             reason = "No diner meets the recorded requirements for this dish; choose a replacement."
         if dish.confirm_with_staff:
