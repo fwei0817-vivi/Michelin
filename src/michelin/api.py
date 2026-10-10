@@ -24,7 +24,13 @@ from michelin.meal import PeopleAction, apply_people_action
 from michelin.model import ExtractionRequest, ExtractionResponse
 from michelin.plan import ai_swap, dish_facts, llm_planner, refine
 from michelin.plan.budget import subtotal_cap, totals
-from michelin.plan.edibility import assessment, diner_status, edible_by, open_questions
+from michelin.plan.edibility import (
+    assessment,
+    diner_status,
+    edible_by,
+    open_questions,
+    veg_tag,
+)
 from michelin.plan.score import variety_score
 from michelin.plan.validation import validate_order
 from michelin.profiles import ProfileStore
@@ -349,7 +355,12 @@ def with_status(plan: Plan, menu: Menu, diners) -> Plan:
     return plan.model_copy(
         update={
             "items": [
-                i.model_copy(update={"status": diner_status(menu.dish(i.dish_id), diners)})
+                i.model_copy(
+                    update={
+                        "status": diner_status(menu.dish(i.dish_id), diners),
+                        "veg_tag": veg_tag(menu.dish(i.dish_id)),
+                    }
+                )
                 for i in plan.items
             ]
         }
@@ -819,6 +830,7 @@ def evaluate_menu(req: EvaluateRequest) -> dict:
             "assessments": {p.id: assessment(d, p) for p in req.diners},
             "questions": open_questions(d, req.diners),
             "status": diner_status(d, req.diners),
+            "veg_tag": veg_tag(d),
         }
         for d in menu.dishes
     }

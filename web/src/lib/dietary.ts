@@ -1,4 +1,4 @@
-import type { DinerProfile, DinerStatusMap, Dish } from "../types";
+import type { DinerProfile, DinerStatusMap, Dish, VegTag } from "../types";
 import { ALLERGEN_LABEL, avoidsHeat, listNames } from "./format";
 
 import KEYWORDS from "./keywords.json";
@@ -71,18 +71,13 @@ export function heatNote(dish: Dish, diners: DinerProfile[]): string | null {
 }
 
 // Ingredients that would break a vegetarian, no-pork or no-beef diet if the kitchen uses them.
-const ANIMAL = ["pork", "beef", "meat", "stock", "fish", "shellfish", "egg"].map(keyword);
-
-/** The dish may hide an animal ingredient (e.g. minced pork in yu-xiang eggplant, lard in a
- * pancake, 肉末): a "Vegan"/"Matches all" chip must then not be shown as settled. */
-export function mayHideMeat(dish: Dish): boolean {
-  return dish.main_ingredients.some(i => i.tier !== "menu" && ANIMAL.some(re => re.test(i.name)));
-}
-
-/** Chip text: never "Vegetarian" or "Matches all" while something still needs asking. */
-export function vegChip(dish: Dish, unsure: boolean): string {
-  const diet = dish.is_vegan ? "vegan" : "vegetarian";
-  return unsure ? `Ask if ${diet}` : diet === "vegan" ? "Vegan" : "Vegetarian";
+/** The vegetarian/vegan tag, decided by the backend (veg_tag, QA r16): no keyword guessing
+ * here, and another diner's halal or allergy check never turns it into "Ask". */
+export function vegTag(tag: VegTag | null | undefined): { label: string; ask: boolean } | null {
+  if (!tag) return null;
+  const ask = tag.startsWith("ask_");
+  const diet = tag.replace("ask_", "");
+  return { label: ask ? `Ask if ${diet}` : diet === "vegan" ? "Vegan" : "Vegetarian", ask };
 }
 export function fitsChip(n: number, unsure: boolean): string {
   return unsure ? `Fits all ${n} only if the server confirms` : `Matches all ${n}`;
@@ -91,10 +86,4 @@ export function fitsChip(n: number, unsure: boolean): string {
 /** "Only if the server confirms": read from the backend's per-diner status only (QA r15). */
 export function needsConfirm(status: DinerStatusMap | undefined, dinerIds: string[]): boolean {
   return dinerIds.some((id) => status?.[id]?.status === "needs_confirm");
-}
-
-/** The vegetarian/vegan tag (D-8). The hidden-meat keywords may only hide the tag; they never
- * add an "Ask" the backend status does not have. */
-export function showVegTag(dish: Dish, unsure: boolean): boolean {
-  return dish.is_vegetarian === true && (unsure || !mayHideMeat(dish));
 }

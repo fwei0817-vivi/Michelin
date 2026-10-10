@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowLeftRight, Check, ChevronDown, CircleHelp, Flame, Leaf, ListChecks, LockKeyhole, Plus, RefreshCw, Sparkles, Trash2, UnlockKeyhole, UserX, Users, X } from "lucide-react";
 import { CATEGORY_LABEL, MARK_LABEL, checkLabel, currencySymbol, dishName, flagWording, listNames, money } from "../lib/format";
-import { dishQuestions, fitsChip, heatNote, needsConfirm, showVegTag, vegChip } from "../lib/dietary";
+import { dishQuestions, fitsChip, heatNote, needsConfirm, vegTag } from "../lib/dietary";
 import { photoFor } from "../lib/dishPhotos";
 import { Coverage } from "./Coverage";
 import type { DinerProfile, DiningSettings, Dish, FeedbackChip, Menu, Plan, PlanItem } from "../types";
@@ -293,6 +293,7 @@ function DishCard({ item, dish, diners, cur, kept, ai, expanded, disabled, onTog
   const questions = ai && item.server_question !== undefined ? (item.server_question ? [item.server_question] : []) : dishQuestions(dish, diners);
   // The backend's per-diner status is the one source (QA r15); old saved plans lack it.
   const unsure = item.status ? needsConfirm(item.status, item.edible_by) : questions.length > 0;
+  const veg = vegTag(item.veg_tag); // backend-decided (QA r16)
   const photo = photoFor(dish);
   const panelId = `dish-panel-${dish.id}`;
   return (
@@ -320,10 +321,10 @@ function DishCard({ item, dish, diners, cur, kept, ai, expanded, disabled, onTog
             Kept
           </span>
         )}
-        {showVegTag(dish, unsure) && (
-          <span className={unsure ? "tag-ask" : ""} title={unsure ? "Ask the kitchen first" : undefined}>
+        {veg && (
+          <span className={veg.ask ? "tag-ask" : ""} title={veg.ask ? "Ask the kitchen first" : undefined}>
             <Leaf size={12} />
-            {vegChip(dish, unsure)}
+            {veg.label}
           </span>
         )}
         {dish.spice_level != null && dish.spice_level > 0 && (

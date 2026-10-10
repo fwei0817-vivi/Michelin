@@ -47,6 +47,7 @@ def test_tomato_egg_still_needs_confirming(demo):  # noqa: F811
     assert "everyone can eat it if the server confirms" in line
 
 
+@pytest.mark.ai_prose
 def test_summary_preference_overclaims_are_rejected(demo):  # noqa: F811
     menu, req = _setup(demo)
     ids = [

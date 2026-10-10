@@ -124,15 +124,15 @@ def test_r15_repro_tomato_egg_out_and_back_all_surfaces_agree(demo, mia_facts): 
 
 def test_web_marks_read_only_the_backend_status():
     """Build-time check: the cards decide 'only if the server confirms' from the backend
-    status; the hidden-meat keywords may only hide the vegetarian tag."""
+    status, and (QA r16) the veg tag from the backend's veg_tag; no hidden-meat keywords."""
     for name in ("components/Ticket.tsx", "components/SwapSheet.tsx"):
         src = (WEB / name).read_text()
         assert "mayHideMeat" not in src, name
         unsure = re.findall(r"const unsure = [^\n]*", src)
         assert unsure and all("needsConfirm" in u for u in unsure), (name, unsure)
-        assert "showVegTag(" in src
+        assert "veg_tag" in src and "vegChip" not in src
     lib = (WEB / "lib/dietary.ts").read_text()
-    assert re.search(r"showVegTag[^}]*unsure \|\| !mayHideMeat", lib)
+    assert "mayHideMeat" not in lib and "ANIMAL" not in lib
 
 
 def _req(diners):

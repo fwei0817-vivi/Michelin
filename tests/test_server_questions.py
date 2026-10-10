@@ -71,6 +71,7 @@ def test_brief_gives_the_model_the_rule_flagged_risks():
     assert all("ask" not in r for r in rows.values())
 
 
+@pytest.mark.ai_prose
 def test_model_questions_replace_the_templates_one_per_dish(tmp_path):
     good = {
         "eggplant_with_garlic_sauce": "Ben is vegetarian and Cai avoids pork: is the garlic "

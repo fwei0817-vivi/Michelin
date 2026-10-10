@@ -72,7 +72,17 @@ def recorded_dish_facts(request, monkeypatch, tmp_path):
         monkeypatch.setattr(dish_facts, "prepare", recorded)
 
 
+@pytest.fixture(autouse=True)
+def ai_prose_setting(request, monkeypatch):
+    """MICHELIN_AI_PROSE is off by default (QA r16); tests of the AI-prose gate opt in."""
+    if "ai_prose" in request.keywords:
+        monkeypatch.setenv("MICHELIN_AI_PROSE", "1")
+    else:
+        monkeypatch.delenv("MICHELIN_AI_PROSE", raising=False)
+
+
 def pytest_configure(config):
+    config.addinivalue_line("markers", "ai_prose: turn MICHELIN_AI_PROSE on for this test")
     config.addinivalue_line(
         "markers", "real_dish_facts: use the real AI dish-facts path (tests pass a fake)"
     )

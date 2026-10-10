@@ -30,6 +30,7 @@ Surfaces (decision):
 
 from __future__ import annotations
 
+import os
 import re
 
 from michelin.plan.edibility import assessment, diner_status, edible_by
@@ -159,6 +160,13 @@ def detoken(text: str, diners) -> str | None:
     return re.sub(r"\{([^{}]*)\}", lambda m: ids[m.group(1).strip()], text)
 
 
+def ai_prose() -> bool:
+    """MICHELIN_AI_PROSE (default off, QA r16 team decision): when off, no prose the AI
+    writes (summary, reasons, swap or change notes) reaches the UI; the code writes them.
+    The AI still reads menus, infers ingredients and picks dishes."""
+    return os.environ.get("MICHELIN_AI_PROSE", "").strip().lower() in {"1", "true", "on", "yes"}
+
+
 def _approve(text: str) -> str:
     if len(APPROVED) < _MAX_APPROVED:
         APPROVED.add(text)
@@ -256,6 +264,8 @@ def _named(text: str, diners) -> list:
 def summary(text: object, menu, request, items, shown: bool = False) -> str | None:
     """The plan subtitle, checked against the order it will be shown with. `shown=True`
     re-checks a subtitle already on screen (names already in) against a new order."""
+    if not shown and not ai_prose():
+        return None
     t = _clean(text) if shown else detoken(_clean(text), request.diners)
     if not t:
         return None
@@ -342,6 +352,8 @@ def code_summary(menu, request, items) -> str:
 def reason(text: object, dish, menu, request, n: int = 0, shown: bool = False) -> str | None:
     """A per-dish reason, checked for this dish on this order. `shown=True` re-checks a
     reason already on screen (names already in) against a new order."""
+    if not shown and not ai_prose():
+        return None
     t = _clean(text, 200) if shown else detoken(_clean(text, 200), request.diners)
     return _approve(t) if t and _reason_ok(t, dish, menu, request, n) else None
 
@@ -365,6 +377,8 @@ def _reason_ok(t: str, dish, menu, request, n: int = 0) -> bool:
 
 def swap_clause(text: object, dish, menu, request) -> str | None:
     """The short 'why' in a swap note, checked for the new dish."""
+    if not ai_prose():
+        return None
     t = detoken(_clean(text, 120), request.diners)
     if not t or len(t.split()) > 10 or re.search(r"[;:]|\$\d", t):
         return None
@@ -384,6 +398,8 @@ def swap_clause(text: object, dish, menu, request) -> str | None:
 def change_note(text: object, menu, d: dict, after_ids, request_diners=()) -> str | None:
     """A refine note that already matched the real diff (refine.note_ok); the dish, spice
     and diet words are checked against the dishes it names."""
+    if not ai_prose():
+        return None
     t = detoken(_clean(text, 160), request_diners)
     if not t:
         return None

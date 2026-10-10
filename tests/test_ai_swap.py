@@ -63,6 +63,7 @@ def _target_and_candidate(menu, request, plan, pick=None):
     return old, new, brief
 
 
+@pytest.mark.ai_prose
 def test_only_the_swapped_dish_changes(table, monkeypatch):
     menu, request, plan = table
     old, new, _ = _target_and_candidate(
@@ -367,6 +368,7 @@ def test_a_failed_coverage_retry_keeps_the_first_valid_pick(table, monkeypatch):
     assert len(fake.calls) == 2 and out.new_dish_id == weak and out.plan is not None
 
 
+@pytest.mark.ai_prose
 def test_summary_stays_visible_after_a_swap(table):
     menu, request, plan = table
     old, new, _ = _target_and_candidate(menu, request, plan)

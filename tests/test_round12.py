@@ -103,6 +103,7 @@ def _menu_req(menu, diners):
     )
 
 
+@pytest.mark.ai_prose
 def test_summary_gate_checks_each_kind_of_claim(demo):  # noqa: F811
     menu, diners = _facts(demo)
     m, req = _menu_req(menu, diners)
@@ -159,6 +160,7 @@ def _assert_gated(response):
         assert any(a in s for a in ai_text.APPROVED), f"AI text bypassed ai_text: {s!r}"
 
 
+@pytest.mark.ai_prose
 def test_no_ai_text_bypasses_the_gate(demo, monkeypatch):  # noqa: F811
     """Every AI-writable field carries a marker word. Any response string with the marker
     must contain a string the gate approved; a new field that skips the gate fails here."""

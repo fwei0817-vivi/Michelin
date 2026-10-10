@@ -69,6 +69,7 @@ def run(menu, request, *answers, tmp_path):
     return out, fake
 
 
+@pytest.mark.ai_prose
 def test_valid_answer_becomes_the_plan(setup, tmp_path):
     menu, request, good = setup
     out, fake = run(menu, request, good, tmp_path=tmp_path)
@@ -291,6 +292,7 @@ def _post(menu_id="cafe_china", budget=40):
     )
 
 
+@pytest.mark.ai_prose
 def test_api_returns_ai_plans_and_explains_failures(setup, monkeypatch):
     good = setup[2]
     monkeypatch.setattr(api, "MOCK", False)

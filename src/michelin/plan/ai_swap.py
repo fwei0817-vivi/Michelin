@@ -400,6 +400,8 @@ def _to_plan(
     def kept(i):  # an earlier reason only if still true on the new order
         if i.dish_id == new_id:
             return str(answer.get("reason") or "")[:200] or i.reason  # the code's swap line
+        if not ai_text.ai_prose():
+            return i.reason  # code-written for the new order (QA r16)
         dish = menu.dish(i.dish_id)
         old = kept_reasons.get(i.dish_id)
         return ai_text.reason(old, dish, menu, request, n, shown=True) or i.reason
@@ -415,6 +417,8 @@ def _to_plan(
 def _summary_after(menu: Menu, request: TableRequest, plan: Plan, old_id, out: Plan) -> str:
     """The earlier order's summary only if it is still true of the new order (re-validated
     by the one gate, QA r12); otherwise the code's own line about the new order."""
+    if not ai_text.ai_prose():
+        return ai_text.code_summary(menu, request, out.items)  # QA r16: code only
     return ai_text.summary(
         plan.summary, menu, request, out.items, shown=True
     ) or ai_text.code_summary(menu, request, out.items)

@@ -68,6 +68,7 @@ def test_fallback_reason_is_natural_and_names_who():
         variety_score=0.5,
     )
     out = explain(plan, menu, req)
-    assert out.items[0].reason.startswith("A dish everyone can share.")
-    assert out.items[1].reason == "Gives Alice and Ben another option."
+    # QA r16 wording: who it is for, from diner_status (vegan Mia: unknown veg data -> no)
+    assert out.items[0].reason == "For Alice and Ben; not for Mia."
+    assert out.items[1].reason == "For Alice and Ben; not for Mia."
     assert all("coverage" not in i.reason for i in out.items)

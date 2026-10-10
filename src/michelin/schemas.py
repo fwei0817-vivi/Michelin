@@ -295,6 +295,7 @@ class PlanItem(BaseModel):
     # diner id -> {"status": "ok"|"needs_confirm"|"no", "reason": str|None}; filled by the
     # API from edibility.diner_status, the one source the web cards render (QA r15).
     status: dict[str, dict] = Field(default_factory=dict)
+    veg_tag: str | None = None  # edibility.veg_tag: the card's vegetarian/vegan tag (QA r16)
 
 
 class Check(BaseModel):
