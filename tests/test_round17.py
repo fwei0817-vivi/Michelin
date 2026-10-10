@@ -117,7 +117,7 @@ def test_api_plan_subtitle_matches_status(demo, halal_possible, monkeypatch):  #
 
 
 def test_veg_tag_vegetarian_unless_vegan_diner(demo):  # noqa: F811
-    menu_json, diners = demo
+    menu_json, _ = demo
     menu = Menu.model_validate(client.post("/api/menu/facts", json=menu_json).json())
     from michelin.schemas import DinerProfile
 
@@ -129,3 +129,72 @@ def test_veg_tag_vegetarian_unless_vegan_diner(demo):  # noqa: F811
         assert "vegan" not in (veg_tag(d, veg) or "")
         assert "vegan" in veg_tag(d, vegan)
         assert "vegan" not in (veg_tag(d, []) or "")
+
+
+# QA r18: the order checklist's coverage line follows diner_status too
+CLAIM = re.compile(r"everyone can eat|fits all|matches all|all diners|each person", re.IGNORECASE)
+
+
+def test_r18_coverage_check_names_mia(demo, halal_possible):  # noqa: F811
+    menu_json, diners = _setup(demo)
+    menu, req = _req_menu(menu_json, diners)
+    passed, detail = ai_text.coverage_check(
+        menu, req, [PlanItem(dish_id=i, quantity=1) for i in ORDER]
+    )
+    assert passed and "Mia's only if the server confirms (halal)" in detail, detail
+    assert not CLAIM.search(detail) and "without asking" not in detail
+
+
+def test_r18_coverage_check_all_ok(demo):  # noqa: F811
+    menu_json, diners = demo
+    menu, req = _req_menu(menu_json, [d for d in diners if d["id"] != "mia"])
+    items = [PlanItem(dish_id=i, quantity=1) for i in ORDER]
+    st = [diner_status(menu.dish(i), req.diners) for i in ORDER]
+    all_ok = all(any(s[p.id]["status"] == "ok" for s in st) for p in req.diners)
+    passed, detail = ai_text.coverage_check(menu, req, items)
+    assert passed
+    assert ("without asking" in detail) == all_ok, (detail, st)
+
+
+def test_r18_api_plan_checks_follow_status(demo, halal_possible, monkeypatch):  # noqa: F811
+    menu, diners = _setup(demo)
+    swap = {"dish_id": "eight_treasure_sticky_rice", "reason": "x"}
+    monkeypatch.setattr(ai_swap, "_ask", lambda t, s, c: (json.dumps(swap), "fake"))
+    r = client.post(
+        "/api/plan/swap",
+        json=_body(menu, diners, plan=_plan(menu, diners), dish_id="pumpkin_cake_3"),
+    ).json()
+    assert r["kind"] == "plan", r
+    for c in r["plan"]["checks"]:
+        assert not CLAIM.search(c["detail"]), c
+    (cov,) = [c for c in r["plan"]["checks"] if c["name"] == "coverage"]
+    m, req = _req_menu(menu, diners)
+    assert (cov["passed"], cov["detail"]) == ai_text.coverage_check(
+        m, req, [PlanItem(dish_id=i["dish_id"], quantity=1) for i in r["plan"]["items"]]
+    )
+    assert "Mia's only if the server confirms" in cov["detail"], cov
+
+
+def test_r18_generic_diners_any_order(demo):  # noqa: F811
+    """No demo names: a vegan and a tree-nut allergy, over many orders; every claim in the
+    subtitle and the coverage check matches diner_status."""
+    import itertools
+
+    menu_json, _ = demo
+    diners = [
+        {"id": "x1", "name": "Ana", "diets": ["vegan"]},
+        {"id": "x2", "name": "Kofi", "allergies": ["tree_nut"]},
+    ]
+    menu, req = _req_menu(client.post("/api/menu/facts", json=menu_json).json(), diners)
+    ids = [d.id for d in menu.dishes if d.category.value != "staple"][:8]
+    for combo in itertools.combinations(ids, 3):
+        items = [PlanItem(dish_id=i, quantity=1) for i in combo]
+        check_subtitle(ai_text.code_summary(menu, req, items), menu, req, combo)
+        passed, detail = ai_text.coverage_check(menu, req, items)
+        st = [diner_status(menu.dish(i), req.diners) for i in combo]
+        has = {p.id: {s[p.id]["status"] for s in st} for p in req.diners}
+        assert passed == all(h & {"ok", "needs_confirm"} for h in has.values()), detail
+        assert ("without asking" in detail) == all("ok" in h for h in has.values()), detail
+        for p in req.diners:
+            if "ok" not in has[p.id]:
+                assert p.name in detail, detail

@@ -22,7 +22,7 @@ from michelin import llm
 from michelin.explain import explain
 from michelin.meal import PeopleAction, apply_people_action
 from michelin.model import ExtractionRequest, ExtractionResponse
-from michelin.plan import ai_swap, dish_facts, llm_planner, refine
+from michelin.plan import ai_swap, ai_text, dish_facts, llm_planner, refine
 from michelin.plan.budget import subtotal_cap, totals
 from michelin.plan.edibility import (
     assessment,
@@ -885,13 +885,10 @@ def _mock_solve(menu: Menu, request: TableRequest) -> Plan | Conflict:
         )
 
     dishes = [menu.dish(i.dish_id) for i in items]
-    non_staple = [d for d in dishes if d.category.value != "staple"]
     t = totals(subtotal, n, request.tax_rate, request.tip_rate)
     cap = subtotal_cap(request.all_in_budget, 1, request.tax_rate, request.tip_rate)
 
-    short = [
-        p.name for p in request.diners if not any(p.id in edible_by(d, [p]) for d in non_staple)
-    ]
+    covered, cover_detail = ai_text.coverage_check(menu, request, items)  # QA r18
     checks = [
         Check(
             name="allergies",
@@ -903,12 +900,8 @@ def _mock_solve(menu: Menu, request: TableRequest) -> Plan | Conflict:
         ),
         Check(
             name="coverage",
-            passed=not short,
-            detail=(
-                "Everyone can eat at least one dish."
-                if not short
-                else f"Not enough for: {', '.join(short)}."
-            ),
+            passed=covered,
+            detail=cover_detail,
         ),
         Check(
             name="budget",

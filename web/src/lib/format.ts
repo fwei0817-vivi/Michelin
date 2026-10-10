@@ -162,7 +162,7 @@ export function checkLabel(name: string, passed: boolean): string {
   const labels: Record<string, [string, string]> = {
     allergies: ["No recorded allergy conflicts", "Allergy conflict"],
     diets: ["Recorded diets met", "Diet conflict"],
-    coverage: ["Everyone can eat something", "Someone has nothing to eat"],
+    coverage: ["Each diner has a dish (see who can eat what)", "Someone has nothing to eat"], // Ticket uses coverageLabel (QA r18)
     budget: ["Within budget", "Over budget"],
     ai: ["Menu ids and safety rules verified", "AI choice failed the checks"],
   };

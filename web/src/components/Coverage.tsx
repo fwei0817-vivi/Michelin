@@ -1,6 +1,5 @@
 import { ChevronDown } from "lucide-react";
 import { dinerSummary, dishName } from "../lib/format";
-import { dishQuestions } from "../lib/dietary";
 import type { DinerProfile, Menu, Plan } from "../types";
 
 /** Per-person coverage: how many non-staple dishes each diner can eat by their recorded needs. */
@@ -15,10 +14,11 @@ export function Coverage({ menu, plan, diners }: { menu: Menu; plan: Plan; diner
       </p>
       <ul className="who-list">
         {diners.map((p) => {
-          const matching = dishes.filter((i) => i.edible_by.includes(p.id));
-          // Only this diner's unknown allergens count here; the dish's own staff questions apply to everyone.
-          const toCheck = new Set(matching.filter((i) => dishQuestions(byId[i.dish_id], [p]).length > 0).map((i) => i.dish_id));
-          const short = matching.length < 1;
+          // QA r18: read only the backend's per-diner status ("ok" / "needs_confirm" / "no")
+          const matching = dishes.filter((i) => ["ok", "needs_confirm"].includes(i.status?.[p.id]?.status ?? "no"));
+          const toCheck = new Set(matching.filter((i) => i.status?.[p.id]?.status === "needs_confirm").map((i) => i.dish_id));
+          const sure = matching.length - toCheck.size;
+          const short = sure < 1; // no dish without asking the server (QA r18)
           return (
             <li key={p.id}>
               <details>
@@ -26,14 +26,16 @@ export function Coverage({ menu, plan, diners }: { menu: Menu; plan: Plan; diner
                   <span className="who-name">{p.name}</span>
                   <span className="who-needs">{dinerSummary(p) || "no restrictions recorded"}</span>
                   <span className={`who-count ${short ? "short" : ""}`}>
-                    {matching.length} {matching.length === 1 ? "dish" : "dishes"}
+                    {sure} {sure === 1 ? "dish" : "dishes"}{toCheck.size > 0 ? ` + ${toCheck.size} to confirm` : ""}
                     <ChevronDown size={14} />
                   </span>
                 </summary>
                 <div className="who-detail">
                   {toCheck.size > 0 && (
                     <p>
-                      {toCheck.size} of these {toCheck.size === 1 ? "needs" : "need"} a check with the kitchen.
+                      {toCheck.size === matching.length
+                        ? `${matching.length === 1 ? "This dish needs" : "All of these need"} a check with the server first.`
+                        : `${toCheck.size} of these ${toCheck.size === 1 ? "needs" : "need"} a check with the server first.`}
                     </p>
                   )}
                   {matching.length ? (
@@ -41,7 +43,7 @@ export function Coverage({ menu, plan, diners }: { menu: Menu; plan: Plan; diner
                       {matching.map((i) => (
                         <li key={i.dish_id}>
                           {dishName(byId[i.dish_id])}
-                          {toCheck.has(i.dish_id) ? " (check ingredients)" : ""}
+                          {toCheck.has(i.dish_id) ? " (ask the server first)" : ""}
                         </li>
                       ))}
                     </ul>

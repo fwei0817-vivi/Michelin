@@ -535,12 +535,13 @@ def _to_plan(menu: Menu, request: TableRequest, answer: dict, items: list) -> Pl
     asked = server_questions(answer, selected, request)
     items = [i.model_copy(update={"server_question": asked.get(i.dish_id)}) for i in items]
     extra: list[str] = []  # QA r12 audit: the AI's whole-meal questions are not shown
+    covered, cover_detail = ai_text.coverage_check(menu, request, items)  # QA r18
     checks = [
         Check(name="ai", passed=True, detail="Dishes chosen by the AI, then checked by the rules."),
         Check(
             name="coverage",
-            passed=True,
-            detail="Everyone can eat at least one dish under their recorded requirements.",
+            passed=covered,
+            detail=cover_detail,
         ),
         Check(name="budget", passed=True, detail="The total includes tax and tip and fits."),
         Check(name="diets", passed=True, detail="Allergies and diets were checked per diner."),

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowLeftRight, Check, ChevronDown, CircleHelp, Flame, Leaf, ListChecks, LockKeyhole, Plus, RefreshCw, Sparkles, Trash2, UnlockKeyhole, UserX, Users, X } from "lucide-react";
 import { CATEGORY_LABEL, MARK_LABEL, checkLabel, currencySymbol, dishName, flagWording, listNames, money } from "../lib/format";
+import { coverageLabel } from "../lib/coverage";
 import { dishQuestions, fitsChip, heatNote, needsConfirm, vegTag } from "../lib/dietary";
 import { photoFor } from "../lib/dishPhotos";
 import { Coverage } from "./Coverage";
@@ -72,6 +73,10 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
   const [refining, setRefining] = useState(false);
   const byId: Record<string, Dish> = Object.fromEntries(menu.dishes.map((d) => [d.id, d]));
   const items = plan.items.filter((i) => byId[i.dish_id]);
+  // QA r18: the coverage line comes from the backend per-diner status, never "everyone" when someone only has dishes to confirm
+  const cov = coverageLabel(items.filter((i) => byId[i.dish_id].category !== "staple"), diners);
+  const label = (c: { name: string; passed: boolean }) => (c.name === "coverage" ? cov.label : checkLabel(c.name, c.passed));
+  const passed = (c: { name: string; passed: boolean }) => (c.name === "coverage" ? c.passed && cov.passed : c.passed);
   const cur = currencySymbol(menu.currency);
   const remaining = settings.budget - plan.per_person;
   const over = remaining < 0;
@@ -192,7 +197,7 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
             <ul>
               {plan.checks.map((c) => (
                 <li key={c.name}>
-                  <strong>{checkLabel(c.name, c.passed)}.</strong> {c.detail}
+                  <strong>{label(c)}.</strong> {c.detail}
                 </li>
               ))}
             </ul>
@@ -223,9 +228,9 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
           </div>
           <ul className="bill-checks" aria-label="Plan checks">
             {plan.checks.map((c) => (
-              <li key={c.name} className={c.passed ? "" : "failed"}>
-                {c.passed ? <Check size={14} /> : <X size={14} />}
-                {checkLabel(c.name, c.passed)}
+              <li key={c.name} className={passed(c) ? "" : "failed"}>
+                {passed(c) ? <Check size={14} /> : <X size={14} />}
+                {label(c)}
               </li>
             ))}
           </ul>

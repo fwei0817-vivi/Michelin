@@ -381,6 +381,32 @@ def code_summary(menu, request, items) -> str:
     return f"{n} dish{'es' if n != 1 else ''} to share; " + "; ".join(parts) + f"; {heat}."
 
 
+def coverage_check(menu, request, items) -> tuple[bool, str]:
+    """The plan's coverage check, same rule as code_summary (QA r18): "everyone" only when
+    every diner has a dish that is "ok" in diner_status; anyone with only dishes the server
+    must confirm is named."""
+    shared = [
+        menu.dish(i.dish_id) for i in items if menu.dish(i.dish_id).category.value != "staple"
+    ]
+    st = [diner_status(d, request.diners) for d in shared]
+    none, ask = [], []
+    for p in request.diners:
+        mine = [s[p.id] for s in st]
+        if any(v["status"] == "ok" for v in mine):
+            continue
+        asks = [v["reason"] for v in mine if v["status"] == "needs_confirm"]
+        if asks:
+            t = _topic(p, asks)
+            ask.append(f"{p.name or p.id}'s only if the server confirms" + (f" ({t})" if t else ""))
+        else:
+            none.append(p.name or p.id)
+    if none:
+        return False, f"Not enough for: {', '.join(none)}."
+    if ask:
+        return True, "Everyone has a dish; " + "; ".join(ask) + "."
+    return True, "Everyone has at least one dish they can eat without asking."
+
+
 def reason(text: object, dish, menu, request, n: int = 0, shown: bool = False) -> str | None:
     """A per-dish reason, checked for this dish on this order. `shown=True` re-checks a
     reason already on screen (names already in) against a new order."""
