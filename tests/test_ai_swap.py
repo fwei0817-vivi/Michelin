@@ -374,7 +374,7 @@ def test_summary_stays_visible_after_a_swap(table):
     named = plan.model_copy(update={"summary": f"Built around {menu.dish(old).name_en}."})
     out = ai_swap.manual(menu, request, named, old, new)
     assert out.plan.summary and menu.dish(old).name_en not in out.plan.summary
-    assert "per person with tax and tip" in out.plan.summary
+    assert "to share" in out.plan.summary
 
 
 def test_better_prefers_the_least_served_and_has_no_price_window(table):

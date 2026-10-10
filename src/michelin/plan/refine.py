@@ -400,9 +400,19 @@ def card_words(note: str, d: dict) -> str:
     return re.sub(r"\bmild\b", word, note, flags=re.IGNORECASE)
 
 
-def final_note(ai_note: str | None, d: dict) -> tuple[str, bool]:
-    """(note, from_ai): the AI's note when its claims match the diff, else the code's."""
+def final_note(
+    ai_note: str | None, d: dict, menu: Menu | None = None, after_ids=()
+) -> tuple[str, bool]:
+    """(note, from_ai): the AI's note when its claims match the diff (and, given the menu,
+    pass the one gate in ai_text), else the code's."""
     note = re.sub(r"\s+", " ", str(ai_note or "")).strip()
     if note and note_ok(note, d):
-        return card_words(note, d).rstrip(".") + ".", True
+        note = card_words(note, d).rstrip(".") + "."
+        if menu is None:
+            return note, True
+        from michelin.plan import ai_text
+
+        checked = ai_text.change_note(note, menu, d, after_ids)
+        if checked is not None:
+            return checked, True
     return code_note(d), False

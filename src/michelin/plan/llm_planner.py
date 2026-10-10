@@ -35,8 +35,8 @@ from pathlib import Path
 
 from michelin import gemini, llm
 from michelin.explain import explain
+from michelin.plan import ai_text, refine
 from michelin.plan import hints as rules_hints
-from michelin.plan import refine
 from michelin.plan.budget import cents, subtotal_cap, totals
 from michelin.plan.edibility import (
     ask_server,
@@ -511,8 +511,14 @@ def _to_plan(menu: Menu, request: TableRequest, answer: dict, items: list) -> Pl
     items = [
         i.model_copy(
             update={
-                "reason": _fair_reason(
-                    reasons.get(i.dish_id), known[i.dish_id], request, len(base.items)
+                "reason": ai_text.reason(
+                    _fair_reason(
+                        reasons.get(i.dish_id), known[i.dish_id], request, len(base.items)
+                    ),
+                    known[i.dish_id],
+                    menu,
+                    request,
+                    len(base.items),
                 )
                 or i.reason
             }
@@ -521,13 +527,7 @@ def _to_plan(menu: Menu, request: TableRequest, answer: dict, items: list) -> Pl
     ]
     asked = server_questions(answer, selected, request)
     items = [i.model_copy(update={"server_question": asked.get(i.dish_id)}) for i in items]
-    extra = [
-        q
-        for q in (str(q).strip()[:200] for q in answer.get("server_questions") or [])
-        if q
-        and meal_question_ok(q, selected, request.diners)
-        and not _names_a_dish(q, [d for d, _ in selected])
-    ]
+    extra: list[str] = []  # QA r12 audit: the AI's whole-meal questions are not shown
     checks = [
         Check(name="ai", passed=True, detail="Dishes chosen by the AI, then checked by the rules."),
         Check(
@@ -543,7 +543,8 @@ def _to_plan(menu: Menu, request: TableRequest, answer: dict, items: list) -> Pl
             "items": items,
             "checks": checks,
             "confirm_with_staff": [asked[d.id] for d, _ in selected if d.id in asked] + extra[:3],
-            "summary": _summary(answer.get("summary"), len(items)),
+            "summary": ai_text.summary(answer.get("summary"), menu, request, items)
+            or ai_text.code_summary(menu, request, items),
         }
     )
 
@@ -976,7 +977,7 @@ def plan(
         kept.attempts = outcome.attempts
         return kept
     ai_note = None if outcome.fallback else (outcome.answer or {}).get("change_note")
-    note, from_ai = refine.final_note(ai_note, d)
+    note, from_ai = refine.final_note(ai_note, d, menu, [i.dish_id for i in outcome.plan.items])
     if "less_spicy" in feedback.chips and not missed:
         note, from_ai = refine.spice_note(d), False  # always the code's, in card words
     if missed:

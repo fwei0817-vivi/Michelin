@@ -23,8 +23,14 @@ def test_varied_table_scores_higher_than_monotone_table():
 
 
 def test_mostly_fried_table_is_penalized():
-    fried = [d(f"f{i}", DishCategory.STIR_FRY, "deep_fry", p) for i, p in enumerate(("pork", "chicken", "fish"))]
-    not_fried = [d(f"n{i}", DishCategory.STIR_FRY, "stir_fry", p) for i, p in enumerate(("pork", "chicken", "fish"))]
+    fried = [
+        d(f"f{i}", DishCategory.STIR_FRY, "deep_fry", p)
+        for i, p in enumerate(("pork", "chicken", "fish"))
+    ]
+    not_fried = [
+        d(f"n{i}", DishCategory.STIR_FRY, "stir_fry", p)
+        for i, p in enumerate(("pork", "chicken", "fish"))
+    ]
     assert variety_score(fried) < variety_score(not_fried)
 
 

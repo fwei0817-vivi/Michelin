@@ -18,7 +18,7 @@ import re
 from dataclasses import dataclass, field
 
 from michelin import llm
-from michelin.plan import llm_planner
+from michelin.plan import ai_text, llm_planner
 from michelin.plan.budget import cents, subtotal_cap, totals
 from michelin.plan.edibility import assessment, edible_by, risks
 from michelin.plan.validation import family_repeats, validate_order
@@ -272,6 +272,8 @@ def _line(
         why = None  # "Ben and Cai can eat it" when all four can undersells it (QA r8)
     if why and (len(why.split()) > 10 or re.search(r"[;:]|\$\d", why)):
         why = None  # one short clause only; the price part is computed below
+    if why:
+        why = ai_text.swap_clause(why, new, menu, request)  # the one gate (QA r12)
     if not why:
         who = [p.name for p in request.diners if p.id in ok]
         why = (
@@ -377,35 +379,25 @@ def _to_plan(
         )
     out = llm_planner._to_plan(menu, request, {"dishes": rows, "summary": plan.summary}, items)
     kept_reasons = {i.dish_id: i.reason for i in plan.items if i.dish_id != old_id}
+    n = len(out.items)
+
+    def kept(i):  # an earlier reason only if still true on the new order
+        dish = menu.dish(i.dish_id)
+        return ai_text.reason(kept_reasons.get(i.dish_id), dish, menu, request, n) or i.reason
+
     return out.model_copy(
         update={
-            "items": [
-                i.model_copy(update={"reason": kept_reasons.get(i.dish_id) or i.reason})
-                for i in out.items
-            ],
+            "items": [i.model_copy(update={"reason": kept(i)}) for i in out.items],
             "summary": _summary_after(menu, request, plan, old_id, out),
         }
     )
 
 
 def _summary_after(menu: Menu, request: TableRequest, plan: Plan, old_id, out: Plan) -> str:
-    """Keep the plan's summary when it still holds (same dish count, does not name the
-    replaced dish); otherwise a plain rule-written line about the new order."""
-    old = plan.summary or ""
-    shared = sum(1 for i in out.items if menu.dish(i.dish_id).category.value != "staple")
-    gone = _name(menu.dish(old_id)).lower() if old_id else None
-    if (
-        old
-        and old_id is not None
-        and gone not in old.lower()
-        and llm_planner._summary(old, len(out.items)) is not None
-    ):
-        return old
-    fed = {p for i in out.items for p in i.edible_by}
-    who = "everyone has" if len(fed) >= len(request.diners) else "not everyone has"
-    return (
-        f"{shared} shared dish{'es' if shared != 1 else ''} plus rice, "
-        f"${out.per_person:.2f} per person with tax and tip; {who} something to eat."
+    """The earlier order's summary only if it is still true of the new order (re-validated
+    by the one gate, QA r12); otherwise the code's own line about the new order."""
+    return ai_text.summary(plan.summary, menu, request, out.items) or ai_text.code_summary(
+        menu, request, out.items
     )
 
 
