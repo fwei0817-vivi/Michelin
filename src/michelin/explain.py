@@ -1,5 +1,6 @@
 """Grounded explanations; never infer ingredients or change a plan."""
 
+from michelin.plan.edibility import assessment
 from michelin.schemas import Menu, Plan, TableRequest
 
 
@@ -20,7 +21,16 @@ def explain(plan: Plan, menu: Menu, request: TableRequest) -> Plan:
             reason = f"Gives {_join(names)} another option."
         else:
             reason = "No diner meets the recorded requirements for this dish; choose a replacement."
-        if dish.confirm_with_staff:
+        ask = [
+            p.name
+            for p in request.diners
+            if p.id in item.edible_by and assessment(dish, p)["status"] == "requires_confirmation"
+        ]
+        if ask and len(ask) == len(names) == request.n_diners:
+            reason += " Ask the server first."
+        elif ask:
+            reason += f" Ask the server first for {_join(ask)}."
+        elif dish.confirm_with_staff:
             reason += " Check the listed questions with staff."
         items.append(item.model_copy(update={"reason": reason}))
     return plan.model_copy(update={"items": items})

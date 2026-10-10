@@ -17,7 +17,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 
-from michelin import keywords, llm
+from michelin import llm
 from michelin.plan import ai_text, llm_planner
 from michelin.plan.budget import cents, subtotal_cap, totals
 from michelin.plan.edibility import assessment, edible_by, risks
@@ -295,23 +295,12 @@ def _line(
 
 
 def _needs_asking(dish, request: TableRequest, ok: set) -> bool:
-    """Mirrors the swap card's "only if the server confirms" (web dietary.ts): someone it is
-    counted for needs the server to confirm, or a non-menu ingredient may hide meat."""
-    if any(
+    """The swap card's per-diner test, exactly: someone the dish is counted for has the
+    assessment status "requires_confirmation" (what the card's "only if the server confirms"
+    reads from /eligibility). No separate ingredient keywords (QA r14)."""
+    return any(
         p.id in ok and assessment(dish, p)["status"] == "requires_confirmation"
         for p in request.diners
-    ):
-        return True
-    animal = re.compile(
-        "|".join(
-            keywords.pattern(c)
-            for c in ("pork", "beef", "meat", "stock", "fish", "shellfish", "egg")
-        ),
-        re.IGNORECASE,
-    )
-    return any(
-        getattr(i.tier, "value", i.tier) != "menu" and animal.search(i.name)
-        for i in dish.main_ingredients
     )
 
 

@@ -44,13 +44,6 @@ def _setup(egg_tier):
     return menu, req
 
 
-def test_swap_hint_says_if_the_server_confirms_like_the_card():
-    menu, req = _setup(EvidenceTier.INFERRED)
-    line = ai_swap._line(menu, req, "greens", "tomato_egg", "Alice and Ben can eat it")
-    assert "everyone can eat it if the server confirms" in line
-    assert "Alice and Ben can eat it," not in line
-
-
 def test_swap_hint_without_doubt_stays_plain():
     menu, req = _setup(EvidenceTier("menu"))
     line = ai_swap._line(menu, req, "greens", "tomato_egg", None)
@@ -75,6 +68,6 @@ def test_fallback_reason_is_natural_and_names_who():
         variety_score=0.5,
     )
     out = explain(plan, menu, req)
-    assert out.items[0].reason == "A dish everyone can share."
+    assert out.items[0].reason.startswith("A dish everyone can share.")
     assert out.items[1].reason == "Gives Alice and Ben another option."
     assert all("coverage" not in i.reason for i in out.items)

@@ -250,6 +250,8 @@ def summary(text: object, menu, request, items) -> str | None:
     for p in _named(t, request.diners):
         if not any(edible_by(d, [p]) for d in shared):
             return None
+    if _OVERCLAIM.search(low) and not _all_well_served(shared, request.diners):
+        return None  # "meets everyone's preferences" / "easily accommodates all" (QA r14)
     if _EVERYONE.search(low):
         fed = {pid for d in shared for pid in edible_by(d, request.diners)}
         if len(fed) < len(request.diners):
@@ -259,6 +261,33 @@ def summary(text: object, menu, request, items) -> str | None:
         ):
             return None
     return _approve(t)
+
+
+_OVERCLAIM = re.compile(
+    r"\bpreferences?\b|\baccommodat\w*\s+(?:\w+\s+){0,2}?all\b|\beveryone'?s?\s+needs\b",
+    re.IGNORECASE,
+)
+_CHECKABLE_PREFS = {"no_spicy", "mild"}
+
+
+def _pref_ok(dish, person) -> bool:
+    prefs = {getattr(x, "value", x) for x in person.preferences}
+    if prefs - _CHECKABLE_PREFS:
+        return False  # a taste the code cannot check: the claim is not provable
+    heat = _spice(dish)
+    return not (("no_spicy" in prefs and heat >= 1) or ("mild" in prefs and heat >= 2))
+
+
+def _all_well_served(dishes, diners) -> bool:
+    """Every diner has at least 2 dishes needing no server check and clashing with no taste."""
+    return all(
+        sum(
+            assessment(d, p)["status"] == "validated_under_known_data" and _pref_ok(d, p)
+            for d in dishes
+        )
+        >= 2
+        for p in diners
+    )
 
 
 def code_summary(menu, request, items) -> str:
