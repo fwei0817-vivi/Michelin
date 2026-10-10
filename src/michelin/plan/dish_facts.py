@@ -725,6 +725,27 @@ _PLAIN_RICE = re.compile(
 )
 
 
+COURSES = ("hot_main", "staple", "cold", "soup", "dessert", "side", "unknown")
+_BY_CATEGORY = {
+    DishCategory.COLD_APPETIZER: "cold",
+    DishCategory.SOUP: "soup",
+    DishCategory.DESSERT: "dessert",
+    DishCategory.DRINK: "dessert",
+    DishCategory.STAPLE: "staple",
+}
+
+
+def course_of(category: DishCategory, ai: str | None) -> str:
+    """The printed category when it is clear (cold/soup/dessert/drink/plain rice); for
+    stir-fry and braise the AI's course (it may say "side"), else hot_main; for "other" the
+    AI's course, else unknown (unknown never counts as a hot dish)."""
+    if category in _BY_CATEGORY:
+        return _BY_CATEGORY[category]
+    if category in (DishCategory.STIR_FRY, DishCategory.BRAISE_OR_STEW):
+        return ai if ai in ("hot_main", "staple", "side") else "hot_main"
+    return ai if ai in COURSES else "unknown"
+
+
 def _category(dish: Dish, ai: str | None) -> DishCategory:
     """The printed category wins; the AI only fills in "other". It may call a dish a
     per-person "staple" only if it is plain rice (QA r5: not Scallion Pancake or Dan Dan)."""
@@ -954,6 +975,9 @@ def prepare(menu: Menu, client=None, diners=None) -> Menu:
             break
     index = alt_index(cache)
     dishes = [apply(d, lookup(cache, d, index)) for d in plain.dishes]
+    from michelin.plan import courses  # the course of each dish (2026-10-10)
+
+    dishes = courses.annotate(dishes, client)
     if diners:  # the table's own allergies and diets ("mango", "halal"), asked per term
         from michelin.plan import custom_facts
 

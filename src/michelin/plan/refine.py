@@ -11,6 +11,7 @@ import re
 
 from pydantic import BaseModel, Field
 
+from michelin.plan import spice
 from michelin.schemas import Menu
 
 CHIPS = {
@@ -58,7 +59,7 @@ _SEAFOOD = re.compile(
 
 
 def _spice(d) -> int:
-    return d.spice_level if d.spice_level is not None else d.menu_spice or 0
+    return spice.level(d)  # the one spice source (2026-10-10)
 
 
 def _seafood(d) -> bool:
@@ -197,7 +198,7 @@ def honest_note(chips: list[str], d: dict, menu: Menu | None = None, after=()) -
         if "less_spicy" in chips and menu is not None:
             known = {x.id: x for x in menu.dishes}
             top = max((_spice(known[i]) for i, _ in after if i in known), default=0)
-            extra = f" Its spiciest dish is {['not spicy', 'a little spicy', 'spicy', 'very spicy'][min(top, 3)]}."
+            extra = f" Its spiciest dish is {spice.word(top)}."
         return f"Couldn't {goals}: the AI kept the same order.{extra}"
     return (
         f"Couldn't fully {goals} within everyone's allergies, diets, kept dishes and the "
@@ -214,7 +215,7 @@ def changes_list(d: dict) -> list[str]:
     return out
 
 
-SPICE_WORDS = ["not spicy", "a little spicy", "spicy", "very spicy"]
+SPICE_WORDS = spice.WORDS
 
 
 def not_less_spicy(menu: Menu, before) -> str:

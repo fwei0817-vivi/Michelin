@@ -183,7 +183,11 @@ def assessment(dish: Dish, diner: DinerProfile) -> dict:
 def diner_status(dish: Dish, diners: list[DinerProfile]) -> dict[str, dict]:
     """The one per-dish, per-diner status every surface reads (QA r15): the card chips, the
     swap hint and the code-written reason. "ok": eat it; "needs_confirm": eat it once the
-    server confirms (reason says what); "no": not for them (reason says why)."""
+    server confirms (reason says what); "no": not for them (reason says why).
+    "taste" (2026-10-10) is the soft taste conflict, from plan.spice: "too_spicy" (not
+    listed for them anywhere), "a_little_spicy" (listed, flagged) or None."""
+    from michelin.plan import spice
+
     out = {}
     for p in diners:
         a = assessment(dish, p)
@@ -193,7 +197,17 @@ def diner_status(dish: Dish, diners: list[DinerProfile]) -> dict[str, dict]:
             out[p.id] = {"status": "needs_confirm", "reason": "; ".join(a["reasons"]) or None}
         else:
             out[p.id] = {"status": "ok", "reason": None}
+        out[p.id]["taste"] = spice.taste(dish, p) if out[p.id]["status"] != "no" else None
     return out
+
+
+def for_whom(dish: Dish, diners: list[DinerProfile]) -> list[str]:
+    """Who a dish is listed / recommended / counted for: allowed by allergies and diets AND
+    no taste conflict (not too spicy for a no-heat diner). edible_by stays the hard
+    allergy/diet floor."""
+    from michelin.plan import spice
+
+    return [p.id for p in diners if can_eat(dish, p) and spice.taste(dish, p) != "too_spicy"]
 
 
 def veg_tag(dish: Dish, diners: list[DinerProfile] | None = None) -> str | None:

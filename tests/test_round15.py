@@ -113,7 +113,7 @@ def test_r15_repro_tomato_egg_out_and_back_all_surfaces_agree(demo, mia_facts): 
     egg = next(i for i in back["plan"]["items"] if i["dish_id"] == "tomato_egg")
     _agree(menu, diners, egg, back["message"])
     # Decision: with halal "no" and cilantro "no", Tomato & Egg needs no check for Mia.
-    assert egg["status"]["mia"] == {"status": "ok", "reason": None}
+    assert egg["status"]["mia"] == {"status": "ok", "reason": None, "taste": None}
     assert "everyone can eat it," in back["message"]
     # the menu sheet reads the very same status
     sheet = client.post("/api/menu/evaluate", json={"menu": menu, "diners": diners}).json()

@@ -4,8 +4,9 @@ import type { DinerStatusMap } from "../types";
  *  eat as is, "confirm" dishes they can eat once the server confirms. Pass non-staple items. */
 export function dinerCounts(items: { status?: DinerStatusMap }[], dinerIds: string[]) {
   return Object.fromEntries(dinerIds.map((id) => [id, {
-    ok: items.filter((i) => i.status?.[id]?.status === "ok").length,
-    confirm: items.filter((i) => i.status?.[id]?.status === "needs_confirm").length,
+    // a taste conflict (too spicy for them) is not their dish (2026-10-10)
+    ok: items.filter((i) => i.status?.[id]?.status === "ok" && i.status?.[id]?.taste !== "too_spicy").length,
+    confirm: items.filter((i) => i.status?.[id]?.status === "needs_confirm" && i.status?.[id]?.taste !== "too_spicy").length,
   }])) as Record<string, { ok: number; confirm: number }>;
 }
 

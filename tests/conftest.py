@@ -161,3 +161,16 @@ def oracle_planner(request, monkeypatch, tmp_path):
     monkeypatch.setattr(llm_planner, "enabled", lambda: True)
     yield
     llm_planner._memory.clear()
+
+
+@pytest.fixture(autouse=True)
+def recorded_courses(monkeypatch, tmp_path):
+    """Courses come from the committed course cache; tests never ask a model for them."""
+    import shutil
+
+    from michelin.plan import courses
+
+    path = tmp_path / "dish_course.json"
+    shutil.copy(ROOT / "data/facts/dish_course.json", path)
+    monkeypatch.setattr(courses, "CACHE_PATH", path)
+    monkeypatch.setattr(courses, "_ask", lambda batch, client=None: {})

@@ -33,6 +33,7 @@ from __future__ import annotations
 import os
 import re
 
+from michelin.plan import spice
 from michelin.plan.edibility import assessment, diner_status, edible_by
 
 APPROVED: set[str] = set()  # every AI string this gate let through (tests read it)
@@ -182,7 +183,7 @@ def _tokens(name: str | None) -> set[str]:
 
 
 def _spice(d) -> int:
-    return max(d.spice_level or 0, d.menu_spice or 0) if d is not None else 0
+    return spice.level(d)  # the one spice source
 
 
 _SINGLE = re.compile(
@@ -314,8 +315,7 @@ def _pref_ok(dish, person) -> bool:
     prefs = {getattr(x, "value", x) for x in person.preferences}
     if prefs - _CHECKABLE_PREFS:
         return False  # a taste the code cannot check: the claim is not provable
-    heat = _spice(dish)
-    return not (("no_spicy" in prefs and heat >= 1) or ("mild" in prefs and heat >= 2))
+    return spice.taste(dish, person) is None
 
 
 def _all_well_served(dishes, diners) -> bool:
@@ -348,11 +348,13 @@ def code_summary(menu, request, items) -> str:
         menu.dish(i.dish_id) for i in items if menu.dish(i.dish_id).category.value != "staple"
     ]
     st = [diner_status(d, request.diners) for d in shared]
-    ok = {p.id: sum(s[p.id]["status"] == "ok" for s in st) for p in request.diners}
+    # counted only when "ok" (no server check) and not too spicy for them (2026-10-10)
+    ok = {
+        p.id: sum(s[p.id]["status"] == "ok" and s[p.id]["taste"] != "too_spicy" for s in st)
+        for p in request.diners
+    }
     top = max((_spice(d) for d in shared), default=0)
-    heat = ["nothing spicy", "at most a little spicy", "up to spicy", "up to very spicy"][
-        min(top, 3)
-    ]
+    heat = "nothing spicy" if not top else f"at most {spice.word(top)}"
 
     def n_dishes(n):
         return f"{n} dishes" if n != 1 else "one dish"
@@ -369,16 +371,26 @@ def code_summary(menu, request, items) -> str:
             parts.append(f"{who} at least {n_dishes(low)} they can eat")
         for p in stuck:
             name = p.name or p.id
-            asks = [s[p.id]["reason"] for s in st if s[p.id]["status"] == "needs_confirm"]
+            asks = [
+                s[p.id]["reason"]
+                for s in st
+                if s[p.id]["status"] == "needs_confirm" and s[p.id]["taste"] != "too_spicy"
+            ]
             if asks:
                 t = _topic(p, asks)
                 parts.append(
                     f"{name}'s dishes need a quick check with the server" + (f" ({t})" if t else "")
                 )
+            elif any(s[p.id]["taste"] == "too_spicy" for s in st):
+                parts.append(f"{name} has no dish that is not too spicy for them")
             else:
                 parts.append(f"{name} has no dish they can eat")
     n = len(shared)
-    return f"{n} dish{'es' if n != 1 else ''} to share; " + "; ".join(parts) + f"; {heat}."
+    line = f"{n} dish{'es' if n != 1 else ''} to share; " + "; ".join(parts) + f"; {heat}."
+    from michelin.plan import enough  # the 'enough food' rule, said honestly when unmet
+
+    short = enough.honest_line(menu, request, items)
+    return f"{line} {short}" if short else line
 
 
 def coverage_check(menu, request, items) -> tuple[bool, str]:
@@ -391,7 +403,9 @@ def coverage_check(menu, request, items) -> tuple[bool, str]:
     st = [diner_status(d, request.diners) for d in shared]
     none, ask = [], []
     for p in request.diners:
-        mine = [s[p.id] for s in st]
+        mine = [
+            s[p.id] for s in st if s[p.id]["taste"] != "too_spicy"
+        ]  # taste conflict: not theirs
         if any(v["status"] == "ok" for v in mine):
             continue
         asks = [v["reason"] for v in mine if v["status"] == "needs_confirm"]

@@ -18,9 +18,9 @@ import re
 from dataclasses import dataclass, field
 
 from michelin import explain, llm
-from michelin.plan import ai_text, llm_planner
+from michelin.plan import ai_text, llm_planner, spice
 from michelin.plan.budget import cents, subtotal_cap, totals
-from michelin.plan.edibility import assessment, diner_status, edible_by, risks
+from michelin.plan.edibility import assessment, diner_status, for_whom, risks
 from michelin.plan.validation import family_repeats, validate_order
 from michelin.schemas import PREFERENCE_TEXT, Menu, Plan, PlanItem, TableRequest
 
@@ -34,7 +34,7 @@ only, never one already ordered or removed). Hard rules: it must fit the money l
 ("menu_price_left" is the most its menu price can be; tax and tip are added on top), and
 it should suit the diners' allergies and diets ("ok_for" lists who can eat it; never pick a
 dish nobody can eat). After the swap every diner must still have at least one non-rice dish
-they can eat. Prefer, in order: the dish that the MOST diners can eat (longest "ok_for";
+they can eat ("too_spicy_for" lists diners who avoid heat: it is not their dish). Prefer, in order: the dish that the MOST diners can eat (longest "ok_for";
 all diners is best), then one the least-served diners can eat (lowest
 "dishes_they_can_eat_after_swap"), a price close to the replaced dish (cheaper is fine), and a dish that does not repeat the main ingredient, category
 or cooking method of the dishes that stay. Follow each diner's "notes" (tastes in their own
@@ -94,15 +94,18 @@ def brief(menu: Menu, request: TableRequest, plan: Plan, old_id: str) -> dict:
     for d in menu.dishes:
         if d.id in ordered or d.id in excluded or d.category.value == "staple" or d.price is None:
             continue
-        ok = edible_by(d, request.diners)
+        ok = for_whom(d, request.diners)
         if not ok:
             continue
         if family_repeats(menu, request, [*(i.dish_id for i in others), d.id]):
             continue  # a second version of a dish that stays, feeding nobody new
         row = {"id": d.id, "name": _name(d), "price": d.price, "category": d.category.value}
         row["ok_for"] = ok
-        if d.spice_level is not None:
-            row["spice"] = d.spice_level
+        if d.spice_level is not None or d.menu_spice is not None:
+            row["spice"] = spice.level(d)  # the one spice source
+        hot = [p.id for p in spice.too_spicy_for(d, request.diners)]
+        if hot:
+            row["too_spicy_for"] = hot
         if d.cooking_method:
             row["method"] = d.cooking_method
         main = [i.name for i in d.main_ingredients if i.tier.value == "menu"]
@@ -134,7 +137,7 @@ def brief(menu: Menu, request: TableRequest, plan: Plan, old_id: str) -> dict:
         # How many of the dishes that stay this diner can eat (rice aside): favour the
         # least-served diners when choosing.
         row["dishes_they_can_eat_after_swap"] = sum(
-            p.id in edible_by(known[i.dish_id], request.diners)
+            p.id in for_whom(known[i.dish_id], request.diners)
             for i in others
             if known[i.dish_id].category.value != "staple"
         )
@@ -145,7 +148,7 @@ def brief(menu: Menu, request: TableRequest, plan: Plan, old_id: str) -> dict:
             "name": _name(old),
             "price": old.price,
             "category": old.category.value,
-            "ok_for": edible_by(old, request.diners),
+            "ok_for": for_whom(old, request.diners),
         },
         "order_stays": [
             {
@@ -154,7 +157,7 @@ def brief(menu: Menu, request: TableRequest, plan: Plan, old_id: str) -> dict:
                 "quantity": i.quantity,
                 "price": known[i.dish_id].price,
                 "category": known[i.dish_id].category.value,
-                "ok_for": edible_by(known[i.dish_id], request.diners),
+                "ok_for": for_whom(known[i.dish_id], request.diners),
             }
             for i in others
         ],
@@ -252,7 +255,7 @@ def _line(
 ) -> str:
     """'Swapped to X, Kevin can eat it, $3.00 cheaper.' The price part is always computed."""
     new = menu.dish(new_id)
-    ok = set(edible_by(new, request.diners))
+    ok = set(for_whom(new, request.diners))
     if why:  # the one gate first: {id} tokens become names, raw names/ids reject (QA r15)
         why = ai_text.swap_clause(why, new, menu, request)
     everyone = re.compile(
@@ -290,7 +293,18 @@ def _line(
             else f"{_join_names(who)} can eat it"
         )
         if unsure:
-            why += " if the server confirms"
+            st = diner_status(new, request.diners)
+            ask = [
+                p.name
+                for p in request.diners
+                if p.id in ok and st[p.id]["status"] == "needs_confirm"
+            ]
+            why += " if the server confirms" + (
+                "" if len(ask) == len(who) else f" for {_join_names(ask)}"
+            )
+    hot = [p.name for p in spice.too_spicy_for(new, request.diners)]
+    if hot:  # a taste conflict, said the same way as the card (2026-10-10)
+        why = why.strip().rstrip(".") + f", too spicy for {_join_names(hot)}"
     why = why.strip().rstrip(".")
     first = why.split(" ", 1)[0].rstrip(",")
     if first not in {p.name for p in request.diners}:  # keep names capitalised
@@ -316,7 +330,7 @@ def _score(menu: Menu, request: TableRequest, plan: Plan, old_id: str, new_id: s
     after = [i for i in plan.items if i.dish_id != old_id]
     after.append(PlanItem(dish_id=new_id, quantity=1))
     now = llm_planner.counts(menu, request, plan.items)
-    ok = edible_by(menu.dish(new_id), request.diners)
+    ok = for_whom(menu.dish(new_id), request.diners)
     neediest = min((now[p] for p in ok), default=99)
     return (llm_planner.spread(menu, request, after), -neediest, len(ok))
 
@@ -471,7 +485,7 @@ def swap(menu: Menu, request: TableRequest, plan: Plan, old_id: str, client=None
                 llm.Turn(
                     "user",
                     f"{answer['dish_id']} suits only "
-                    f"{len(edible_by(menu.dish(answer['dish_id']), request.diners))} of "
+                    f"{len(for_whom(menu.dish(answer['dish_id']), request.diners))} of "
                     f"{request.n_diners} diners and does not help the least-served diners "
                     "(see dishes_they_can_eat_after_swap). These dishes fit the budget and "
                     "suit more or serve the least-served: "

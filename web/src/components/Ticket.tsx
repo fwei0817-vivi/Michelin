@@ -293,7 +293,10 @@ function DishCard({ item, dish, diners, cur, kept, ai, expanded, disabled, onTog
 }) {
   const name = dishName(dish);
   const notFor = diners.filter((p) => !item.edible_by.includes(p.id));
-  const heat = heatNote(dish, diners.filter((p) => item.edible_by.includes(p.id)));
+  // spice tag and taste note come from the backend (plan.spice); old saved plans fall back
+  const heat = item.status ? item.heat_note ?? null : heatNote(dish, diners.filter((p) => item.edible_by.includes(p.id)));
+  const tooHot = diners.filter((p) => item.status?.[p.id]?.taste === "too_spicy");
+  const spiceTag = item.status ? item.spice_label ?? null : dish.spice_level ? SPICE[dish.spice_level] : null;
   // AI plans carry one rule-checked question per dish; other plans use the templates.
   const questions = ai && item.server_question !== undefined ? (item.server_question ? [item.server_question] : []) : dishQuestions(dish, diners);
   // The backend's per-diner status is the one source (QA r15); old saved plans lack it.
@@ -332,15 +335,15 @@ function DishCard({ item, dish, diners, cur, kept, ai, expanded, disabled, onTog
             {veg.label}
           </span>
         )}
-        {dish.spice_level != null && dish.spice_level > 0 && (
+        {spiceTag && (
           <span>
             <Flame size={12} />
-            {SPICE[dish.spice_level]}
+            {spiceTag}
           </span>
         )}
         {(dish.menu_marks ?? []).map((m) => <span key={m} className="tag-mark" title={MARK_LABEL[m]?.title}>Menu: {MARK_LABEL[m]?.short ?? m}</span>)}
         {dish.cooking_method && <span>{dish.cooking_method.replaceAll("_", " ")}</span>}
-        {notFor.length === 0 && (
+        {notFor.length === 0 && tooHot.length === 0 && (
           <span title={unsure ? "Allowed for everyone only once the server answers the questions below" : "Matches every diner's recorded requirements"} className={unsure ? "tag-ask" : ""}>
             <Users size={12} />
             {fitsChip(diners.length, unsure)}

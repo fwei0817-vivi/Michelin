@@ -17,4 +17,8 @@ eq(coverageLabel([{ status: { ben: ok, mia: ok } }], diners), { passed: true, la
 eq(coverageLabel([{ status: { ben: no, mia: ok } }], diners), { passed: false, label: "Ben has nothing to eat" }, "ben none");
 eq(coverageLabel([{ status: { ben: ask, mia: ask } }], diners).label, "Everyone has a dish, Ben and Mia only if the server confirms", "both ask");
 eq(coverageLabel([{}], diners).passed, false, "missing status is not a pass");
+// 2026-10-10: a too-spicy dish is not counted for a no-heat diner
+const hot = { status: "ok" as const, reason: null, taste: "too_spicy" as const };
+eq(coverageLabel([{ status: { ben: ok, mia: hot } }], diners), { passed: false, label: "Mia has nothing to eat" }, "too spicy not counted");
+eq(dinerCounts([{ status: { ben: ok, mia: hot } }, { status: { ben: ok, mia: ok } }], ["mia"]), { mia: { ok: 1, confirm: 0 } }, "count skips too spicy");
 if (fails) throw new Error(`${fails} coverage test(s) failed`);

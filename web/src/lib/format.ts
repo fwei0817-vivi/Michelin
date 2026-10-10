@@ -164,6 +164,7 @@ export function checkLabel(name: string, passed: boolean): string {
     diets: ["Recorded diets met", "Diet conflict"],
     coverage: ["Each diner has a dish (see who can eat what)", "Someone has nothing to eat"], // Ticket uses coverageLabel (QA r18)
     budget: ["Within budget", "Over budget"],
+    enough: ["Enough food for everyone", "Not enough food for everyone"],
     ai: ["Menu ids and safety rules verified", "AI choice failed the checks"],
   };
   return labels[name]?.[passed ? 0 : 1] ?? name;

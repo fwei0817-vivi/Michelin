@@ -22,12 +22,13 @@ from michelin import llm
 from michelin.explain import explain
 from michelin.meal import PeopleAction, apply_people_action
 from michelin.model import ExtractionRequest, ExtractionResponse
-from michelin.plan import ai_swap, ai_text, dish_facts, llm_planner, refine
+from michelin.plan import ai_swap, ai_text, dish_facts, llm_planner, refine, spice
 from michelin.plan.budget import subtotal_cap, totals
 from michelin.plan.edibility import (
     assessment,
     diner_status,
     edible_by,
+    for_whom,
     open_questions,
     veg_tag,
 )
@@ -359,6 +360,8 @@ def with_status(plan: Plan, menu: Menu, diners) -> Plan:
                     update={
                         "status": diner_status(menu.dish(i.dish_id), diners),
                         "veg_tag": veg_tag(menu.dish(i.dish_id), diners),
+                        "spice_label": spice.label(menu.dish(i.dish_id)),
+                        "heat_note": spice.heat_note(menu.dish(i.dish_id), diners),
                     }
                 )
                 for i in plan.items
@@ -831,6 +834,9 @@ def evaluate_menu(req: EvaluateRequest) -> dict:
             "questions": open_questions(d, req.diners),
             "status": diner_status(d, req.diners),
             "veg_tag": veg_tag(d, req.diners),
+            "spice_label": spice.label(d),
+            "heat_note": spice.heat_note(d, req.diners),
+            "for_whom": for_whom(d, req.diners),
         }
         for d in menu.dishes
     }
@@ -903,6 +909,7 @@ def _mock_solve(menu: Menu, request: TableRequest) -> Plan | Conflict:
             passed=covered,
             detail=cover_detail,
         ),
+        llm_planner.enough_check(menu, request, items),
         Check(
             name="budget",
             passed=subtotal <= cap + 1e-6,

@@ -502,15 +502,16 @@ export function SwapSheet({ menu, menus, menuId, plan, diners, excluded, old, mo
                           {d.family_id && <span className="tag-family" title={`One of ${others.length + 1} choices on the menu line ${d.family_name ?? ""}`}>{others.length + 1} choices of {d.family_name}</span>}
                           {(d.menu_marks ?? []).map((m) => <span key={m} className="tag-mark" title={MARK_LABEL[m]?.title}>Menu: {MARK_LABEL[m]?.short ?? m}</span>)}
                           {(() => { const v = vegTag(e?.veg_tag); return v && <span className={v.ask ? "tag-ask" : ""}><Leaf size={12} />{v.label}</span>; })()}
-                          {d.spice_level != null && d.spice_level > 0 && <span><Flame size={12} />{SPICE[d.spice_level]}</span>}
-                          {e && diners.length > 0 && notFor.length === 0 && <span className={unsure ? "tag-ask" : ""} title={unsure ? "Allowed for everyone only once the server confirms" : "Matches every diner's recorded requirements"}><Users size={12} />{fitsChip(diners.length, unsure)}</span>}
+                          {(e ? e.spice_label : d.spice_level ? SPICE[d.spice_level] : null) && <span><Flame size={12} />{e ? e.spice_label : SPICE[d.spice_level ?? 0]}</span>}
+                          {e && diners.length > 0 && notFor.length === 0 && !e.heat_note?.startsWith("Too spicy") && <span className={unsure ? "tag-ask" : ""} title={unsure ? "Allowed for everyone only once the server confirms" : "Matches every diner's recorded requirements"}><Users size={12} />{fitsChip(diners.length, unsure)}</span>}
                         </div>
                         {!e ? (
                           <p className="helper">Checking diner requirements…</p>
                         ) : (
-                          (notFor.length > 0 || askFor.length > 0) && (
+                          (notFor.length > 0 || askFor.length > 0 || !!e.heat_note) && (
                             <div className="dish-notes">
                               {notFor.map(p => <p className="not-for" key={p.id}><UserX size={13}/><span>{p.name}: {plainReason(e.blocked_for[p.id] ?? [], e.assessments?.[p.id]?.status === "requires_confirmation" || (e.blocked_for[p.id] ?? []).every(r => /^confirm/i.test(r)), p)}</span></p>)}
+                              {e.heat_note && <p><Flame size={13}/><span>{e.heat_note}</span></p>}
                               {askFor.map(p => <p className="ask-for" key={p.id}><CircleHelp size={13}/><span>{p.name}: {plainReason(e.assessments?.[p.id]?.reasons ?? [], true, p)}</span></p>)}
                             </div>
                           )

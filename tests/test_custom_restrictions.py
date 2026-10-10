@@ -218,7 +218,7 @@ def test_taste_chips_reach_the_planner_brief_and_never_exclude(sample_menu):
         custom_flags=[flag("kiwi", "allergy", "no")],
     )
     assert assessment(hot, zoe)["eligible"]  # tastes are soft: the rules never exclude for them
-    assert "avoid spice 2-3 unless nothing else fits" in llm_planner.SYSTEM
+    assert "too_spicy_for" in llm_planner.SYSTEM  # 2026-10-10: a taste conflict, never listed
 
 
 def test_cards_show_only_what_blocks_an_excluded_dish():

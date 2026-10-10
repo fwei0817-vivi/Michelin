@@ -35,13 +35,15 @@ from pathlib import Path
 
 from michelin import gemini, llm
 from michelin.explain import explain
-from michelin.plan import ai_text, refine
+from michelin.plan import ai_text, enough, refine, spice
 from michelin.plan import hints as rules_hints
 from michelin.plan.budget import cents, subtotal_cap, totals
 from michelin.plan.edibility import (
     ask_server,
     assessment,
+    diner_status,
     edible_by,
+    for_whom,
     risks,
 )
 from michelin.plan.score import variety_score
@@ -79,14 +81,20 @@ only if that diner is in the dish's "ok_for" list; never list anyone else in "fo
 - Kept dishes must be in the order.
 - The sum of the chosen dishes' prices must not exceed "menu_price_cap" (tax, tip and \
 rice are already taken out of the budget).
+Enough food (checked by the rules when the budget allows): at least one hot dish per \
+person ("course" hot_main or staple, i.e. fried rice or noodles; plain rice is extra; cold \
+dishes, soups, desserts, sides and unknown courses do not count), and every diner has at \
+least 2 dishes in their "ok_for" that are not in "ok_only_if_server_confirms", at least \
+one of them hot.
 You decide how many dishes to order. A good guideline is about one dish per person (rice \
 is added for everyone), more if dishes are small and the budget allows, fewer if they are \
 large or money is tight; make sure each diner has a fair share they can eat. Then, softly: \
 vary the main ingredients and cooking methods, and follow each diner's "notes" (their tastes \
 in their own words, e.g. "no spicy food, loves tofu": do not recommend a hot dish to someone \
 who avoids heat, in "for" or in the reason). Notes may start with quick taste picks: \
-"no spicy food" or "mild heat at most" means choose dishes with spice 0-1 for them and \
-avoid spice 2-3 unless nothing else fits; "loves spicy food" means include a hot dish they \
+"no spicy food" or "mild heat at most": a dish with spice 2-3 is a taste conflict for them \
+(its "too_spicy_for" lists them): never list it in their "for" and do not count it as their \
+dish; prefer spice 0, at most 1; "loves spicy food" means include a hot dish they \
 can eat; "likes seafood" or "likes meat dishes" means include one they can eat; "prefers \
 light..." (清淡) favours steamed, cold, soup and simple stir-fried dishes over deep-fried, \
 heavy braised or oily ones; "no offal" means avoid tripe, intestine, liver, kidney, blood. \
@@ -175,16 +183,27 @@ def brief(menu: Menu, request: TableRequest, hint: rules_hints.Hints | None = No
     for d in menu.dishes:
         if d.id in excluded or d.category.value == "staple" or d.price is None:
             continue
-        ok = edible_by(d, request.diners)
-        if not ok:
+        if not edible_by(d, request.diners):
             continue
+        ok = for_whom(d, request.diners)  # allergies, diets AND no taste conflict
         row = {
             "id": d.id,
             "name": d.name_en or d.name_zh,
             "price": d.price,
             "category": d.category.value,
+            "course": enough.course(d),
             "ok_for": ok,
         }
+        hot = [p.id for p in spice.too_spicy_for(d, request.diners)]
+        if hot:
+            row["too_spicy_for"] = hot
+        ask = [
+            pid
+            for pid, v in diner_status(d, request.diners).items()
+            if v["status"] == "needs_confirm" and pid in ok
+        ]
+        if ask:
+            row["ok_only_if_server_confirms"] = ask
         if d.name_zh:
             row["zh"] = d.name_zh
         if d.family_id:
@@ -192,8 +211,8 @@ def brief(menu: Menu, request: TableRequest, hint: rules_hints.Hints | None = No
             row["version"] = d.variant
         if d.menu_marks:
             row["menu_marks"] = [getattr(m, "value", m).replace("_", " ") for m in d.menu_marks]
-        if d.spice_level is not None:
-            row["spice"] = d.spice_level
+        if d.spice_level is not None or d.menu_spice is not None:
+            row["spice"] = spice.level(d)
         elif HOT_NAME.search(f"{d.name_en or ''} {d.name_zh or ''} {d.description_raw or ''}"):
             row["spice"] = "unknown, name suggests hot"
         if d.cooking_method:
@@ -342,11 +361,17 @@ def check(
             continue
         seen.add(dish_id)
         ok = set(edible_by(known[dish_id], request.diners))
+        fits = set(for_whom(known[dish_id], request.diners))
         for pid in row.get("for") or []:
             if pid in names and pid not in ok:
                 problems.append(
                     f"{dish_id} is not safe for {names[pid]} ({pid}) under their allergies or "
                     "diets; do not count it for them."
+                )
+            elif pid in names and pid not in fits:
+                problems.append(
+                    f"{dish_id} is too spicy for {names[pid]} ({pid}), who avoids heat; do not "
+                    "list or count it for them."
                 )
         items.append(PlanItem(dish_id=dish_id, quantity=1))
     problems += family_repeats(menu, request, [i.dish_id for i in items])
@@ -545,6 +570,7 @@ def _to_plan(menu: Menu, request: TableRequest, answer: dict, items: list) -> Pl
         ),
         Check(name="budget", passed=True, detail="The total includes tax and tip and fits."),
         Check(name="diets", passed=True, detail="Allergies and diets were checked per diner."),
+        enough_check(menu, request, items),
     ]
     return base.model_copy(
         update={
@@ -715,6 +741,18 @@ def _plain(text: str, label: str) -> str:
     return text if text.endswith(("?", ".")) else text + "?"
 
 
+def enough_check(menu: Menu, request: TableRequest, items) -> Check:
+    """The 'enough food' rule as a plan check (plan.enough), honest when unmet."""
+    line = enough.honest_line(menu, request, items)
+    return Check(
+        name="enough",
+        passed=line is None,
+        detail=line
+        or "At least one hot dish per person, and everyone has 2 dishes they can eat "
+        "without asking, one of them hot.",
+    )
+
+
 THIN = 2  # a diner with fewer non-rice dishes than this is under-served
 COVERAGE_NUDGE = True  # tests of other behaviour switch this off (conftest)
 
@@ -723,7 +761,7 @@ def counts(menu: Menu, request: TableRequest, items) -> dict[str, int]:
     """Non-rice dishes in the order each diner can eat."""
     known = {d.id: d for d in menu.dishes}
     dishes = [known[i.dish_id] for i in items if known[i.dish_id].category.value != "staple"]
-    ok = [set(edible_by(d, request.diners)) for d in dishes]
+    ok = [set(for_whom(d, request.diners)) for d in dishes]  # no taste conflicts counted
     return {p.id: sum(p.id in o for o in ok) for p in request.diners}
 
 
@@ -759,7 +797,7 @@ def coverage_fix(menu: Menu, request: TableRequest, items) -> CoverageFix | None
     for d in menu.dishes:
         if d.id in chosen or d.id in excluded or d.price is None or d.category.value == "staple":
             continue
-        ok = set(edible_by(d, request.diners))
+        ok = set(for_whom(d, request.diners))
         if not ok & least:
             continue
         options = [(None, [*items, PlanItem(dish_id=d.id, quantity=1)])]
@@ -804,7 +842,7 @@ def _apply_fix(answer: dict, fix: CoverageFix, menu: Menu, request: TableRequest
     rows = [
         r for r in answer.get("dishes", []) if isinstance(r, dict) and r.get("dish_id") != fix.drop
     ]
-    ok = edible_by(menu.dish(fix.add), request.diners)
+    ok = for_whom(menu.dish(fix.add), request.diners)
     rows.append({"dish_id": fix.add, "reason": "", "for": ok, "server_question": ""})
     return {**answer, "dishes": rows, "summary": ""}
 
@@ -818,7 +856,7 @@ def fallback(menu: Menu, request: TableRequest) -> tuple[dict, list] | None:
         {
             "dish_id": d.id,
             "reason": "",
-            "for": edible_by(d, request.diners),
+            "for": for_whom(d, request.diners),
             "server_question": "",
         }
         for d, _ in order
@@ -1185,6 +1223,7 @@ def _plan(menu, request, client=None, cache_path=None, feedback=None) -> Outcome
     turns = [llm.Turn("user", intro + "Brief:\n" + json.dumps(payload, ensure_ascii=False))]
     history: list[list[str]] = []
     answer: dict = {}
+    enough_asked, first_ok = False, None
     for attempt in range(1 + MAX_RETRIES):
         try:
             text, used = _ask(turns, schema, menu, request, client)
@@ -1226,6 +1265,36 @@ def _plan(menu, request, client=None, cache_path=None, feedback=None) -> Outcome
         else:
             problems, items = check(menu, request, answer, staples)
         history.append(problems)
+        if first_ok is not None:  # the 'enough food' retry: keep whichever order is better
+            short_now = enough.deficit([menu.dish(i.dish_id) for i in items], request.diners)
+            if problems or short_now >= first_ok[4]:
+                text, used, answer, items, _ = first_ok
+                problems = []
+            first_ok = None
+        elif not problems and not enough_asked and attempt < MAX_RETRIES:
+            dishes_now = [menu.dish(i.dish_id) for i in items]
+            short = enough.gaps(dishes_now, request.diners)
+            if short and enough.feasible(menu, request):
+                enough_asked = True
+                first_ok = (text, used, answer, items, enough.deficit(dishes_now, request.diners))
+                example = enough.cheapest(menu, request)
+                turns += [
+                    llm.Turn("model", text or ""),
+                    llm.Turn(
+                        "user",
+                        "That order is valid but not enough food for this table:\n- "
+                        + "\n- ".join(short)
+                        + (
+                            "\nAn order that meets this within the budget exists, e.g. "
+                            + ", ".join(d.id for d in example[0])
+                            + "."
+                            if example
+                            else ""
+                        )
+                        + "\nReturn the full corrected order in the same format.",
+                    ),
+                ]
+                continue
         if problems and hint is not None and hint.feasible is False:
             # Nothing can fit: no point retrying; say what to change.
             info = answer.get("no_fit") if isinstance(answer, dict) else None

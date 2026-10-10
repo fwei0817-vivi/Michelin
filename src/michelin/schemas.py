@@ -166,6 +166,9 @@ class Dish(BaseModel):
     menu_marks: list[MenuMark] = Field(default_factory=list)
     menu_spice: int | None = Field(default=None, ge=0, le=3)  # pepper icons, capped at 3
     menu_section: str | None = None  # the printed heading ("Dim Sum"), as read
+    # The course (2026-10-10, AI dish facts + printed category): hot_main, staple (fried
+    # rice/noodles; plain rice is category "staple"), cold, soup, dessert, side, unknown.
+    course: str | None = None
     # The AI's answer for a diner's own allergy or diet ("mango", "halal"); set by the server.
     custom_flags: list[CustomFlag] = Field(default_factory=list)
 
@@ -295,6 +298,8 @@ class PlanItem(BaseModel):
     # diner id -> {"status": "ok"|"needs_confirm"|"no", "reason": str|None}; filled by the
     # API from edibility.diner_status, the one source the web cards render (QA r15).
     status: dict[str, dict] = Field(default_factory=dict)
+    spice_label: str | None = None  # plan.spice.label: the card's one spice tag (2026-10-10)
+    heat_note: str | None = None  # plan.spice.heat_note: "Too spicy for <names>"
     veg_tag: str | None = None  # edibility.veg_tag: the card's vegetarian/vegan tag (QA r16)
 
 

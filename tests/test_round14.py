@@ -80,4 +80,4 @@ def test_code_reason_says_ask_the_server_when_the_card_does(demo):  # noqa: F811
         variety_score=0.5,
     )
     reason = explain(plan, menu, req).items[0].reason
-    assert "Ask the server first" in reason
+    assert "if the server confirms" in reason  # 2026-10-10 wording
