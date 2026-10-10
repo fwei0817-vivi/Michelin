@@ -449,7 +449,9 @@ def rows_to_dishes(rows: list[dict]) -> list[Dish]:
             cost = cost if cost is not None else price
             if cost is None:
                 continue
-            label = f"{stem} ({option})"
+            tail = re.fullmatch(r"(.+?)\s*\(([^()\d]+)\)", stem)
+            # "Kung Pao Chicken (Spicy)" keeps its printed word: "Kung Pao (Chicken, Spicy)".
+            label = f"{tail[1]} ({option}, {tail[2]})" if tail else f"{stem} ({option})"
             label_zh = (
                 f"{base_zh}（{option_zh}）"
                 if base_zh and option_zh and option_zh not in base_zh
@@ -466,7 +468,8 @@ def rows_to_dishes(rows: list[dict]) -> list[Dish]:
                     family_name=name,
                     variant=option,
                     menu_marks=marks,
-                    menu_spice=spicy,
+                    # A pepper printed on one choice only ("Hunan Fermented Chili 🌶").
+                    menu_spice=_spicy(c) if "spicy" in c else spicy,
                     menu_section=section,
                     confirm_with_staff=[
                         f"Confirm ingredients, allergens, and preparation for {label}."

@@ -142,7 +142,7 @@ def test_committed_cafe_mandarin_read_is_complete_and_has_facts(monkeypatch):
         "Cucumber Salad (Garlic)",
         "Cucumber Salad (Spicy Chili Oil)",
     }
-    for name in ("Yu Xiang (Pork)", "Kung Pao (Chicken)", "Broccoli (Chicken)"):
+    for name in ("Yu Xiang (Pork)", "Kung Pao (Chicken, Spicy)", "Broccoli (Chicken)"):
         d = next(x for x in dishes if x.name_en == name)
         assert "vegetarian_possible" in [m.value for m in d.menu_marks]
     menu = Menu(

@@ -1016,14 +1016,15 @@ def nothing_for(menu: Menu, request: TableRequest) -> Conflict | None:
         needs = [a.value.replace("_", " ") for a in p.allergies]
         needs += [x.value.replace("_", " ") for x in p.diets]
         needs += [*p.other_allergies, *p.other_diets]
-        soy_sauce = sum(
-            any(
-                f.allergen.value in ("wheat", "soy") and "soy sauce" in (f.reason or "").lower()
-                for f in d.allergens
-                if f.allergen in p.allergies
-            )
-            for d in dishes
-        )
+
+        # Counted the way the rules excluded them: a soy sauce the dish's facts name (as an
+        # ingredient, or as the reason for its wheat/soy flag), on a dish that is ruled out.
+        def uses_soy_sauce(d) -> bool:
+            names = [i.name for i in d.main_ingredients]
+            names += [f.reason or "" for f in d.allergens]
+            return any("soy sauce" in n.lower() or "酱油" in n for n in names)
+
+        soy_sauce = sum(uses_soy_sauce(d) for d in dishes)
         line = (
             f"Nothing on this menu is safe for {name} ({', '.join(needs) or 'their needs'}): "
             f"all {len(dishes)} dishes are ruled out or would need the kitchen to confirm."

@@ -16,12 +16,14 @@
     {
      "name_en": "Garlic",
      "name_zh": "蒜香",
-     "upcharge": ""
+     "upcharge": "",
+     "spicy": 0
     },
     {
      "name_en": "Spicy Chili Oil",
      "name_zh": "香辣红油",
-     "upcharge": ""
+     "upcharge": "",
+     "spicy": 1
     }
    ]
   },
@@ -362,7 +364,7 @@
    ]
   },
   {
-   "name_en": "Kung Pao Chicken",
+   "name_en": "Kung Pao Chicken (Spicy)",
    "name_zh": "宫保鸡 / 牛 / 虾 / 豆腐",
    "price": 18,
    "description": "Scallion | Peanut 葱 | 花生",
@@ -595,7 +597,6 @@
    "price": 24,
    "description": "Red Bell Pepper | Scallion 红椒 | 葱",
    "marks": [
-    "vegetarian_possible",
     "gluten_free_possible"
    ],
    "spicy": 1,
@@ -661,29 +662,33 @@
    "marks": [
     "gluten_free_possible"
    ],
-   "spicy": 1,
+   "spicy": 0,
    "section": "Chef's Recommendation",
    "choice_text": "Choice of Steamed w/ Ginger Scallion / Hunan Fermented Chili / Salt & Pepper / Sweet & Sour 姜葱豉油 / 湖南香辣 / 椒盐 / 糖醋",
    "choices": [
     {
      "name_en": "Steamed w/ Ginger Scallion",
      "name_zh": "姜葱豉油",
-     "upcharge": ""
+     "upcharge": "",
+     "spicy": 0
     },
     {
      "name_en": "Hunan Fermented Chili",
      "name_zh": "湖南香辣",
-     "upcharge": ""
+     "upcharge": "",
+     "spicy": 1
     },
     {
      "name_en": "Salt & Pepper",
      "name_zh": "椒盐",
-     "upcharge": ""
+     "upcharge": "",
+     "spicy": 0
     },
     {
      "name_en": "Sweet & Sour",
      "name_zh": "糖醋",
-     "upcharge": ""
+     "upcharge": "",
+     "spicy": 0
     }
    ]
   },
@@ -959,5 +964,6 @@
  "restaurant_name": "Cafe Mandarin 御庭",
  "legend": "Spicy V Vegetarian VP Vegetarian Possible V Vegan GP Gluten Free Possible",
  "model": "google/gemini-3.5-flash-lite",
- "version": "1"
+ "version": "1",
+ "edited": "Hand-checked against test-menus/cafe-mandarin.pdf (QA r10): Wok Cauliflower VP removed; per-choice peppers on Cucumber Salad and Fluke; 'Kung Pao Chicken (Spicy)' as printed."
 }
