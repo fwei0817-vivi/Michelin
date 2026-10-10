@@ -94,6 +94,7 @@ def diff(menu: Menu, before: list[tuple[str, int]], after: list[tuple[str, int]]
         "veg": total(a, _veg) - total(b, _veg),
         "dishes": sum(a.values()) - sum(b.values()),
         "names": {i: known[i].name_en or known[i].name_zh or i for i in {*a, *b} if i in known},
+        "spice_of": {i: _spice(known[i]) for i in {*a, *b} if i in known},
         "menu_names": {d.id: d.name_en or "" for d in menu.dishes},
     }
 
@@ -352,9 +353,22 @@ def _names_match(low: str, d: dict) -> bool:
     return True
 
 
+def card_words(note: str, d: dict) -> str:
+    """The cards' spice words in the note (QA r9): one pepper is "a little spicy", never
+    "mild"; a dish with no pepper is "not spicy"."""
+    levels = {d.get("spice_of", {}).get(i, 0) for i in d["added"]}
+    if not levels or not re.search(r"\bmild\b", note, re.IGNORECASE):
+        return note
+    word = "a little spicy" if levels == {1} else "non-spicy" if levels == {0} else None
+    if word is None:
+        return note
+    note = re.sub(r"\ban? mild\b", word, note, flags=re.IGNORECASE)
+    return re.sub(r"\bmild\b", word, note, flags=re.IGNORECASE)
+
+
 def final_note(ai_note: str | None, d: dict) -> tuple[str, bool]:
     """(note, from_ai): the AI's note when its claims match the diff, else the code's."""
     note = re.sub(r"\s+", " ", str(ai_note or "")).strip()
     if note and note_ok(note, d):
-        return note.rstrip(".") + ".", True
+        return card_words(note, d).rstrip(".") + ".", True
     return code_note(d), False

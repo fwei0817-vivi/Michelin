@@ -374,18 +374,39 @@ def _is_diet(term: str) -> bool:
     return t in _DIET_WORDS or t.endswith(("-free", " free", "friendly", "certified"))
 
 
-def ask_server(dish: Dish, flagged: list[Risk], follow_up: bool = False) -> str:
-    """One plain sentence a diner could say to the server, covering these risks:
-    "Is there any pork or lard in the Scallion Pancake (for David and Tom)?" As a follow-up
-    to a question that already names the dish: "Also, is there any pork in it (for Cai)?"
-    Diets get their own clause: "Is there any pork in the Fried Rice (for Ben), and is it
-    halal (for Mia)?" """
+# One concern per clause: "lard" and "minced pork" are the pork question.
+_CONCERN = {
+    "lard": "pork or lard",
+    "bacon": "pork",
+    "ham": "pork",
+    "minced pork": "pork",
+    "pork fat": "pork or lard",
+    "meat stock": "meat or meat stock",
+    "meat broth": "meat or meat stock",
+    "tree nut": "tree nuts",
+    "nuts": "tree nuts",
+    "shrimp": "shellfish",
+    "crab": "shellfish",
+}
+
+
+def ask_server(
+    dish: Dish, flagged: list[Risk], follow_up: bool = False, restricted: bool = True
+) -> str:
+    """One short question a diner could say to the server, covering these risks, one clause
+    per concern and no repeats: "Is there any pork or cilantro in the Yu Xiang (Tofu) (for
+    Cai and Mia), and is it vegetarian and halal (for Ben and Mia)?" Diets are asked as
+    "is it halal?", never as an ingredient. A dish's generic "confirm ingredients" note asks
+    only when someone at the table has an allergy or diet and nothing else is asked."""
     label = dish.name_en or dish.name_zh or dish.id
 
     def about(r: Risk) -> str:
-        t = r.about.replace("_", " ").strip()
-        return t[3:] if t.lower().startswith("no ") and not _is_diet(t) else t
+        t = r.about.replace("_", " ").strip().lower()
+        t = t[3:] if t.startswith("no ") and not _is_diet(t) else t
+        return _CONCERN.get(t, t)
 
+    generic = [r for r in flagged if about(r) in ("ingredients", "ingredient")]
+    flagged = [r for r in flagged if r not in generic]
     spice = [r for r in flagged if r.about == "spice level"]
     rest = [r for r in flagged if r.about != "spice level"]
     ingr = [r for r in rest if not _is_diet(about(r))]
@@ -408,8 +429,10 @@ def ask_server(dish: Dish, flagged: list[Risk], follow_up: bool = False) -> str:
     if spice:
         clauses.append(("how spicy is it" if clauses else f"how spicy is {where}", names(spice)))
     if not clauses:
-        clauses.append((f"is there anything to check in {where}", []))
-    every = names(flagged)
+        if not (generic and restricted):
+            return ""
+        clauses.append((f"what goes into {where}, including the sauce", []))
+    every = names([*ingr, *diet, *spice])
     split = len({tuple(n) for _, n in clauses if n}) > 1
     parts = []
     for text, who in clauses:
@@ -419,7 +442,12 @@ def ask_server(dish: Dish, flagged: list[Risk], follow_up: bool = False) -> str:
     text = ", and ".join(parts)
     if not split and every:
         text += f" (for {_join(every, 'and')})"
-    text = ("Also, " + text) if follow_up else text[0].upper() + text[1:]
+    if follow_up:
+        text = "Also, " + text
+    elif text.startswith("what"):
+        text = "Can you tell us " + text
+    else:
+        text = text[0].upper() + text[1:]
     return text + "?"
 
 

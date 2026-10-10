@@ -658,30 +658,21 @@ def _misstates(text: str, diners) -> bool:
 
 
 def server_questions(answer: dict, selected, request: TableRequest) -> dict[str, str]:
-    """One line per dish for the server: the model's question, plus the rule-based question
-    for any flagged risk it does not cover (a named diner and the risk's word must appear)."""
-    written = {
-        r["dish_id"]: str(r.get("server_question") or "").strip()[:300]
-        for r in answer.get("dishes") or []
-        if isinstance(r, dict)
-    }
+    """One short question per dish, built by the code from the checks it needs (QA r9 Q-2:
+    the AI's freeform questions repeated "pork" and folded halal into a "since Mia avoids..."
+    sentence). The AI's dish questions are not used; one clause per concern, no repeats."""
     out: dict[str, str] = {}
     for d, _ in selected:
-        label = d.name_en or d.name_zh or d.id
         flagged = risks(d, request.diners)
-        mine = _plain(written.get(d.id, ""), label)
-        if _misstates(mine, request.diners) or _off_topic(mine, d, request.diners, flagged):
-            # Never show a need the diner does not have, a question for someone the dish is
-            # not for, or a concern nothing on this dish involves; the rule questions stand.
-            mine = ""
-        missing = [r for r in flagged if not (mine and r.covered_by(mine))]
-        if not mine and not missing:
-            continue
-        # A skipped risk gets the rules' own plain question, after the model's.
-        out[d.id] = " ".join(
-            x for x in [mine, ask_server(d, missing, bool(mine)) if missing else ""] if x
-        )
+        if flagged:
+            text = ask_server(d, flagged, restricted=any(_restricted(p) for p in request.diners))
+            if text:
+                out[d.id] = text
     return out
+
+
+def _restricted(p) -> bool:
+    return bool(p.allergies or p.diets or p.other_allergies or p.other_diets)
 
 
 def _plain(text: str, label: str) -> str:
@@ -1005,8 +996,55 @@ def _already_mild(menu: Menu, request: TableRequest, feedback) -> Outcome | None
     )
 
 
+def nothing_for(menu: Menu, request: TableRequest) -> Conflict | None:
+    """A diner with no dish on the menu at all (QA r9: a wheat allergy at Wo Hop, where
+    soy sauce, which contains wheat, is in nearly everything). Said plainly, with the main
+    reason, before any model call; the rules stay strict."""
+    excluded = set(request.excluded_dish_ids)
+    dishes = [
+        d
+        for d in menu.dishes
+        if d.price is not None and d.category.value != "staple" and d.id not in excluded
+    ]
+    if not dishes:
+        return None
+    lines = []
+    for p in request.diners:
+        if any(p.id in edible_by(d, [p]) for d in dishes):
+            continue
+        name = p.name or p.id
+        needs = [a.value.replace("_", " ") for a in p.allergies]
+        needs += [x.value.replace("_", " ") for x in p.diets]
+        needs += [*p.other_allergies, *p.other_diets]
+        soy_sauce = sum(
+            any(
+                f.allergen.value in ("wheat", "soy") and "soy sauce" in (f.reason or "").lower()
+                for f in d.allergens
+                if f.allergen in p.allergies
+            )
+            for d in dishes
+        )
+        line = (
+            f"Nothing on this menu is safe for {name} ({', '.join(needs) or 'their needs'}): "
+            f"all {len(dishes)} dishes are ruled out or would need the kitchen to confirm."
+        )
+        if soy_sauce and {a.value for a in p.allergies} & {"wheat", "soy"}:
+            line += (
+                f" {soy_sauce} of them use soy sauce, and regular soy sauce is brewed from soy "
+                "and wheat. Ask the restaurant for a dish made without soy sauce (or with "
+                "gluten-free tamari) and add it to the menu, or choose another restaurant."
+            )
+        lines.append(line)
+    if not lines:
+        return None
+    return Conflict(code="missing_information", message=" ".join(lines), relaxations=[])
+
+
 def _plan(menu, request, client=None, cache_path=None, feedback=None) -> Outcome:
     cache_path = cache_path or CACHE_PATH
+    empty = nothing_for(menu, request)
+    if empty is not None:
+        return Outcome(None, empty, "Someone has nothing to eat on this menu.", 0, [])
     if not enabled() and client is None:
         return _unavailable(
             "Recommendations need an AI model, and none is configured on this server. "

@@ -110,7 +110,7 @@ def test_photo_uses_gemini_and_ai_dish_facts(monkeypatch):
     assert evaluation[eggplant["id"]]["questions"]
     call = fake_client.models.calls[0]
     assert call["model"] == "gemini-3.8-flash"
-    assert call["config"].temperature is None  # Gemini 3: keep the default temperature
+    assert call["config"].temperature == 0  # QA r9: the menu read is deterministic (and cached)
     assert "Gemini (gemini-3.8-flash) read the dish names" in body["notice"]
     assert "No model API" not in body["notice"]
     assert "likely ingredients and allergens from its name" in body["notice"]

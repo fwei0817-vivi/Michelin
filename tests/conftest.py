@@ -55,6 +55,9 @@ def recorded_dish_facts(request, monkeypatch, tmp_path):
     from michelin.plan import dish_facts
 
     monkeypatch.setattr(dish_facts, "CACHE_PATH", tmp_path / "dish_facts.json")
+    from michelin.parse import vision
+
+    monkeypatch.setattr(vision, "READ_CACHE", tmp_path / "menu_reads")
     if "real_dish_facts" not in request.keywords:
 
         def recorded(menu, client=None, diners=None):

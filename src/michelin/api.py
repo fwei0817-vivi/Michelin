@@ -572,6 +572,16 @@ def _pages(req: ParseRequest) -> list[tuple[bytes, str]]:
     return pages
 
 
+def _uploads(req: ParseRequest) -> list[bytes]:
+    """The uploaded files' bytes, in order (the menu-read cache key)."""
+    import base64
+
+    return [
+        base64.b64decode(e)
+        for e in [*([req.image_base64] if req.image_base64 else []), *req.images_base64]
+    ]
+
+
 def _image_mime(image: bytes) -> str | None:
     if image.startswith(b"\x89PNG"):
         return "image/png"
@@ -679,10 +689,11 @@ def parse_menu(req: ParseRequest) -> dict:
     pages = _pages(req)
     if pages and vision.configured():
         try:
+            key = vision.read_key(_uploads(req))
             if len(pages) == 1:
-                read = vision.read_menu_photo(*pages[0])
+                read = vision.read_menu_photo(*pages[0], key=key)
             else:
-                read = vision.read_menu_pages(pages)
+                read = vision.read_menu_pages(pages, key=key)
             dishes, printed_name, used_model = read[:3]
             legend = read[3] if len(read) > 3 else ""
         except gemini.RateLimited as exc:

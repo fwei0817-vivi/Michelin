@@ -113,9 +113,48 @@ def bare(menu: Menu) -> Menu:
     )
 
 
+_PUNCT = str.maketrans(
+    {
+        "\u2018": "'",
+        "\u2019": "'",
+        "\u201a": "'",
+        "\u201b": "'",
+        "\u2032": "'",
+        "\u201c": '"',
+        "\u201d": '"',
+        "\u201e": '"',
+        "\u2033": '"',
+        "\u2010": "-",
+        "\u2011": "-",
+        "\u2012": "-",
+        "\u2013": "-",
+        "\u2014": "-",
+        "\u2015": "-",
+        "\u2026": "...",
+        "\u00a0": " ",
+        "\u3000": " ",
+        "\uff08": "(",
+        "\uff09": ")",
+        "\uff0c": ",",
+        "\uff1a": ":",
+        "\uff0f": "/",
+        "\uff5c": "|",
+        "\u00b4": "'",
+        "\u0060": "'",
+    }
+)
+
+
+def ascii_punct(text: str) -> str:
+    """Curly quotes, dashes and full-width marks as their plain forms (QA r9: "General
+    Tso’s" and "General Tso's" are one dish)."""
+    return text.translate(_PUNCT)
+
+
 def norm(name: str | None) -> str:
     """'Crystal Shrimp Dumplings (4)' and 'crystal shrimp dumplings (5 pcs)' are one dish."""
-    text = unicodedata.normalize("NFKD", name or "").encode("ascii", "ignore").decode().lower()
+    text = unicodedata.normalize("NFKD", ascii_punct(name or "")).encode("ascii", "ignore")
+    text = text.decode().lower()
     text = re.sub(
         r"\((?:\d+\s*(?:pcs?|pieces?)?|\w*\s*pcs?)\)|\b\d+\s*(?:pcs?|pieces?)\b", " ", text
     )

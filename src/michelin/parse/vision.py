@@ -14,10 +14,13 @@ OCR, then to text paste. Only the image is sent.
 
 from __future__ import annotations
 
+import hashlib
 import json
+import logging
 import os
 import re
 import unicodedata
+from pathlib import Path
 
 from michelin import gemini, llm  # noqa: F401 - gemini is patched in tests
 from michelin.schemas import MAX_MENU_DISHES, Dish
@@ -489,27 +492,75 @@ def nice_name(name: str) -> str:
 
 
 def read_menu_photo(
-    image: bytes, mime: str, client=None
+    image: bytes, mime: str, client=None, key: str | None = None
 ) -> tuple[list[Dish], str | None, str, str]:
     """(dishes, restaurant name if printed, model used, printed legend). Raises
     gemini.RateLimited on 429, and other errors on transport or malformed output."""
-    return read_menu_pages([(image, mime)], client)
+    return read_menu_pages([(image, mime)], client, key)
 
 
 def _ask(pages: list[tuple[bytes, str]], client=None) -> tuple[dict, str]:
     prompt = PROMPT + (PAGES.format(n=len(pages)) if len(pages) > 1 else "")
     (first, mime), more = pages[0], pages[1:]
     turn = llm.Turn("user", prompt, first, mime, more=list(more))
-    text, used = llm.generate_json("vision", turns=[turn], schema=SCHEMA, client=client)
+    text, used = llm.generate_json(
+        "vision", turns=[turn], schema=SCHEMA, client=client, temperature=0
+    )
     body = json.loads(text)
     return (body if isinstance(body, dict) else {}), used
 
 
+# The model's raw read of an upload, cached by the file contents (QA r9 MU-1: two reads of
+# one PDF differed). Bump READ_VERSION when the reading prompt or schema changes; the
+# prompt text is hashed into the key too, so an edit can never serve a stale read.
+READ_VERSION = "1"
+READ_CACHE = Path(
+    os.environ.get("MICHELIN_READ_CACHE", Path(__file__).resolve().parents[3] / "data/menu_reads")
+)
+
+
+def read_key(files: list[bytes]) -> str:
+    """The uploaded files' ordered content hashes plus the reading prompt's version."""
+    prompt = hashlib.sha256(
+        (PROMPT + PAGES + json.dumps(SCHEMA, sort_keys=True)).encode()
+    ).hexdigest()[:12]
+    hashes = [hashlib.sha256(f).hexdigest() for f in files]
+    return hashlib.sha256(f"{READ_VERSION}|{prompt}|{'|'.join(hashes)}".encode()).hexdigest()[:32]
+
+
+def cached_read(key: str) -> dict | None:
+    try:
+        raw = json.loads((READ_CACHE / f"{key}.json").read_text())
+    except (OSError, ValueError):
+        return None
+    return raw if isinstance(raw, dict) and isinstance(raw.get("rows"), list) else None
+
+
+def _save_read(key: str, read: dict) -> None:
+    try:
+        READ_CACHE.mkdir(parents=True, exist_ok=True)
+        tmp = READ_CACHE / f"{key}.{os.getpid()}.tmp"
+        tmp.write_text(json.dumps(read, ensure_ascii=False, indent=1))
+        tmp.replace(READ_CACHE / f"{key}.json")
+    except OSError:
+        logging.getLogger("michelin").warning("Could not save the menu read", exc_info=True)
+
+
 def read_menu_pages(
-    pages: list[tuple[bytes, str]], client=None
+    pages: list[tuple[bytes, str]], client=None, key: str | None = None
 ) -> tuple[list[Dish], str | None, str, str]:
     """Several photos (or PDF pages) of one menu, merged into one menu: one vision call when
-    the pages fit together, else one call per page; dishes printed twice are kept once."""
+    the pages fit together, else one call per page; dishes printed twice are kept once.
+    With a `key` (see read_key) the same upload is read once and then served from cache."""
+    hit = cached_read(key) if key else None
+    if hit is not None:
+        name = nice_name(str(hit.get("restaurant_name") or "")) or None
+        return (
+            rows_to_dishes(hit["rows"]),
+            name,
+            f"{hit.get('model', '')} (cached)",
+            hit.get("legend", ""),
+        )
     pages = pages[:MAX_PAGES]
     if sum(len(p) for p, _ in pages) <= ONE_CALL_BYTES:
         batches = [pages]
@@ -524,4 +575,15 @@ def read_menu_pages(
         legends.append(str(body.get("legend") or "").strip())
     name = nice_name(next((n for n in names if n), "")) or None
     legend = " ".join(dict.fromkeys(x for x in legends if x))[:300]
+    if key and rows:
+        _save_read(
+            key,
+            {
+                "rows": rows,
+                "restaurant_name": name or "",
+                "legend": legend,
+                "model": used,
+                "version": READ_VERSION,
+            },
+        )
     return rows_to_dishes(rows), name, used, legend

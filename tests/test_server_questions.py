@@ -80,9 +80,10 @@ def test_model_questions_replace_the_templates_one_per_dish(tmp_path):
     out, calls = plan_with(answer(good), tmp_path)
     assert out.plan is not None and len(calls) == 1  # no extra model call
     asked = out.plan.confirm_with_staff
+    # QA r9: the code writes one short question per dish; the model's wording is not used.
     assert asked == [
-        "Scallion Pancake: " + good["scallion_pancake"],  # the model forgot the dish name
-        good["eggplant_with_garlic_sauce"],  # names "garlic sauce": no prefix needed
+        "Is there any pork or lard in the Scallion Pancake (for Ben and Cai)?",
+        "Is there any pork in the Eggplant with Garlic Sauce (for Ben and Cai)?",
     ]
     by_id = {i.dish_id: i.server_question for i in out.plan.items}
     assert by_id["eggplant_with_garlic_sauce"] == asked[1]
@@ -96,13 +97,12 @@ def test_a_missed_risk_gets_the_rule_question_appended(tmp_path):
     out, _ = plan_with(answer(partial), tmp_path)
     by_id = {i.dish_id: i.server_question for i in out.plan.items}
     egg = by_id["eggplant_with_garlic_sauce"]
-    assert egg == (
-        "Eggplant with Garlic Sauce: Ben is vegetarian: does it have minced pork? "
-        "Also, is there any minced pork in it (for Ben and Cai)?"
-    )
-    # No question at all from the model: the rules' own plain question.
     assert (
-        by_id["scallion_pancake"] == "Is there any lard in the Scallion Pancake (for Ben and Cai)?"
+        egg == "Is there any pork in the Eggplant with Garlic Sauce (for Ben and Cai)?"
+    )  # one clause for pork, never asked twice
+    assert (
+        by_id["scallion_pancake"]
+        == "Is there any pork or lard in the Scallion Pancake (for Ben and Cai)?"
     )
 
 
@@ -115,8 +115,9 @@ def test_rule_questions_skip_what_nobody_at_the_table_avoids():
     alice_only = [DINERS[0]]  # peanut allergy only: lard does not matter to her
     assert [r.about for r in risks(pancake, alice_only)] == []
     flagged = risks(pancake, DINERS)
-    assert ask_server(pancake, flagged) == (
-        "Is there any lard in the Scallion Pancake (for Ben and Cai)?"
+    assert (
+        ask_server(pancake, flagged)
+        == "Is there any pork or lard in the Scallion Pancake (for Ben and Cai)?"
     )
 
 
@@ -213,7 +214,7 @@ def test_q2_raw_labels_are_humanised():
         "scallion_pancake",
         "Is there any lard in the scallion pancake, for Ben (vegetarian) and Cai (no_pork)?",
     )
-    assert q == "Is there any lard in the scallion pancake, for Ben (vegetarian) and Cai (no pork)?"
+    assert q == "Is there any pork or lard in the Scallion Pancake (for Ben and Cai)?"
     # Rule fallbacks and the brief never carry raw ids either.
     assert "_" not in _asked("eggplant_with_garlic_sauce", "")
     brief = json.dumps(llm_planner.brief(MENU, REQUEST))
@@ -222,7 +223,10 @@ def test_q2_raw_labels_are_humanised():
 
 def test_q2_a_true_question_still_passes():
     q = "Is there any minced pork in the eggplant, since Ben is vegetarian and Cai avoids pork?"
-    assert _asked("eggplant_with_garlic_sauce", q) == q
+    assert (
+        _asked("eggplant_with_garlic_sauce", q)
+        == "Is there any pork in the Eggplant with Garlic Sauce (for Ben and Cai)?"
+    )  # no "since X avoids" text
 
 
 def test_q2_swap_path_drops_the_same_questions(tmp_path, monkeypatch):

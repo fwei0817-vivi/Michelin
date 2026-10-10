@@ -98,7 +98,7 @@ def test_all_pages_go_in_one_request(monkeypatch):
 def test_api_reads_several_pages_as_one_menu(monkeypatch):
     seen = []
 
-    def fake(pages, client=None):
+    def fake(pages, client=None, key=None):
         seen.append([m for _, m in pages])
         return vision.rows_to_dishes(PAGE1["dishes"] + PAGE2["dishes"]), "Cafe", "m", ""
 
