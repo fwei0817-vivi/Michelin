@@ -38,7 +38,8 @@ def test_q2_yu_xiang_tofu_gets_one_short_question():
     low = q.lower()
     assert low.count("pork") <= 1 and "since" not in low and "avoids" not in low
     assert "also," not in low and q.count("?") == 1
-    assert "halal" in low and "halal in" not in low and "or halal" not in low
+    # r22: a vegetarian dish is plainly halal; Mia's halal is asked as its pork risk
+    assert ("halal" in low or "pork" in low) and "halal in" not in low and "or halal" not in low
     assert q.startswith("Is there any ") and "Yu Xiang (Tofu)" in q
 
 

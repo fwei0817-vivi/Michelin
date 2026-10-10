@@ -154,7 +154,7 @@ def annotate(dishes: list, client=None) -> list:
 
 _SNACK = re.compile(
     r"\bchips\b|crackers?|crispy noodles\b|"
-    r"\bwings?\b|nuggets?|\bfries\b|虾片|蝦片|脆面|脆麵",
+    r"\bwings?\b|nuggets?|\bfries\b|spicy strips?|latiao|辣条|辣條|虾片|蝦片|脆面|脆麵",
     re.IGNORECASE,
 )
 _WING = re.compile(r"\bwings?\b|鸡翼|雞翼|鸡翅|雞翅", re.IGNORECASE)

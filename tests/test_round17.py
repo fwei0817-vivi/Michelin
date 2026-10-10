@@ -36,6 +36,11 @@ def halal_possible(monkeypatch):
 
     monkeypatch.setattr(custom_facts, "_ask", fake)
     monkeypatch.setattr(llm, "provider", lambda *a, **k: "fake")
+    # these tests are about labels when someone has only to-confirm dishes; since r22 a
+    # plainly vegetarian dish is halal without asking, so switch that shortcut off here
+    from michelin.plan import edibility
+
+    monkeypatch.setattr(edibility, "_plainly_fits", lambda dish, term: False)
 
 
 def check_subtitle(text, menu, req, ids):

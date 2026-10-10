@@ -234,6 +234,8 @@ def top_up(menu, request, items):
                 continue
             if any(spice.taste(d, p) for p in request.diners):  # no heat for no-heat diners
                 continue
+            if not is_hot(d):  # QA r22: only dishes that count toward the rule (no snacks)
+                continue
             new = _deficit_v([*base, vec[d.id]], n)
             if new < cur:
                 cands.append(((new, sub0 + d.price, 0), d.id, None))

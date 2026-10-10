@@ -44,7 +44,8 @@ def test_r14_repro_beef_for_alice_is_a_plain_can_eat(demo):  # noqa: F811
 def test_tomato_egg_still_needs_confirming(demo):  # noqa: F811
     menu, req = _setup(demo, mia_flags=True)
     line = ai_swap._line(menu, req, "broccoli_tofu", "tomato_egg", None)
-    assert "everyone can eat it if the server confirms" in line
+    # r22: no meat, no alcohol, no pork risk -> halal needs no question
+    assert "everyone can eat it" in line and "server" not in line
 
 
 @pytest.mark.ai_prose
@@ -80,4 +81,4 @@ def test_code_reason_says_ask_the_server_when_the_card_does(demo):  # noqa: F811
         variety_score=0.5,
     )
     reason = explain(plan, menu, req).items[0].reason
-    assert "if the server confirms" in reason  # 2026-10-10 wording
+    assert reason == "Everyone can share this."  # r22: Tomato & Egg is plainly halal

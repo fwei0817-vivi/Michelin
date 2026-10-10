@@ -1233,7 +1233,8 @@ def _plan(menu, request, client=None, cache_path=None, feedback=None) -> Outcome
             return Outcome(
                 _to_plan(menu, request, stored["answer"], items),
                 None,
-                f"AI plan by {llm.label(stored['model'])}, checked by the rules (cached).",
+                f"AI plan by {llm.label(stored['model'])}, checked by the rules (cached)."
+                + str(stored.get("note") or ""),  # QA r22: the top-up note survives the cache
                 cached=True,
                 answer=stored["answer"],
             )
@@ -1342,6 +1343,7 @@ def _plan(menu, request, client=None, cache_path=None, feedback=None) -> Outcome
         if not problems:
             calls = attempt + 1
             note = ""
+            added_names = ""
             topped = enough.top_up(menu, request, items) if ENOUGH_FIX else None
             if topped is not None:  # QA r20: the code meets the rule itself when it can
                 _, added, dropped = topped
@@ -1349,8 +1351,7 @@ def _plan(menu, request, client=None, cache_path=None, feedback=None) -> Outcome
                 problems2, items2 = check(menu, request, answer2, staples)
                 if not problems2:  # never ship an order that fails a rule
                     answer, items = answer2, items2
-                    names = ", ".join(menu.dish(i).name_en or i for i in added)
-                    note = f" The rules added {names} so there is enough food."
+                    added_names = ", ".join(menu.dish(i).name_en or i for i in added)
             fix = coverage_fix(menu, request, items) if COVERAGE_NUDGE else None
             if fix is not None:
                 # QA r5 #8: a valid in-budget change serves a least-served diner better.
@@ -1376,12 +1377,19 @@ def _plan(menu, request, client=None, cache_path=None, feedback=None) -> Outcome
                     log.warning("Coverage retry failed: %s", type(exc).__name__)
                 if better is not None:
                     answer, items, used = better
-                    note = " The AI evened out who can eat what when asked."
+                    note += " The AI evened out who can eat what when asked."
                 else:
                     answer = _apply_fix(answer, fix, menu, request)
                     problems, items = check(menu, request, answer, staples)
-                    note = " The rules swapped one dish so the least-served diner has more."
-            _cache_put(key, {"model": used, "answer": answer}, cache_path)
+                    note += " The rules swapped one dish so the least-served diner has more."
+            if added_names:  # QA r22: claim "enough" only if the final order meets the rule
+                short = enough.honest_line(menu, request, items)
+                note = (
+                    f" The rules added {added_names} so there is enough food."
+                    if short is None
+                    else f" The rules added {added_names}, but the order is still short: {short}"
+                ) + note
+            _cache_put(key, {"model": used, "answer": answer, "note": note}, cache_path)
             retried = f" after {attempt} correction{'s' * (attempt > 1)}" if attempt else ""
             return Outcome(
                 _to_plan(menu, request, answer, items),

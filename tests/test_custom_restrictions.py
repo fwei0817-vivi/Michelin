@@ -108,6 +108,7 @@ def test_diet_likely_excludes_possible_asks_but_stays_eligible():
     pork = dish("Pork Bun", flag("halal", "diet", "likely"), flag("no alcohol", "diet", "no"))
     assert not assessment(pork, OMAR)["eligible"]
     greens = dish("Greens", flag("halal", "diet", "no"), flag("no alcohol", "diet", "possible"))
+    greens = greens.model_copy(update={"contains_pork": False})  # r22: halal >= no pork
     a = assessment(greens, OMAR)
     assert a["eligible"] and a["status"] == "requires_confirmation"
     assert any("alcohol or cooking wine" in q for q in open_questions(greens, [OMAR]))
