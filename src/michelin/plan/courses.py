@@ -148,7 +148,40 @@ def annotate(dishes: list, client=None) -> list:
         if new:
             _save(new)
             cache = {**cache, **new}
-    return [d.model_copy(update={"course": _course(d, cache)}) for d in dishes]
+    out = [d.model_copy(update={"course": _course(d, cache)}) for d in dishes]
+    return _snacks(out)
+
+
+_SNACK = re.compile(
+    r"\bchips\b|crackers?|crispy noodles\b|"
+    r"\bwings?\b|nuggets?|\bfries\b|虾片|蝦片|脆面|脆麵",
+    re.IGNORECASE,
+)
+_WING = re.compile(r"\bwings?\b|鸡翼|雞翼|鸡翅|雞翅", re.IGNORECASE)
+
+
+def _snacks(dishes: list) -> list:
+    """QA r21: a snack (chips, crackers, Crispy Noodles at $1.75, or anything priced far
+    below the menu's usual hot dish) is a side, never a hot main or staple. Wings are hot
+    finger food: a side, never cold."""
+    hot = sorted(d.price for d in dishes if d.course == "hot_main" and d.price)
+    median = hot[len(hot) // 2] if hot else None
+    out = []
+    for d in dishes:
+        text = f"{d.name_en or ''} {d.name_zh or ''}"
+        c = d.course
+        if (
+            c == "cold"
+            and _WING.search(text)
+            or c in ("hot_main", "staple")
+            and (
+                (_SNACK.search(text) and not _WING.search(text))
+                or (median and d.price and d.price < 0.35 * median)
+            )
+        ):
+            c = "side"
+        out.append(d if c == d.course else d.model_copy(update={"course": c}))
+    return out
 
 
 _NOODLE = re.compile(

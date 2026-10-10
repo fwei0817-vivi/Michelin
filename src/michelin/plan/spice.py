@@ -85,10 +85,11 @@ def heat_note(dish, diners) -> str | None:
     hot = [p.name or p.id for p in diners if taste(dish, p) == "too_spicy"]
     little = [p.name or p.id for p in diners if taste(dish, p) == "a_little_spicy"]
     parts = []
+    # the level itself is the card's tag; this says only who it concerns (QA r21)
     if hot:
-        parts.append(f"Too spicy for {_join(hot)}")
+        parts.append(f"Not for {_join(hot)}, who {'avoids' if len(hot) == 1 else 'avoid'} heat")
     if little:
         parts.append(
-            f"A little spicy for {_join(little)}, who {'avoids' if len(little) == 1 else 'avoid'} heat"
+            f"{_join(little)} {'avoids' if len(little) == 1 else 'avoid'} heat; ask for it mild"
         )
     return "; ".join(parts) or None

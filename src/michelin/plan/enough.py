@@ -14,6 +14,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
+from michelin.plan import spice
 from michelin.plan.budget import subtotal_cap, totals
 from michelin.plan.dish_facts import course_of
 from michelin.plan.edibility import diner_status, edible_by
@@ -230,6 +231,8 @@ def top_up(menu, request, items):
         cands = []
         for d in pool:
             if d.id in have:
+                continue
+            if any(spice.taste(d, p) for p in request.diners):  # no heat for no-heat diners
                 continue
             new = _deficit_v([*base, vec[d.id]], n)
             if new < cur:

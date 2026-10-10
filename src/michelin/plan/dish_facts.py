@@ -757,6 +757,18 @@ def plain_rice_only(dish: Dish) -> Dish:
     counts as food and can be picked from the menu. Its course says "staple"."""
     if dish.category == DishCategory.STAPLE and not is_plain_rice(dish):
         return dish.model_copy(update={"category": DishCategory.OTHER, "course": "staple"})
+    if is_plain_rice(dish) and not dish.allergens:
+        # plain steamed rice has none of the nine allergens and no meat (QA r21): no
+        # "ask the server" unless a fact or the menu says otherwise
+        return dish.model_copy(
+            update={
+                "reviewed_allergens": list(Allergen),
+                "is_vegetarian": True if dish.is_vegetarian is None else dish.is_vegetarian,
+                "is_vegan": True if dish.is_vegan is None else dish.is_vegan,
+                "contains_pork": False if dish.contains_pork is None else dish.contains_pork,
+                "contains_beef": False if dish.contains_beef is None else dish.contains_beef,
+            }
+        )
     return dish
 
 

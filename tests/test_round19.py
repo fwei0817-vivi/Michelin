@@ -74,12 +74,12 @@ def test_one_spice_source_for_tag_and_reason(cafe_mandarin):
     for d in cafe_mandarin.dishes:
         r = explain.reason_for(d, 1, req)
         lab = spice.label(d)
-        if lab:  # said once: as the closing label, or "a little spicy for X" (r20)
-            assert r.endswith(f" {lab}.") or f"{lab.lower()} for " in r, (d.id, r)
-            assert r.lower().replace("too spicy", "").count(lab.lower()) == 1, (d.id, r)
-        for other in spice.LABELS[1:]:
-            if other != lab:
-                assert not r.endswith(f" {other}."), (d.id, r)
+        # r21: the level is said once per card, by its tag; the reason and the heat note
+        # never repeat a spice level
+        assert "spicy" not in r.lower(), (d.id, r)
+        note = (spice.heat_note(d, YUKINO) or "").lower()
+        assert not any(x.lower() in note for x in spice.LABELS[1:]), (d.id, note)
+        assert lab is None or lab == spice.label(d)
 
 
 def test_yukino_table_taste_conflicts_never_listed(cafe_mandarin):
@@ -92,21 +92,21 @@ def test_yukino_table_taste_conflicts_never_listed(cafe_mandarin):
         fw = set(for_whom(d, YUKINO))
         for p in YUKINO:
             if st[p.id]["taste"] == "too_spicy":
-                assert p.id not in fw and "too spicy for" in r, (d.id, r)
+                assert p.id not in fw and p.name not in r.split(";")[0], (d.id, r)
         if spice.level(d) >= 2:
             assert not {"li", "kevin"} & fw, d.id
-            assert "Too spicy for Li and Kevin" in (spice.heat_note(d, YUKINO) or ""), d.id
+            assert "Not for Li and Kevin, who avoid heat" in (spice.heat_note(d, YUKINO) or ""), d.id
         if r.startswith("Everyone can share this"):
             assert fw == {p.id for p in YUKINO}, (d.id, r)
         if spice.level(d) == 1 and {"li", "kevin"} <= fw:
-            assert "a little spicy for Li and Kevin" in r, (d.id, r)
+            assert "Li and Kevin avoid heat; ask for it mild" in (spice.heat_note(d, YUKINO) or "")
 
 
 def test_hot_sour_soup_tag_reason_agree(cafe_mandarin):
     d = cafe_mandarin.dish("hot_sour_soup")
     r = explain.reason_for(d, 1, _req(YUKINO))
-    assert spice.label(d).lower() in r.lower()
-    assert ("Spicy." in r) == (spice.label(d) == "Spicy")
+    assert "spicy" not in r.lower()  # the tag alone says it (r21)
+    assert spice.label(d) in spice.LABELS
 
 
 def test_server_confirm_phrasing():
@@ -132,9 +132,9 @@ def test_too_spicy_dish_synthetic_diners():
     x = DinerProfile(id="x", name="Xia", notes="no spicy food please")
     y = DinerProfile(id="y", name="Yan")
     r = explain.reason_for(hot, 1, _req([x, y]))
-    assert r == "For Yan; too spicy for Xia. Spicy.", r
+    assert r == "For Yan.", r
     assert for_whom(hot, [x, y]) == ["y"]
-    assert spice.heat_note(hot, [x, y]) == "Too spicy for Xia"
+    assert spice.heat_note(hot, [x, y]) == "Not for Xia, who avoids heat"
 
 
 def _menu(dishes):

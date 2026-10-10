@@ -4,7 +4,6 @@ Every per-dish reason the UI shows is written here (QA r16): who it is for, how 
 in the card's words, and "ask the server" only when edibility.diner_status says so.
 """
 
-from michelin.plan import spice
 from michelin.plan.edibility import diner_status
 from michelin.schemas import Menu, Plan, TableRequest
 
@@ -27,12 +26,6 @@ def reason_for(dish, quantity: int, request: TableRequest) -> str:
         if status[p.id]["status"] != "no" and status[p.id]["taste"] != "too_spicy"
     ]
     blocked = [p.id for p in request.diners if status[p.id]["status"] == "no"]
-    hot = [
-        p.id
-        for p in request.diners
-        if status[p.id]["status"] != "no" and status[p.id]["taste"] == "too_spicy"
-    ]
-    little = [i for i in listed if status[i]["taste"] == "a_little_spicy"]
     ask = [i for i in listed if status[i]["status"] == "needs_confirm"]
     if not listed:
         line = "Not a fit for anyone at this table"
@@ -50,16 +43,9 @@ def reason_for(dish, quantity: int, request: TableRequest) -> str:
             line += f" ({_join([name[i] for i in ask])} only if the server confirms)"
     if blocked:
         line += f"; not for {_join([name[i] for i in blocked])}"
-    if hot:
-        line += f"; too spicy for {_join([name[i] for i in hot])}"
-    heat = spice.label(dish)
-    if little:  # the spice said once (QA r20)
-        line += f"; a little spicy for {_join([name[i] for i in little])}."
-    else:
-        line += "."
-        if heat:
-            line += f" {heat}."
-    return line
+    # QA r21: the spice is stated once per card, by its tag (plan.spice.label); who it is
+    # too hot for is the card's heat note (plan.spice.heat_note). The reason says neither.
+    return line + "."
 
 
 def explain(plan: Plan, menu: Menu, request: TableRequest) -> Plan:

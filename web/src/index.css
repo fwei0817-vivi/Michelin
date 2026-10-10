@@ -551,3 +551,12 @@ details[open] > summary .who-count svg { transform: rotate(180deg); }
 .term-add .field { flex: 1; }
 .refine-box { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; margin: 12px 0; border: 1px solid #ddd; border-radius: 10px; background: #fff; }
 .refine-actions { display: flex; gap: 8px; }
+
+/* QA r21 (narrow screens, simple fixes): no sideways scroll, nothing under the ticket bar,
+   and the inline notes ("The rules added…", why the ticket is blocked) stay visible. */
+@media (max-width: 900px) {
+  html, body { overflow-x: hidden; }
+  .workspace { padding-bottom: calc(140px + env(safe-area-inset-bottom)); }
+  .bill .bill-note[role="status"] { display: block; }
+  .dish-card, .dish-tags, .dish-actions { min-width: 0; max-width: 100%; flex-wrap: wrap; }
+}

@@ -216,6 +216,10 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
             {source === "ai" ? <Sparkles size={13} /> : <ListChecks size={13} />}
             {source === "ai" ? "Chosen by AI, checked by the rules" : source === "rules" ? "Built by the rules after the AI's orders failed the checks" : "Demo fixture plan"}
           </p>
+          {(() => {
+            const added = sourceNote?.match(/The rules added [^.]*\./)?.[0];
+            return added ? <p className="bill-note" role="status">{added}</p> : null;
+          })()}
           <p className="bill-total">
             <strong>{money(plan.per_person, cur)}</strong>
             <span>per person</span>
