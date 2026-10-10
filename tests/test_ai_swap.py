@@ -68,7 +68,9 @@ def test_only_the_swapped_dish_changes(table, monkeypatch):
     old, new, _ = _target_and_candidate(
         menu, request, plan, pick=lambda c: min(c, key=lambda r: r["price"])["id"]
     )
-    fake = Fake({"dish_id": new, "reason": "Lighter, and Kevin can eat it.", "server_question": ""})
+    fake = Fake(
+        {"dish_id": new, "reason": "Lighter, and {kevin} can eat it.", "server_question": ""}
+    )
     meat = next(
         d.id
         for d in menu.dishes
@@ -94,7 +96,7 @@ def test_only_the_swapped_dish_changes(table, monkeypatch):
         "a rich, warming braise that balances the lighter dishes nicely on the table",
     )
     assert f", {who} can eat it" in long
-    assert ai_swap._line(menu, request, old, new, "Tom likes beef").startswith(
+    assert ai_swap._line(menu, request, old, new, "{tom} likes beef").startswith(
         f"Swapped to {menu.dish(new).name_en}, Tom likes beef, "
     )
     monkeypatch.setattr(ai_swap, "_ask", fake)

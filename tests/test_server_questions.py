@@ -42,7 +42,7 @@ def answer(questions: dict[str, str]) -> dict:
             for i in ORDER
         ],
         "server_questions": [],
-        "summary": "Plates everyone can share, with fish for Alice and Cai.",
+        "summary": "Plates everyone can share, with fish for {alice} and {cai}.",
     }
 
 
@@ -64,10 +64,10 @@ def test_brief_gives_the_model_the_rule_flagged_risks():
     payload = llm_planner.brief(MENU, REQUEST)
     rows = {d["id"]: d for d in payload["dishes"]}
     assert any(
-        r.endswith("pork (matters for Ben, Cai)")
+        r.endswith("pork (matters for {ben}, {cai})")
         for r in rows["eggplant_with_garlic_sauce"]["risks"]
     )
-    assert rows["scallion_pancake"]["risks"] == ["lard (matters for Ben, Cai)"]
+    assert rows["scallion_pancake"]["risks"] == ["lard (matters for {ben}, {cai})"]
     assert all("ask" not in r for r in rows.values())
 
 

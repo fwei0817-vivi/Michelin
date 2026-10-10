@@ -292,6 +292,9 @@ class PlanItem(BaseModel):
     edible_by: list[str] = Field(default_factory=list)  # diner ids, under hard constraints
     reason: str | None = None  # one-liner from explain.py
     server_question: str | None = None  # one question for the server about this dish
+    # diner id -> {"status": "ok"|"needs_confirm"|"no", "reason": str|None}; filled by the
+    # API from edibility.diner_status, the one source the web cards render (QA r15).
+    status: dict[str, dict] = Field(default_factory=dict)
 
 
 class Check(BaseModel):

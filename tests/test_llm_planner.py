@@ -240,7 +240,7 @@ def test_brief_names_a_diners_only_option_and_sets_no_dish_count():
     diners = [DinerProfile(id="ann", name="Ann"), DinerProfile(id="ben", name="Ben")]
     request = TableRequest(menu_id="x", diners=diners, budget_per_person=40)
     payload = llm_planner.brief(menu, request, hints.Hints(True, None, {"ben": [only]}))
-    assert payload["only_option"] == {"Ben": only} and payload["an_order_fits"] is True
+    assert payload["only_option"] == {"ben": only} and payload["an_order_fits"] is True
     assert not {"portion_units", "target_dishes", "min_dishes_per_diner"} & payload.keys()
     assert all("units" not in d for d in payload["dishes"])
 

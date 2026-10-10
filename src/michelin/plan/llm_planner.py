@@ -69,7 +69,8 @@ CACHE_PATH = Path(__file__).resolve().parents[3] / "data/local/llm_plans.json"
 _cache_lock = threading.Lock()
 _memory: dict[str, dict] = {}
 
-SYSTEM = """You plan a shared, family-style order at a Chinese restaurant for a table.
+SYSTEM = (
+    """You plan a shared, family-style order at a Chinese restaurant for a table.
 
 Choose dishes only from the list you are given, by id. Hard rules:
 - Every diner must be able to eat at least one chosen dish. A dish counts for a diner \
@@ -112,7 +113,10 @@ table, including why this many dishes (e.g. small plates, so a few extra). Do no
 If no order can meet the hard rules (for example the cap is too low for a dish everyone \
 can eat), return an empty "dishes" list and fill "no_fit": a one-sentence reason and, \
 with change "budget", the cheapest order that meets every rule except the cap in \
-"dish_ids"; the server prices it with tax, tip and rice."""
+"dish_ids"; the server prices it with tax, tip and rice.
+"""
+    + ai_text.NAME_RULE
+)
 
 
 @dataclass
@@ -206,13 +210,13 @@ def brief(menu: Menu, request: TableRequest, hint: rules_hints.Hints | None = No
         if flagged:
             # Facts from the rules; the model words the question, the rules check it.
             row["risks"] = [
-                f"{r.about}" + (f" (matters for {', '.join(r.names)})" if r.names else "")
+                f"{r.about}" + (f" (matters for {_tokens(r.names, request)})" if r.names else "")
                 for r in flagged
             ][:5]
         dishes.append(row)
     diners = []
     for p in request.diners:
-        row = {"id": p.id, "name": p.name}
+        row = {"id": p.id}  # no names: the AI writes {id}, the code puts in names (QA r15)
         for key in ("allergies", "diets"):
             if getattr(p, key):
                 row[key] = [humanize(getattr(x, "value", x)) for x in getattr(p, key)]
@@ -240,6 +244,12 @@ def brief(menu: Menu, request: TableRequest, hint: rules_hints.Hints | None = No
     }
 
 
+def _tokens(names, request: TableRequest) -> str:
+    """Diner names -> their {id} tokens for the AI's brief (QA r15)."""
+    by_name = {p.name: p.id for p in request.diners}
+    return ", ".join("{" + by_name.get(n, n) + "}" for n in names)
+
+
 def _hint_fields(menu: Menu, request: TableRequest, hint) -> dict:
     """Facts from the rules that make the model's job easier; never a chosen order."""
     if hint is None:
@@ -249,9 +259,8 @@ def _hint_fields(menu: Menu, request: TableRequest, hint) -> dict:
         out["an_order_fits"] = hint.feasible
     if hint.feasible is False and hint.min_budget is not None:
         out["lowest_budget_per_person_that_fits"] = hint.min_budget
-    names = {p.id: p.name for p in request.diners}
     if hint.must_include:
-        out["only_option"] = {names[pid]: ids[0] for pid, ids in hint.must_include.items()}
+        out["only_option"] = {pid: ids[0] for pid, ids in hint.must_include.items()}
     return out
 
 
@@ -259,10 +268,9 @@ def _hint_text(menu: Menu, request: TableRequest, hint) -> list[str]:
     """Retry hints: what the rules know about this table, in words."""
     if hint is None:
         return []
-    names = {p.id: p.name for p in request.diners}
     lines = []
     for pid, ids in hint.must_include.items():
-        lines.append(f"{names[pid]} can eat only {ids[0]} here; it must be in the order.")
+        lines.append(f"{{{pid}}} can eat only {ids[0]} here; it must be in the order.")
     if hint.feasible:
         lines.append(
             "An order that meets every rule exists within the cap, so do not return no_fit."
@@ -511,12 +519,11 @@ def _to_plan(menu: Menu, request: TableRequest, answer: dict, items: list) -> Pl
     items = [
         i.model_copy(
             update={
-                "reason": ai_text.reason(
-                    _fair_reason(
-                        reasons.get(i.dish_id), known[i.dish_id], request, len(base.items)
+                "reason": _fair_reason(  # names come from {id} tokens, put in by ai_text
+                    ai_text.reason(
+                        reasons.get(i.dish_id), known[i.dish_id], menu, request, len(base.items)
                     ),
                     known[i.dish_id],
-                    menu,
                     request,
                     len(base.items),
                 )
@@ -977,7 +984,9 @@ def plan(
         kept.attempts = outcome.attempts
         return kept
     ai_note = None if outcome.fallback else (outcome.answer or {}).get("change_note")
-    note, from_ai = refine.final_note(ai_note, d, menu, [i.dish_id for i in outcome.plan.items])
+    note, from_ai = refine.final_note(
+        ai_note, d, menu, [i.dish_id for i in outcome.plan.items], request.diners
+    )
     if "less_spicy" in feedback.chips and not missed:
         note, from_ai = refine.spice_note(d), False  # always the code's, in card words
     if missed:

@@ -1,4 +1,4 @@
-import type { DinerProfile, Dish } from "../types";
+import type { DinerProfile, DinerStatusMap, Dish } from "../types";
 import { ALLERGEN_LABEL, avoidsHeat, listNames } from "./format";
 
 import KEYWORDS from "./keywords.json";
@@ -86,4 +86,15 @@ export function vegChip(dish: Dish, unsure: boolean): string {
 }
 export function fitsChip(n: number, unsure: boolean): string {
   return unsure ? `Fits all ${n} only if the server confirms` : `Matches all ${n}`;
+}
+
+/** "Only if the server confirms": read from the backend's per-diner status only (QA r15). */
+export function needsConfirm(status: DinerStatusMap | undefined, dinerIds: string[]): boolean {
+  return dinerIds.some((id) => status?.[id]?.status === "needs_confirm");
+}
+
+/** The vegetarian/vegan tag (D-8). The hidden-meat keywords may only hide the tag; they never
+ * add an "Ask" the backend status does not have. */
+export function showVegTag(dish: Dish, unsure: boolean): boolean {
+  return dish.is_vegetarian === true && (unsure || !mayHideMeat(dish));
 }

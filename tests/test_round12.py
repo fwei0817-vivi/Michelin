@@ -115,8 +115,7 @@ def test_summary_gate_checks_each_kind_of_claim(demo):  # noqa: F811
     assert ai_text.summary("The Kung Pao keeps it lively.", m, req, items) is None  # dish
     assert ai_text.summary("A fully vegan table.", m, req, items) is None  # diet
     assert ai_text.summary("Everything here is egg-free.", m, req, items) is None  # allergen
-    name = diners[0]["name"]
-    assert ai_text.summary(f"Plenty for {name}.", m, req, items) is not None
+    assert ai_text.summary("Plenty for {alice}.", m, req, items) == "Plenty for Alice."
 
 
 def test_stale_summary_is_revalidated_after_a_swap(demo):  # noqa: F811

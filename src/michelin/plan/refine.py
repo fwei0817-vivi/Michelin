@@ -401,7 +401,7 @@ def card_words(note: str, d: dict) -> str:
 
 
 def final_note(
-    ai_note: str | None, d: dict, menu: Menu | None = None, after_ids=()
+    ai_note: str | None, d: dict, menu: Menu | None = None, after_ids=(), diners=()
 ) -> tuple[str, bool]:
     """(note, from_ai): the AI's note when its claims match the diff (and, given the menu,
     pass the one gate in ai_text), else the code's."""
@@ -412,7 +412,7 @@ def final_note(
             return note, True
         from michelin.plan import ai_text
 
-        checked = ai_text.change_note(note, menu, d, after_ids)
+        checked = ai_text.change_note(note, menu, d, after_ids, diners)
         if checked is not None:
             return checked, True
     return code_note(d), False

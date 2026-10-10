@@ -105,7 +105,11 @@ export interface PlanItem {
   edible_by: string[];
   reason: string | null;
   server_question?: string | null; // AI plans: one question for the server, rule-checked
+  status?: DinerStatusMap; // backend per-diner status: the only source for card marks (QA r15)
 }
+
+export type DinerStatus = { status: "ok" | "needs_confirm" | "no"; reason: string | null };
+export type DinerStatusMap = Record<string, DinerStatus>;
 
 export interface Check {
   name: string;
@@ -195,6 +199,7 @@ export interface DishEligibility {
   edible_by: string[];
   blocked_for: Record<string, string[]>;
   questions: string[];
+  status?: DinerStatusMap;
   assessments?: Record<string, {status: "conflict" | "requires_confirmation" | "validated_under_known_data"; reasons: string[]}>;
 }
 export type Eligibility = Record<string, DishEligibility>;

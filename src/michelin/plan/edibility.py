@@ -180,6 +180,22 @@ def assessment(dish: Dish, diner: DinerProfile) -> dict:
     }
 
 
+def diner_status(dish: Dish, diners: list[DinerProfile]) -> dict[str, dict]:
+    """The one per-dish, per-diner status every surface reads (QA r15): the card chips, the
+    swap hint and the code-written reason. "ok": eat it; "needs_confirm": eat it once the
+    server confirms (reason says what); "no": not for them (reason says why)."""
+    out = {}
+    for p in diners:
+        a = assessment(dish, p)
+        if not a["eligible"]:
+            out[p.id] = {"status": "no", "reason": "; ".join(a["blocking"]) or None}
+        elif a["status"] == "requires_confirmation":
+            out[p.id] = {"status": "needs_confirm", "reason": "; ".join(a["reasons"]) or None}
+        else:
+            out[p.id] = {"status": "ok", "reason": None}
+    return out
+
+
 def can_eat(dish: Dish, diner: DinerProfile) -> bool:
     return assessment(dish, diner)["eligible"]
 

@@ -1,6 +1,6 @@
 """Grounded explanations; never infer ingredients or change a plan."""
 
-from michelin.plan.edibility import assessment
+from michelin.plan.edibility import diner_status
 from michelin.schemas import Menu, Plan, TableRequest
 
 
@@ -21,10 +21,11 @@ def explain(plan: Plan, menu: Menu, request: TableRequest) -> Plan:
             reason = f"Gives {_join(names)} another option."
         else:
             reason = "No diner meets the recorded requirements for this dish; choose a replacement."
+        status = diner_status(dish, request.diners)  # what the card renders (QA r15)
         ask = [
             p.name
             for p in request.diners
-            if p.id in item.edible_by and assessment(dish, p)["status"] == "requires_confirmation"
+            if p.id in item.edible_by and status[p.id]["status"] == "needs_confirm"
         ]
         if ask and len(ask) == len(names) == request.n_diners:
             reason += " Ask the server first."

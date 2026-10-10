@@ -20,14 +20,15 @@ from dataclasses import dataclass, field
 from michelin import llm
 from michelin.plan import ai_text, llm_planner
 from michelin.plan.budget import cents, subtotal_cap, totals
-from michelin.plan.edibility import assessment, edible_by, risks
+from michelin.plan.edibility import assessment, diner_status, edible_by, risks
 from michelin.plan.validation import family_repeats, validate_order
 from michelin.schemas import PREFERENCE_TEXT, Menu, Plan, PlanItem, TableRequest
 
 log = logging.getLogger(__name__)
 MAX_RETRIES = 1
 
-SYSTEM = """You replace ONE dish in a shared, family-style order at a Chinese restaurant.
+SYSTEM = (
+    """You replace ONE dish in a shared, family-style order at a Chinese restaurant.
 Every other dish stays exactly as it is. Pick one replacement from "candidates" (dish ids
 only, never one already ordered or removed). Hard rules: it must fit the money left
 ("menu_price_left" is the most its menu price can be; tax and tip are added on top), and
@@ -42,7 +43,10 @@ its "ok_for", e.g. "Kevin can eat it" or "adds a vegetable", and
 "server_question": ONE plain sentence a diner would say to the server about the dish's
 "risks", naming the dish, the concern and who it is for, e.g. "Is there any pork or lard in
 the scallion pancake, since David is vegetarian?" (no lists or semicolons), or "" if none.
-State only the allergies and diets the brief lists for each diner."""
+State only the allergies and diets the brief lists for each diner.
+"""
+    + ai_text.NAME_RULE
+)
 
 
 @dataclass
@@ -107,13 +111,14 @@ def brief(menu: Menu, request: TableRequest, plan: Plan, old_id: str) -> dict:
         flagged = risks(d, request.diners)
         if flagged:
             row["risks"] = [
-                r.about + (f" (matters for {', '.join(r.names)})" if r.names else "")
+                r.about
+                + (f" (matters for {llm_planner._tokens(r.names, request)})" if r.names else "")
                 for r in flagged
             ][:5]
         candidates.append(row)
     diners = []
     for p in request.diners:
-        row = {"id": p.id, "name": p.name}
+        row = {"id": p.id}  # no names: the AI writes {id}, the code puts in names (QA r15)
         for key in ("allergies", "diets"):
             if getattr(p, key):
                 row[key] = [llm_planner.humanize(getattr(x, "value", x)) for x in getattr(p, key)]
@@ -248,6 +253,8 @@ def _line(
     """'Swapped to X, Kevin can eat it, $3.00 cheaper.' The price part is always computed."""
     new = menu.dish(new_id)
     ok = set(edible_by(new, request.diners))
+    if why:  # the one gate first: {id} tokens become names, raw names/ids reject (QA r15)
+        why = ai_text.swap_clause(why, new, menu, request)
     everyone = re.compile(
         r"\b(everyone|everybody|all (?:diners|diets|of you)|whole table)\b", re.IGNORECASE
     )
@@ -272,8 +279,6 @@ def _line(
         why = None  # "Ben and Cai can eat it" when all four can undersells it (QA r8)
     if why and (len(why.split()) > 10 or re.search(r"[;:]|\$\d", why)):
         why = None  # one short clause only; the price part is computed below
-    if why:
-        why = ai_text.swap_clause(why, new, menu, request)  # the one gate (QA r12)
     unsure = _needs_asking(new, request, ok)
     if unsure:
         why = None  # the card says "only if the server confirms"; the hint must too (QA r13)
@@ -295,13 +300,9 @@ def _line(
 
 
 def _needs_asking(dish, request: TableRequest, ok: set) -> bool:
-    """The swap card's per-diner test, exactly: someone the dish is counted for has the
-    assessment status "requires_confirmation" (what the card's "only if the server confirms"
-    reads from /eligibility). No separate ingredient keywords (QA r14)."""
-    return any(
-        p.id in ok and assessment(dish, p)["status"] == "requires_confirmation"
-        for p in request.diners
-    )
+    """Read from edibility.diner_status, the same status the cards render (QA r15)."""
+    status = diner_status(dish, request.diners)
+    return any(p.id in ok and status[p.id]["status"] == "needs_confirm" for p in request.diners)
 
 
 def _join_names(names: list[str]) -> str:
@@ -397,8 +398,11 @@ def _to_plan(
     n = len(out.items)
 
     def kept(i):  # an earlier reason only if still true on the new order
+        if i.dish_id == new_id:
+            return str(answer.get("reason") or "")[:200] or i.reason  # the code's swap line
         dish = menu.dish(i.dish_id)
-        return ai_text.reason(kept_reasons.get(i.dish_id), dish, menu, request, n) or i.reason
+        old = kept_reasons.get(i.dish_id)
+        return ai_text.reason(old, dish, menu, request, n, shown=True) or i.reason
 
     return out.model_copy(
         update={
@@ -411,9 +415,9 @@ def _to_plan(
 def _summary_after(menu: Menu, request: TableRequest, plan: Plan, old_id, out: Plan) -> str:
     """The earlier order's summary only if it is still true of the new order (re-validated
     by the one gate, QA r12); otherwise the code's own line about the new order."""
-    return ai_text.summary(plan.summary, menu, request, out.items) or ai_text.code_summary(
-        menu, request, out.items
-    )
+    return ai_text.summary(
+        plan.summary, menu, request, out.items, shown=True
+    ) or ai_text.code_summary(menu, request, out.items)
 
 
 def _ask(turns: list, schema: dict, client):

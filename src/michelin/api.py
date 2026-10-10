@@ -24,7 +24,7 @@ from michelin.meal import PeopleAction, apply_people_action
 from michelin.model import ExtractionRequest, ExtractionResponse
 from michelin.plan import ai_swap, dish_facts, llm_planner, refine
 from michelin.plan.budget import subtotal_cap, totals
-from michelin.plan.edibility import assessment, edible_by, open_questions
+from michelin.plan.edibility import assessment, diner_status, edible_by, open_questions
 from michelin.plan.score import variety_score
 from michelin.plan.validation import validate_order
 from michelin.profiles import ProfileStore
@@ -344,6 +344,18 @@ class SwapResponse(BaseModel):
     source_note: str | None = None
 
 
+def with_status(plan: Plan, menu: Menu, diners) -> Plan:
+    """Every plan the API returns carries each dish's per-diner status (QA r15)."""
+    return plan.model_copy(
+        update={
+            "items": [
+                i.model_copy(update={"status": diner_status(menu.dish(i.dish_id), diners)})
+                for i in plan.items
+            ]
+        }
+    )
+
+
 @app.post("/api/plan/swap", response_model=SwapResponse)
 def swap_dish(req: SwapRequest, x_profile_scope: str | None = Header(default=None)) -> SwapResponse:
     """Single-dish swap: the AI's pick (one call, one retry) or the user's own pick (no call).
@@ -373,7 +385,7 @@ def swap_dish(req: SwapRequest, x_profile_scope: str | None = Header(default=Non
     retried = " after 1 correction" if out.attempts > 1 else ""
     return SwapResponse(
         kind="plan",
-        plan=out.plan,
+        plan=with_status(out.plan, menu, after.diners),
         new_dish_id=out.new_dish_id,
         message=out.message,
         source_note=f"Swap by {llm.label(out.model)}, checked by the rules{retried}."
@@ -448,7 +460,7 @@ def plan(req: PlanRequest, x_profile_scope: str | None = Header(default=None)) -
         raise HTTPException(502, "Planner or explanation returned invalid output.") from exc
     return PlanResponse(
         kind="plan",
-        plan=result,
+        plan=with_status(result, menu, request.diners),
         subtotal_cap=cap,
         source=source,
         source_note=source_note,
@@ -806,6 +818,7 @@ def evaluate_menu(req: EvaluateRequest) -> dict:
             },
             "assessments": {p.id: assessment(d, p) for p in req.diners},
             "questions": open_questions(d, req.diners),
+            "status": diner_status(d, req.diners),
         }
         for d in menu.dishes
     }

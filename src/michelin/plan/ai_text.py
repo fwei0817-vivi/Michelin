@@ -32,7 +32,7 @@ from __future__ import annotations
 
 import re
 
-from michelin.plan.edibility import assessment, edible_by
+from michelin.plan.edibility import assessment, diner_status, edible_by
 
 APPROVED: set[str] = set()  # every AI string this gate let through (tests read it)
 _MAX_APPROVED = 5000
@@ -138,6 +138,27 @@ _ALLERGEN_WORDS = {
 }
 
 
+NAME_RULE = (
+    "Never write a diner's name or id in any text you write. To mention a diner, write "
+    "their id in curly braces, e.g. {alice}; the app puts in their name."
+)
+
+
+def detoken(text: str, diners) -> str | None:
+    """The AI writes {id} tokens, never names (QA r15). Unknown tokens, or any raw id or name
+    (any case, e.g. 'alice ben cai mia'), reject the text; tokens become display names."""
+    ids = {p.id: (p.name or p.id) for p in diners}
+    tokens = re.findall(r"\{([^{}]*)\}", text)
+    if any(t.strip() not in ids for t in tokens):
+        return None
+    bare = re.sub(r"\{[^{}]*\}", " ", text)
+    for p in diners:
+        for word in {p.id, p.name or ""}:
+            if word and re.search(rf"(?<![\w]){re.escape(word)}(?![\w])", bare, re.IGNORECASE):
+                return None
+    return re.sub(r"\{([^{}]*)\}", lambda m: ids[m.group(1).strip()], text)
+
+
 def _approve(text: str) -> str:
     if len(APPROVED) < _MAX_APPROVED:
         APPROVED.add(text)
@@ -232,9 +253,10 @@ def _named(text: str, diners) -> list:
     ]
 
 
-def summary(text: object, menu, request, items) -> str | None:
-    """The plan subtitle, checked against the order it will be shown with."""
-    t = _clean(text)
+def summary(text: object, menu, request, items, shown: bool = False) -> str | None:
+    """The plan subtitle, checked against the order it will be shown with. `shown=True`
+    re-checks a subtitle already on screen (names already in) against a new order."""
+    t = _clean(text) if shown else detoken(_clean(text), request.diners)
     if not t:
         return None
     low = t.lower()
@@ -252,6 +274,10 @@ def summary(text: object, menu, request, items) -> str | None:
             return None
     if _OVERCLAIM.search(low) and not _all_well_served(shared, request.diners):
         return None  # "meets everyone's preferences" / "easily accommodates all" (QA r14)
+    if _SUITS_ALL.search(low) and any(
+        v["status"] != "ok" for d in shared for v in diner_status(d, request.diners).values()
+    ):
+        return None  # "suitable for everyone" only if no one needs a check anywhere (QA r15)
     if _EVERYONE.search(low):
         fed = {pid for d in shared for pid in edible_by(d, request.diners)}
         if len(fed) < len(request.diners):
@@ -264,8 +290,12 @@ def summary(text: object, menu, request, items) -> str | None:
 
 
 _OVERCLAIM = re.compile(
-    r"\bpreferences?\b|\baccommodat\w*\s+(?:\w+\s+){0,2}?all\b|\beveryone'?s?\s+needs\b",
+    r"\bpreferences?\b|\baccommodat\w*\s+(?:\w+\s+){0,2}?all\b|\beveryone'?s?\s+needs\b"
+    r"|\bdietary needs\b|\beveryone'?s?\s+dietary\b|\ball dietary\b",
     re.IGNORECASE,
+)
+_SUITS_ALL = re.compile(
+    r"\bsuit(?:able|s|ed)? (?:for |to )?(?:everyone|everybody|all)\b", re.IGNORECASE
 )
 _CHECKABLE_PREFS = {"no_spicy", "mild"}
 
@@ -309,29 +339,33 @@ def code_summary(menu, request, items) -> str:
     return f"{len(shared)} dish{'es' if len(shared) != 1 else ''} to share; {who}; {heat}."
 
 
-def reason(text: object, dish, menu, request, n: int = 0) -> str | None:
-    """A per-dish reason, checked for this dish on this order."""
-    t = _clean(text, 200)
-    if not t:
-        return None
+def reason(text: object, dish, menu, request, n: int = 0, shown: bool = False) -> str | None:
+    """A per-dish reason, checked for this dish on this order. `shown=True` re-checks a
+    reason already on screen (names already in) against a new order."""
+    t = _clean(text, 200) if shown else detoken(_clean(text, 200), request.diners)
+    return _approve(t) if t and _reason_ok(t, dish, menu, request, n) else None
+
+
+def _reason_ok(t: str, dish, menu, request, n: int = 0) -> bool:
     low = t.lower()
     if n and not count_ok(t, n):
-        return None
+        return False
     if not _dishes_ok(low, menu, {dish.id}):
-        return None
+        return False
     if not _spice_ok(low, [dish]) or not _diet_ok(low, [dish], request.diners):
-        return None
+        return False
+    status = diner_status(dish, request.diners)  # the status the card renders (QA r15)
     for p in _named(t, request.diners):
-        if assessment(dish, p)["status"] != "validated_under_known_data":
-            return None
-    if _EVERYONE.search(low) and len(edible_by(dish, request.diners)) < len(request.diners):
-        return None
-    return _approve(t)
+        if status[p.id]["status"] != "ok":
+            return False
+    # "suitable for everyone" beside a card that says ask the server is false
+    claims_all = _EVERYONE.search(low) or _SUITS_ALL.search(low)
+    return not (claims_all and any(v["status"] != "ok" for v in status.values()))
 
 
 def swap_clause(text: object, dish, menu, request) -> str | None:
     """The short 'why' in a swap note, checked for the new dish."""
-    t = _clean(text, 120)
+    t = detoken(_clean(text, 120), request.diners)
     if not t or len(t.split()) > 10 or re.search(r"[;:]|\$\d", t):
         return None
     ok = set(edible_by(dish, request.diners))
@@ -344,13 +378,13 @@ def swap_clause(text: object, dish, menu, request) -> str | None:
         and re.search(r"\b(can|could) (?:eat|have)|\bsuits?\b|\bfor\b", t, re.IGNORECASE)
     ):
         return None
-    return _approve(t) if reason(t, dish, menu, request) is not None else None
+    return _approve(t) if _reason_ok(t, dish, menu, request) else None
 
 
 def change_note(text: object, menu, d: dict, after_ids, request_diners=()) -> str | None:
     """A refine note that already matched the real diff (refine.note_ok); the dish, spice
     and diet words are checked against the dishes it names."""
-    t = _clean(text, 160)
+    t = detoken(_clean(text, 160), request_diners)
     if not t:
         return None
     low = t.lower()
