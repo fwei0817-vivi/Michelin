@@ -1,3 +1,4 @@
+import { noRiceNote } from "../lib/ticket";
 import { useState } from "react";
 import { ArrowLeftRight, Check, ChevronDown, CircleHelp, Flame, Leaf, ListChecks, LockKeyhole, Plus, RefreshCw, Sparkles, Trash2, UnlockKeyhole, UserX, Users, X } from "lucide-react";
 import { CATEGORY_LABEL, MARK_LABEL, checkLabel, currencySymbol, dishName, flagWording, listNames, money } from "../lib/format";
@@ -251,6 +252,7 @@ export function Ticket({ menu, plan, diners, settings, source, sourceNote, locke
               <dt>Tip ({Number((settings.tip * 100).toFixed(2))}%)</dt>
               <dd>{money(plan.tip, cur)}</dd>
             </dl>
+            {noRiceNote(menu.dishes) && <p className="mt-2 text-xs text-fg-2">{noRiceNote(menu.dishes)}</p>}
           </details>
           {questions > 0 && (
             <a className="bill-ask" href="#ask-server">
