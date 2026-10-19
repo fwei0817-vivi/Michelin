@@ -333,3 +333,9 @@ checkboxes for peanut, tree nut, shellfish, fish, egg, milk, soy, wheat, sesame 
 vegetarian, vegan, no pork, no beef; heat, likes and dislikes are replaced by one free-text
 "Tastes and preferences" note that only the AI reads. Saved people are migrated (heat, likes
 and dislikes folded into the note) on read and as a new revision at server start.
+
+**2026-10-19: a dish photo is that dish, including the main ingredient.** Yu Xiang pork is not
+Yu Xiang eggplant, and Kung Pao chicken is not Kung Pao tofu or shrimp. The same check applies
+to the other illustrations (string beans with pork, boiled fish, plain cauliflower, plain rice).
+A different protein, or a meat photo on a dish marked vegetarian, shows no photo. Why: a
+vegetarian eggplant was showing shredded pork.
