@@ -20,9 +20,24 @@ def client(monkeypatch, tmp_path):
     def no_network(*args, **kwargs):
         raise AssertionError("External network forbidden in offline regression")
 
-    monkeypatch.setattr(socket, "create_connection", no_network)
-    monkeypatch.setattr(socket.socket, "connect", no_network)
-    return TestClient(api.app)
+    # Windows creates a loopback socket pair when the event loop starts. Start
+    # one shared client loop before blocking network access, and restore the
+    # socket methods before shutting it down. Requests remain strictly offline.
+    with TestClient(api.app) as test_client:
+        with monkeypatch.context() as network_guard:
+            network_guard.setattr(socket, "create_connection", no_network)
+            network_guard.setattr(socket.socket, "connect", no_network)
+            yield test_client
+
+
+def test_offline_client_still_blocks_network_connections(client):
+    assert client.get("/api/model/prepared").status_code == 200
+    with pytest.raises(AssertionError, match="External network forbidden"):
+        socket.create_connection(("203.0.113.1", 443), timeout=0.1)
+    with socket.socket() as connection:
+        connection.settimeout(0.1)
+        with pytest.raises(AssertionError, match="External network forbidden"):
+            connection.connect(("203.0.113.1", 443))
 
 
 def prepared_body(client, index=0):
