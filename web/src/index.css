@@ -113,10 +113,10 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
 .steps { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 24px; font-size: 13px; color: var(--color-fg-3); }
 .steps li { display: flex; align-items: center; gap: 8px; }
 .steps li + li::before { content: ""; width: 24px; height: 1px; background: var(--color-line-strong); }
-.steps li > span { display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--color-line-strong); border-radius: 50%; font-size: 12px; }
+.steps li > span, .step-link > span { display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--color-line-strong); border-radius: 50%; font-size: 12px; }
 .steps .current { color: var(--color-fg); font-weight: 600; }
 .steps .current > span { background: var(--color-fg); border-color: var(--color-fg); color: var(--color-surface); }
-.steps .complete > span { background: var(--color-brand-soft); border-color: transparent; color: var(--color-brand); }
+.steps .complete > span, .steps .complete .step-link > span { background: var(--color-brand-soft); border-color: transparent; color: var(--color-brand); }
 .onboarding h1 { font-size: 30px; font-weight: 650; line-height: 1.15; letter-spacing: -0.6px; }
 .setup-intro { max-width: 600px; margin: 8px 0 20px; font-size: 15px; line-height: 1.55; color: var(--color-fg-2); }
 .setup-back { min-height: 32px; margin-bottom: 6px; color: var(--color-fg-2); text-decoration: none; }
@@ -185,7 +185,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
 
 /* Dish cards: three across, every footer on the same baseline; details open above the footer. */
 .courses-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 14px; }
-.course-tabs { display: flex; flex-shrink: 0; gap: 4px; max-width: 100%; overflow-x: auto; scrollbar-width: thin; }
+.course-tabs { display: flex; flex-shrink: 1; min-width: 0; gap: 4px; max-width: 100%; overflow-x: auto; scrollbar-width: thin; }
 .course-tabs button { min-height: 36px; padding: 7px 12px; border-radius: 8px; font-size: 13px; color: var(--color-fg-2); white-space: nowrap; }
 .course-tabs button:hover { background: var(--color-surface); color: var(--color-fg); }
 .course-tabs button.active { background: var(--color-brand); color: var(--color-panel-fg); }
@@ -211,16 +211,23 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
 .dish-notes svg { margin-top: 2px; color: var(--color-fg-3); }
 .dish-notes .not-for { color: var(--color-fg); font-weight: 500; }
 .dish-notes .not-for svg { color: var(--color-fg-2); }
-.dish-foot { display: flex; align-items: center; gap: 2px; margin-top: auto; padding-top: 8px; border-top: 1px solid var(--color-line); }
+.dish-notes .ask-for { color: var(--color-fg); }
+.dish-notes .ask-for svg { color: var(--color-fg-2); }
+.dish-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px 2px; margin-top: auto; padding-top: 8px; border-top: 1px solid var(--color-line); }
 .dish-more { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; margin-right: auto; font-size: 12px; font-weight: 600; color: var(--color-fg-3); }
 .dish-more:hover { color: var(--color-fg); }
 .dish-more.has-check { color: var(--color-attention); }
 .dish-more > svg:last-child { transition: transform 0.15s; }
 .dish-more[aria-expanded="true"] > svg:last-child { transform: rotate(180deg); }
+.dish-more { white-space: nowrap; }
+.dish-foot .dish-action { min-width: 28px; padding: 0 6px; }
 .dish-action { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-width: 32px; min-height: 32px; padding: 0 8px; border: 1px solid transparent; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--color-fg-2); }
 .dish-action:hover { background: var(--color-muted); color: var(--color-fg); }
 .dish-action.kept { background: var(--color-brand-soft); color: var(--color-brand); }
 .swap-action { border-color: var(--color-line-strong); color: var(--color-fg); }
+.ai-swap-action { color: var(--color-brand); white-space: nowrap; }
+.ai-swap-inline { margin-top: 10px; }
+.swap-failed { border-color: var(--color-warn, #c58b2a); }
 .dish-panel { display: grid; gap: 8px; padding: 2px 0 4px; font-size: 12px; line-height: 1.55; color: var(--color-fg-2); }
 .dish-panel[hidden] { display: none; }
 .dish-question { display: flex; align-items: flex-start; gap: 6px; font-size: 13px; line-height: 1.5; color: var(--color-attention); }
@@ -428,4 +435,128 @@ details[open] > summary .who-count svg { transform: rotate(180deg); }
   .print-area li { break-inside: avoid; }
   .overlay, .dialog { position: static; display: block; height: auto; max-height: none; margin: 0; padding: 0; overflow: visible; background: transparent; box-shadow: none; }
   .topbar, .mobile-bar { display: none !important; }
+}
+
+/* Photo-first menu step and the stepper on every step (reference demo). */
+.step-link { display: inline-flex; align-items: center; gap: 8px; color: var(--color-brand); font: inherit; font-weight: 600; cursor: pointer; border-radius: 6px; }
+.step-link:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 3px; }
+.step-link:hover { color: var(--color-fg); text-decoration: underline; text-underline-offset: 4px; }
+.plan-steps { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; max-width: 1200px; margin: 0 auto 8px; }
+.plan-steps .steps { margin-bottom: 0; }
+.setup-back { display: inline-flex; align-items: center; gap: 6px; }
+.plan-back { margin-bottom: 0; }
+.photo-first { padding: 22px; margin-bottom: 28px; border: 1px solid var(--color-line); border-radius: 12px; background: var(--color-brand-soft); }
+.photo-first h2 { font-size: 18px; font-weight: 650; }
+.photo-first > p { margin-top: 6px; max-width: 560px; font-size: 14px; line-height: 1.55; color: var(--color-fg-2); }
+.photo-first .setup-actions { margin-top: 16px; }
+.photo-first .helper { margin-top: 10px; }
+.setup-subhead { margin: 0 0 12px; font-size: 15px; font-weight: 650; color: var(--color-fg-2); }
+.menu-preview { display: flex; grid-template-columns: none; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
+.menu-preview li { flex: 0 0 120px; scroll-snap-align: start; }
+.hidden-flag { display: flex; align-items: flex-start; gap: 6px; margin-top: 6px; padding: 6px 8px; border-radius: 6px; background: var(--color-attention-soft); border: 1px solid var(--color-attention-line); color: var(--color-attention); font-size: 12.5px; line-height: 1.4; }
+.hidden-flag svg { flex-shrink: 0; margin-top: 1px; }
+.fit-switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.fit-switch input { appearance: none; width: 34px; height: 20px; border-radius: 10px; background: var(--color-line-strong); position: relative; transition: background .15s; cursor: pointer; }
+.fit-switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.fit-switch input:checked { background: var(--color-brand); }
+.fit-switch input:checked::after { transform: translateX(14px); }
+
+/* Where the plan came from: AI (validated) or the rules planner */
+.plan-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+.plan-source-ai {
+  background: #e9f3d8;
+  color: #24452f;
+}
+.plan-source-note {
+  margin: -4px 0 10px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+.dish-reason {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #2f4a37;
+}
+.dish-reason svg {
+  flex: none;
+  margin-top: 3px;
+  color: #3c7a4d;
+}
+
+/* Saved people: pick tonight's diners */
+.person-item { display: flex; align-items: center; gap: 4px; }
+.person-item .person-row { flex: 1; min-width: 0; }
+.person-remove { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 8px; color: var(--color-fg-3); }
+.person-remove:hover { color: var(--color-danger, #b42318); background: var(--color-surface-2, #f3f1ec); }
+.saved-people { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--color-line); }
+.saved-people-head { margin-bottom: 8px; font-size: 13px; color: var(--color-fg-2); }
+.saved-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.saved-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 12px; border: 1px solid var(--color-line-strong); border-radius: 999px; font-size: 14px; background: var(--color-surface); }
+.saved-chip:hover:not(:disabled) { border-color: var(--color-brand); color: var(--color-brand); }
+.saved-chip:disabled { opacity: 0.5; }
+
+/* A diet chip that still depends on the kitchen's answer */
+.dish-tags .tag-ask, .tag-ask { color: #8a5a00; background: #fff4dc; border-color: #f0d9a8; }
+.plan-summary { margin-top: 6px; max-width: 60ch; color: var(--color-fg-2); font-size: 15px; }
+.plan-summary-rules { color: var(--color-fg); font-weight: 500; }
+
+/* Progress while the AI works: real stages, elapsed seconds, no percentages. */
+.progress { max-width: 460px; margin: 18px auto 0; text-align: left; }
+.progress ol { display: grid; gap: 10px; padding: 0; margin: 0; list-style: none; }
+.progress li { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--color-fg-3); }
+.progress li.current { color: var(--color-fg); font-weight: 600; }
+.progress li.done { color: var(--color-fg-2); }
+.progress li .dot { width: 8px; height: 8px; margin: 0 3px; border-radius: 50%; background: var(--color-line-strong); }
+.progress li.done .dot { background: var(--color-brand); }
+.progress-time { margin-top: 14px; font-size: 12px; color: var(--color-fg-3); }
+.progress-inline { display: inline-flex; align-items: center; gap: 8px; }
+.progress-inline small { color: var(--color-fg-3); }
+.progress-note { margin-left: 8px; color: var(--color-fg-3); }
+.pick-action { white-space: nowrap; }
+.over-budget { display: block; margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--color-danger, #b42318); text-align: right; }
+.check-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.check-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--color-line-strong); border-radius: 999px; font-size: 14px; color: var(--color-fg-2); cursor: pointer; user-select: none; }
+.check-chip input { width: 15px; height: 15px; accent-color: var(--color-brand); }
+.check-chip.on { border-color: var(--color-brand); background: var(--color-brand-soft); color: var(--color-fg); font-weight: 600; }
+.check-chip:focus-within { outline: 2px solid var(--color-brand); outline-offset: 2px; }
+.dish-tags .tag-family, .tag-family { color: #3b4a7a; background: #eef1fb; border-color: #d3daf2; }
+.dish-tags .tag-mark, .tag-mark { color: #2f6b3a; background: #ecf7ee; border-color: #cde6d2; }
+.import-review .menu-mark { color: #2f6b3a; font-weight: 600; }
+.import-review .family-choices { display: block; color: var(--muted, #666); font-size: 0.82em; margin-top: 2px; }
+.page-thumbs { display: flex; flex-wrap: wrap; gap: 10px; list-style: none; padding: 0; margin: 10px 0; }
+.page-thumbs li { width: 96px; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.page-thumbs img, .page-thumbs .page-pdf { width: 96px; height: 120px; object-fit: cover; border: 1px solid #ddd; border-radius: 6px; background: #f6f6f3; }
+.page-thumbs .page-pdf { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 0.8em; color: #555; }
+.page-thumbs small { font-size: 0.75em; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.import-review .menu-section-head { font-weight: 700; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.04em; color: #6b6b6b; padding-top: 8px; border: 0; }
+.term-chips { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.term-chip button { margin-left: 6px; border: 0; background: none; cursor: pointer; font-weight: 700; color: inherit; }
+.suggest-chip { border-style: dashed; background: transparent; cursor: pointer; }
+.term-add { display: flex; gap: 8px; align-items: center; }
+.term-add .field { flex: 1; }
+.refine-box { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; margin: 12px 0; border: 1px solid #ddd; border-radius: 10px; background: #fff; }
+.refine-actions { display: flex; gap: 8px; }
+
+/* QA r21 (narrow screens, simple fixes): no sideways scroll, nothing under the ticket bar,
+   and the inline notes ("The rules added…", why the ticket is blocked) stay visible. */
+@media (max-width: 900px) {
+  html, body { overflow-x: hidden; }
+  .workspace { padding-bottom: calc(140px + env(safe-area-inset-bottom)); }
+  .bill .bill-note[role="status"] { display: block; }
+  .dish-card, .dish-tags, .dish-actions { min-width: 0; max-width: 100%; flex-wrap: wrap; }
 }

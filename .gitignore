@@ -8,3 +8,8 @@ __pycache__/
 .claude/
 web/node_modules/
 web/dist/
+
+data/local/
+.env.*
+!.env.example
+*.lock

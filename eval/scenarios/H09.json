@@ -1,0 +1,61 @@
+{
+  "id": "H09",
+  "category": "hidden_ingredient",
+  "menu": "trap",
+  "title": "Mixed table of six, full menu",
+  "trap": "Every trap at once: vegetarian, shellfish, peanut and no-pork at one table.",
+  "diners": [
+    {
+      "id": "veg",
+      "name": "Vera",
+      "allergies": [],
+      "diets": [
+        "vegetarian"
+      ],
+      "max_spice": null
+    },
+    {
+      "id": "shell",
+      "name": "Sam",
+      "allergies": [
+        "shellfish"
+      ],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "peanut",
+      "name": "Pat",
+      "allergies": [
+        "peanut"
+      ],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "nopork",
+      "name": "Nur",
+      "allergies": [],
+      "diets": [
+        "no_pork"
+      ],
+      "max_spice": null
+    },
+    {
+      "id": "p1",
+      "name": "Ana",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p2",
+      "name": "Ben",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    }
+  ],
+  "budget_per_person": 35,
+  "expect": "any"
+}

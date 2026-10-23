@@ -42,7 +42,7 @@ shapes. Dish `id`s are stable ASCII slugs (`mapo_tofu`) referenced by plans and 
 | GET | `/api/menus/{slug}` | | `Menu` |
 | GET | `/api/profiles` | | `[DinerProfile]` |
 | POST | `/api/plan` | `{menu_id, diner_ids?, diners?, budget_per_person, tax_rate?, tip_rate?, min_dishes_per_person?, locked_dish_ids?, excluded_dish_ids?, menu_override?, dish_count_target?, style_preference?, explain?}` | `{kind: "plan", plan, subtotal_cap}` or `{kind: "conflict", conflict, subtotal_cap}` |
-| POST | `/api/menu/parse` | `{text?, image_base64?}` | `{dishes: Dish[], text}`: name and price rows only, no ingredient guesses; images need `tesseract` on the server |
+| POST | `/api/menu/parse` | `{text?, image_base64?}` | `{dishes: Dish[], text}`: name and price rows, labeled from `data/knowledge/` with evidence tiers (unrecognized dishes stay unknown); images need `tesseract` on the server |
 | POST | `/api/menu/evaluate` | `{menu, diners}` | per dish: `edible_by`, `blocked_for` reasons per diner, staff `questions` |
 
 `diner_ids` name saved profiles; `diners` carries edited or ad-hoc people inline and wins on the
@@ -111,8 +111,8 @@ docker build -t michelin . && docker run -p 8000:8000 --env-file .env michelin
 - A decision that changes product behaviour goes into `docs/decisions.md` with a one-line why.
 - Python ≥ 3.11, `src` layout, pydantic v2; data crosses module boundaries as schema objects,
   not dicts. Code and comments in English; UI strings and displayed dish names are English. Original menu names may remain in source data.
-- Each owner documents the "how" in their own module docstrings. For example the optimizer
-  model is described in `plan/optimizer.py`, the extraction rules in `parse/`. Keep this file
+- Each owner documents the "how" in their own module docstrings. For example the planner
+  brief and retries are described in `plan/llm_planner.py`, the extraction rules in `parse/`. Keep this file
   to skeleton and contracts.
 
 ## Owner notes (one line each; the rest lives in your code)
@@ -120,11 +120,12 @@ docker build -t michelin . && docker run -p 8000:8000 --env-file .env michelin
 - **Frontend**: `web/` is React + Vite + Tailwind v4, no server code of its own. `src/api.ts` is
   the only place that talks to the backend and `src/types.ts` mirrors `schemas.py`. The built
   `dist/` is served by FastAPI; to host it elsewhere set `window.MICHELIN_API` to the API origin.
-- **Backend**: `solve()` uses bounded search with concrete budget/coverage suggestions. `budget.py`,
-  `portions.py`, `edibility.py`, and `score.py` supply the shared checks.
+- **Backend**: the LLM picks dishes (`plan/llm_planner.py`); `validation.py`, `budget.py`,
+  `edibility.py` and `score.py` supply the shared checks; `hints.py` finds the cheapest valid order.
 - **LLM**: `parse/` and `explain.py` are yours, including the choice of provider and
   dependencies. The team only depends on the output shapes: a `Menu` JSON that a human has
   marked `verified: true`, and `explain()` returning the plan with every `reason` filled.
+  Labels come from `parse/knowledge.py` + `data/knowledge/`; `eval/` scores them.
 
 ## Scope (v1)
 
@@ -140,6 +141,30 @@ claims, live scraping of Google Maps or delivery platforms.
 and `style_preference` (`balanced`, `lighter`, `favorites`). Menu overrides are request-local,
 not written to the shared fixtures. `POST /api/menu/evaluate` evaluates candidate eligibility
 for `{menu, diners}`. `POST /api/menu/parse` extracts English name/price rows from `{text}` or
-`{image_base64}`; image OCR uses local Tesseract. Imported dietary fields remain unknown.
+`{image_base64}`; image OCR uses local Tesseract. Imported dishes are now labeled from
+`data/knowledge/` (2026-10-02 in `docs/decisions.md`); unrecognized ones stay unknown.
 All imports and edits require review before planning. No LLM credentials are required for
 the current deterministic planner or grounded explanations. See README for operating limits.
+
+## User-authorized backend extension (2026-09-30)
+
+Persistent explicit profile history is now in scope; see README's backend history section
+for additive CRUD routes, `X-Profile-Scope`, revision semantics, and prototype access limits.
+`POST /api/order/validate` accepts a menu, complete TableRequest, and PlanItems; it recomputes
+the entire order. `/api/menu/evaluate` adds per-diner three-state assessments; `Conflict`
+adds `code`, and `Dish` adds `reviewed_allergens`. Unknown/absent allergen evidence no longer
+counts toward coverage. Existing sample menu data is not retroactively certified. Mock
+orders must pass independent validation too. Existing JSON keys remain compatible; stricter
+validation may return conflicts where old code returned an unvalidated order. Contract
+review by the other owners is still needed before any upstream PR; none is opened here.
+
+## Prepared extraction boundary (2026-09-30)
+
+`POST /api/menu/extract` takes `{menu_id, text? , image_base64?}` (exactly one input) and
+returns `{menu, provider, mode, input_sha256, source_url, retrieved_at, notice}`. The default
+`replay` adapter reads assistant-prepared records from `data/prepared/` by identity/kind/hash;
+no live model call. `GET /api/model/prepared` lists known inputs. Providers implement the same
+`ExtractionProvider` interface; future live implementations register in `PROVIDERS` and are
+selected via `MICHELIN_EXTRACTION_PROVIDER`. Existing parse/planning contracts remain.
+`Menu.preparation_mode` is additive provenance. Explicit review is required after extraction.
+User authorized minimal frontend integration for replay and local synthetic history; no redesign.

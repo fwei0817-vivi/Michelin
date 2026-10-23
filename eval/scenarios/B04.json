@@ -1,0 +1,53 @@
+{
+  "id": "B04",
+  "category": "budget",
+  "menu": "trap",
+  "title": "Six people, generous budget",
+  "trap": "Plenty of money: portions must still not balloon past 1.3 units per person.",
+  "diners": [
+    {
+      "id": "p1",
+      "name": "Ana",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p2",
+      "name": "Ben",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p3",
+      "name": "Cai",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p4",
+      "name": "Dev",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p5",
+      "name": "Eli",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p6",
+      "name": "Fei",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    }
+  ],
+  "budget_per_person": 60,
+  "expect": "any"
+}

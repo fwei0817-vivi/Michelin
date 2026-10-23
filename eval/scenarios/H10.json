@@ -1,0 +1,37 @@
+{
+  "id": "H10",
+  "category": "hidden_ingredient",
+  "menu": "sample_sichuan",
+  "title": "Repo sample menu: vegetarian + shellfish/fish allergy",
+  "trap": "Uses the repo's own labels. Garlic greens and di san xian may use oyster sauce yet are labeled vegetarian.",
+  "diners": [
+    {
+      "id": "david",
+      "name": "David",
+      "allergies": [],
+      "diets": [
+        "vegetarian"
+      ],
+      "max_spice": null
+    },
+    {
+      "id": "amy",
+      "name": "Amy",
+      "allergies": [
+        "shellfish",
+        "fish"
+      ],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p1",
+      "name": "Ana",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    }
+  ],
+  "budget_per_person": 30,
+  "expect": "any"
+}

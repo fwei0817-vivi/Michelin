@@ -1,0 +1,41 @@
+{
+  "id": "C03",
+  "category": "infeasible",
+  "menu": "trap",
+  "title": "Soy allergy at a Sichuan table",
+  "trap": "Soy sauce and bean paste are nearly everywhere; only potato and rice are truly free of it.",
+  "diners": [
+    {
+      "id": "soy",
+      "name": "Soo",
+      "allergies": [
+        "soy"
+      ],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p1",
+      "name": "Ana",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p2",
+      "name": "Ben",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    },
+    {
+      "id": "p3",
+      "name": "Cai",
+      "allergies": [],
+      "diets": [],
+      "max_spice": null
+    }
+  ],
+  "budget_per_person": 30,
+  "expect": "any"
+}

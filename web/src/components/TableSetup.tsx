@@ -1,4 +1,4 @@
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw, UserPlus, X } from "lucide-react";
 import { currencySymbol, dinerSummary, money, subtotalCap } from "../lib/format";
 import type { DinerProfile, DiningSettings } from "../types";
 import { NumberField } from "./NumberField";
@@ -12,6 +12,9 @@ const pct = (x: number) => `${Number((x * 100).toFixed(3))}%`;
 
 interface Props {
   diners: DinerProfile[];
+  saved: DinerProfile[];
+  onPick: (d: DinerProfile) => void;
+  onRemove?: (id: string) => void;
   settings: DiningSettings;
   currency: string;
   onChange: (s: DiningSettings) => void;
@@ -21,33 +24,32 @@ interface Props {
   onPlan: () => void;
   loading: boolean;
   initial?: boolean;
+  current?: boolean;
 }
 
-export function TableSetup({ diners, settings, currency, onChange, onEdit, onAdd, onPreset, onPlan, loading, initial = false }: Props) {
+export function TableSetup({ diners, saved, onPick, onRemove, settings, currency, onChange, onEdit, onAdd, onPreset, onPlan, loading, initial = false, current = false }: Props) {
   const cur = currencySymbol(currency);
   const set = (key: keyof DiningSettings, value: number | string) => onChange({ ...settings, [key]: value });
   const valid =
     settings.budget >= 1 && settings.budget <= 500 &&
-    Number.isInteger(settings.minDishes) && settings.minDishes >= 1 && settings.minDishes <= 10 &&
-    Number.isInteger(settings.dishCount) && settings.dishCount >= 1 && settings.dishCount <= 20 &&
     settings.tax >= 0 && settings.tax <= 0.3 && settings.tip >= 0 && settings.tip <= 0.4;
   return (
     <div className="setup-content">
       <section className="setup-section" aria-labelledby="people-heading">
         <div className="setup-section-head">
           <h3 id="people-heading">
-            People <span>{diners.length}</span>
+            Tonight <span>{diners.length} of 6</span>
           </h3>
-          <select className="field preset" aria-label="Load a group" value="" onChange={(e) => { if (e.target.value) onPreset(e.target.value); }}>
-            <option value="">Load a group…</option>
-            <option value="saved">Example group</option>
-            <option value="two">Example dinner for two</option>
-            <option value="new">Start empty</option>
+          <select className="field preset" aria-label="Quick fill" value="" onChange={(e) => { if (e.target.value) onPreset(e.target.value); }}>
+            <option value="">Quick fill…</option>
+            <option value="saved">Sample group of six</option>
+            <option value="two">Sample dinner for two</option>
+            <option value="new">Clear tonight's table</option>
           </select>
         </div>
         <ul className="people-list">
           {diners.map((d, i) => (
-            <li key={d.id}>
+            <li key={d.id} className="person-item">
               <button className="person-row" onClick={() => onEdit(d)} aria-label={`Edit ${d.name}`}>
                 <span className="avatar">{d.name.charAt(0).toUpperCase() || i + 1}</span>
                 <span className="person-text">
@@ -56,35 +58,52 @@ export function TableSetup({ diners, settings, currency, onChange, onEdit, onAdd
                 </span>
                 <span className="person-edit">Edit</span>
               </button>
+              {onRemove && (
+                <button type="button" className="person-remove" onClick={() => onRemove(d.id)} aria-label={`${d.name} is not eating tonight`} title="Not eating tonight (stays saved)">
+                  <X size={15} />
+                </button>
+              )}
             </li>
           ))}
         </ul>
-        <button className="text-button add-person" onClick={onAdd}>
+        <button className="text-button add-person" onClick={onAdd} disabled={diners.length >= 6}>
           <Plus size={16} />
-          Add a person
+          Add a new person
         </button>
+        {diners.length >= 6 && (
+          <p className="helper" role="status">
+            Six people is the most per table. Remove someone to add another.
+          </p>
+        )}
+        {(() => {
+          const others = saved.filter((s) => !diners.some((d) => d.id === s.id));
+          if (!others.length) return null;
+          return (
+            <div className="saved-people">
+              <p className="saved-people-head">Saved people · tap to add for tonight</p>
+              <div className="saved-chips">
+                {others.map((p) => (
+                  <button key={p.id} type="button" className="saved-chip" disabled={diners.length >= 6} onClick={() => onPick(p)} title={dinerSummary(p) || "No restrictions recorded"}>
+                    <UserPlus size={13} />
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </section>
 
       <section className="setup-section" aria-labelledby="budget-heading">
-        <h3 id="budget-heading">Budget and dishes</h3>
+        <h3 id="budget-heading">Budget and style</h3>
         <div className="field-row">
           <label className="field-label">
             Budget per person
             <span className="input-affix">
               <span aria-hidden="true">{cur.trim()}</span>
-              <NumberField className="field" min={1} max={500} step={1} value={settings.budget} onChange={(n) => set("budget", n)} />
+              <NumberField className="field" min={1} max={500} step={0.01} value={settings.budget} onChange={(n) => set("budget", n)} />
             </span>
-            <small>Tax and tip included</small>
-          </label>
-          <label className="field-label">
-            Dishes to order
-            <NumberField className="field" min={1} max={20} step={1} inputMode="numeric" value={settings.dishCount} onChange={(n) => set("dishCount", n)} />
-            <small>A target, rice included</small>
-          </label>
-          <label className="field-label">
-            Dishes each person can eat
-            <NumberField className="field" min={1} max={10} step={1} inputMode="numeric" value={settings.minDishes} onChange={(n) => set("minDishes", n)} />
-            <small>At least; rice and noodles don't count</small>
+            <small>Includes tax and tip; other fees unknown</small>
           </label>
         </div>
         <div className="field-label style-label" id="style-label">
@@ -117,18 +136,18 @@ export function TableSetup({ diners, settings, currency, onChange, onEdit, onAdd
 
       {!valid && (
         <p className="field-error" role="status">
-          Use a budget from 1–500, 1–20 whole dishes, a minimum of 1–10 dishes, tax up to 30% and tip up to 40%.
+          Use a budget from 1–500, tax up to 30% and tip up to 40%.
         </p>
       )}
       {!diners.length && <p className="helper">Add at least one person to plan your meal.</p>}
       <div className="drawer-footer setup-footer">
         <p className="footer-total">
-          <strong>{money(settings.budget * diners.length, cur)}</strong> for the table
-          <small>About {money(subtotalCap(settings.budget, diners.length, settings.tax, settings.tip), cur)} in menu prices</small>
+          <strong>{money(settings.budget, cur)}</strong> per person
+          <small>{diners.length ? `${money(settings.budget * diners.length, cur)} for ${diners.length}, about ${money(subtotalCap(settings.budget, diners.length, settings.tax, settings.tip), cur)} in menu prices` : "Tax and tip included"}</small>
         </p>
         <button className="btn btn-primary" onClick={onPlan} disabled={loading || !diners.length || !valid}>
           <RefreshCw size={16} className={loading ? "spin" : ""} />
-          {loading ? "Planning…" : initial ? "Find dishes" : "Update dishes"}
+          {loading ? "Planning…" : current ? "See your dishes" : initial ? "Find dishes" : "Update dishes"}
         </button>
       </div>
     </div>

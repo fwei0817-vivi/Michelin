@@ -1,0 +1,53 @@
+{
+  "menu_id": "chili_regular",
+  "input_kind": "text",
+  "input_text": "Ma Po Tofu $22.00\nWhite Rice $2.00\nBok Choy with Garlic $18.00\nScallion Pancakes $10.00",
+  "input_sha256": "f805a85f0f21dfe3a8016e6867f365e24d0c2dfe1ea5a631f2b18a7f957be504",
+  "source_url": "https://chilinyc.com/new-york-midtown-manhattan-chili-food-menu",
+  "retrieved_at": "2026-09-30",
+  "preparation": "Assistant-prepared structured response from a small official-menu factual extract. Input is a curated transcription; descriptions and ingredient evidence use supplied official-page review.",
+  "menu": {
+    "restaurant_id": "chili_regular",
+    "restaurant_name": "CHILI",
+    "cuisine": "chinese_sichuan",
+    "source": "https://chilinyc.com/new-york-midtown-manhattan-chili-food-menu",
+    "verified": true,
+    "dishes": [
+      {
+        "id": "mapo",
+        "name_en": "Ma Po Tofu",
+        "price": 22,
+        "is_vegetarian": true,
+        "confirm_with_staff": [
+          "Confirm omitted ingredients, preparation, cross-contact and additional fees."
+        ]
+      },
+      {
+        "id": "rice",
+        "name_en": "White Rice",
+        "price": 2,
+        "category": "staple",
+        "confirm_with_staff": [
+          "Confirm omitted ingredients, preparation, cross-contact and additional fees."
+        ]
+      },
+      {
+        "id": "bok_choy",
+        "name_en": "Bok Choy with Garlic",
+        "price": 18,
+        "confirm_with_staff": [
+          "Confirm omitted ingredients, preparation, cross-contact and additional fees."
+        ]
+      },
+      {
+        "id": "scallion_pancakes",
+        "name_en": "Scallion Pancakes",
+        "price": 10,
+        "is_vegetarian": true,
+        "confirm_with_staff": [
+          "Confirm omitted ingredients, preparation, cross-contact and additional fees."
+        ]
+      }
+    ]
+  }
+}

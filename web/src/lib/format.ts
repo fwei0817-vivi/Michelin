@@ -1,10 +1,10 @@
-import type { Allergen, AllergenFlag, Diet, DinerProfile, Dish } from "../types";
+import type { Allergen, AllergenFlag, Diet, DinerProfile, Dish, Preference } from "../types";
 
 export const ALLERGENS: Allergen[] = [
-  "shellfish",
-  "fish",
   "peanut",
   "tree_nut",
+  "shellfish",
+  "fish",
   "egg",
   "dairy",
   "soy",
@@ -18,7 +18,7 @@ export const ALLERGEN_LABEL: Record<Allergen, string> = {
   peanut: "peanuts",
   tree_nut: "tree nuts",
   egg: "egg",
-  dairy: "dairy",
+  dairy: "milk",
   soy: "soy",
   wheat: "wheat",
   sesame: "sesame",
@@ -33,7 +33,24 @@ export const DIET_LABEL: Record<Diet, string> = {
   no_beef: "no beef",
 };
 
-export const SPICE_LABEL = ["no heat", "mild", "medium", "hot"];
+
+export const PREFERENCES: Preference[] = ["no_spicy", "mild", "loves_spicy", "likes_seafood", "likes_meat", "light", "no_offal"];
+export const SPICE_PREFS: Preference[] = ["no_spicy", "mild", "loves_spicy"]; // pick at most one
+
+export const PREFERENCE_LABEL: Record<Preference, string> = {
+  no_spicy: "No spicy",
+  mild: "Mild",
+  loves_spicy: "Loves spicy",
+  likes_seafood: "Likes seafood",
+  likes_meat: "Likes meat",
+  light: "Light / 清淡",
+  no_offal: "No offal / 内脏",
+};
+
+/** "Mango " -> "mango"; same cleaning as the server. */
+export function cleanTerm(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9 '\-]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 40).trim();
+}
 
 export function money(n: number | null | undefined, currency = "$"): string {
   if (n == null) return "—";
@@ -63,16 +80,57 @@ export function dietWording(d: Dish): string | null {
 export function dinerSummary(p: DinerProfile): string {
   const parts = [
     ...p.diets.map((d) => DIET_LABEL[d]),
+    ...(p.other_diets ?? []),
     ...p.allergies.map((a) => `no ${ALLERGEN_LABEL[a]}`),
+    ...(p.other_allergies ?? []).map((a) => `no ${a}`),
   ];
-  if (p.max_spice === 0) parts.push("no heat");
+  if (avoidsHeat(p)) parts.push("no heat");
   return parts.join(", ");
+}
+
+/** The diner's own note says they avoid spicy food ("no spicy food", "mild only"). */
+export function avoidsHeat(p: DinerProfile): boolean {
+  if (p.preferences?.some((x) => x === "no_spicy" || x === "mild")) return true;
+  return /\b(no|not|avoids?|hates?|without|can't|cannot|don't)\b[^.;]*\b(spic|heat|hot|chil)|\bmild\b/i.test(p.notes ?? "");
 }
 
 /** "David", "David and Tom", "David, Amy and Tom". */
 export function listNames(names: string[]): string {
   if (names.length <= 1) return names.join("");
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
+export const MARK_LABEL: Record<string, { short: string; title: string }> = {
+  vegetarian: { short: "V", title: "The menu marks it vegetarian" },
+  vegan: { short: "Vegan", title: "The menu marks it vegan" },
+  vegetarian_possible: { short: "VP", title: "The menu says it can be made vegetarian: order it that way and ask" },
+  gluten_free: { short: "GF", title: "The menu marks it gluten free (shown only; a wheat allergy still asks)" },
+  gluten_free_possible: { short: "GP", title: "The menu says it can be made gluten free" },
+};
+
+/** "Menu: VP, GF": the marks printed next to the dish. */
+export function markWording(d: Dish): string | null {
+  const marks = (d.menu_marks ?? []).map((m) => MARK_LABEL[m]?.short ?? m);
+  return marks.length ? `Menu: ${marks.join(", ")}` : null;
+}
+
+/** Versions of one printed line ("Kung Pao (Chicken)", "Kung Pao (Tofu)") side by side,
+ * where the first of them falls; everything else keeps its order. */
+export function groupFamilies<T extends Dish>(dishes: T[]): T[] {
+  const out: T[] = [];
+  const done = new Set<string>();
+  for (const d of dishes) {
+    if (!d.family_id) { out.push(d); continue; }
+    if (done.has(d.family_id)) continue;
+    done.add(d.family_id);
+    out.push(...dishes.filter((x) => x.family_id === d.family_id));
+  }
+  return out;
+}
+
+/** "Kung Pao (Tofu)" and its siblings on this menu. */
+export function siblings(d: Dish, dishes: Dish[]): Dish[] {
+  return d.family_id ? dishes.filter((x) => x.family_id === d.family_id && x.id !== d.id) : [];
 }
 
 export function dishName(d: Dish): string {
@@ -100,14 +158,24 @@ export const CATEGORY_LABEL: Record<string, string> = {
 };
 /** Short pass / fail labels for Plan.checks. Allergy and diet wording stays at "recorded": a pass
  *  means no recorded conflict, never that a dish is free of something. */
-export function checkLabel(name: string, passed: boolean, minDishes: number): string {
+export function checkLabel(name: string, passed: boolean): string {
   const labels: Record<string, [string, string]> = {
     allergies: ["No recorded allergy conflicts", "Allergy conflict"],
     diets: ["Recorded diets met", "Diet conflict"],
-    coverage: [`Everyone has ${minDishes}+ options`, `Not everyone has ${minDishes}+ options`],
+    coverage: ["Each diner has a dish (see who can eat what)", "Someone has nothing to eat"], // Ticket uses coverageLabel (QA r18)
     budget: ["Within budget", "Over budget"],
-    portions: ["Portions fit the table", "Portions off target"],
+    enough: ["Enough food for everyone", "Not enough food for everyone"],
+    ai: ["Menu ids and safety rules verified", "AI choice failed the checks"],
   };
   return labels[name]?.[passed ? 0 : 1] ?? name;
 }
 export const currencySymbol = (currency: string) => currency === "USD" ? "$" : currency === "CNY" ? "¥" : `${currency} `;
+
+const KEEP_CAPS = new Set(["BBQ", "XO", "NYC", "USA", "UK", "LA", "NY", "II", "III"]);
+
+/** "SKY PAVILION 天阁" -> "Sky Pavilion 天阁"; names that are not all caps stay as typed. */
+export function niceName(name: string): string {
+  const letters = name.match(/[A-Za-z]/g) ?? [];
+  if (letters.length < 4 || letters.some((c) => c !== c.toUpperCase())) return name;
+  return name.replace(/[A-Za-z][A-Za-z']*/g, (w) => (KEEP_CAPS.has(w) ? w : w[0] + w.slice(1).toLowerCase()));
+}

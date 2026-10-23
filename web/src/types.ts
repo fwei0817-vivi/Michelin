@@ -14,6 +14,16 @@ export type Allergen =
   | "sesame";
 
 export type Diet = "vegetarian" | "vegan" | "no_pork" | "no_beef";
+/** Soft taste chips: the AI weighs them, the rules never exclude a dish for them. */
+export type Preference = "no_spicy" | "mild" | "loves_spicy" | "likes_seafood" | "likes_meat" | "light" | "no_offal";
+
+export interface CustomFlag {
+  term: string;
+  kind: "allergy" | "diet";
+  answer: "likely" | "possible" | "no" | "unknown";
+  why?: string;
+  printed?: boolean;
+}
 
 export interface IngredientClaim {
   name: string;
@@ -36,8 +46,8 @@ export interface Dish {
   description_raw?: string | null;
   category: string;
   cooking_method?: string | null;
-  spice_level: number;
-  portion: string;
+  spice_level: number | null;
+  portion: string | null;
   main_ingredients: IngredientClaim[];
   allergens: AllergenFlag[];
   is_vegetarian: boolean | null;
@@ -45,13 +55,24 @@ export interface Dish {
   contains_pork: boolean | null;
   contains_beef: boolean | null;
   confirm_with_staff: string[];
+  /** One printed line with a choice of protein: one dish per choice, sharing a family. */
+  family_id?: string | null;
+  family_name?: string | null;
+  variant?: string | null;
+  menu_marks?: MenuMark[];
+  menu_spice?: number | null;
+  menu_section?: string | null;
+  custom_flags?: CustomFlag[];
 }
+
+export type MenuMark = "vegetarian" | "vegan" | "vegetarian_possible" | "gluten_free" | "gluten_free_possible";
 
 export interface Menu {
   restaurant_id: string;
   restaurant_name: string;
   cuisine: string;
   source: string;
+  preparation_mode?: "prepared_replay" | "live" | null;
   currency: string;
   verified: boolean;
   dishes: Dish[];
@@ -70,9 +91,12 @@ export interface DinerProfile {
   name: string;
   allergies: Allergen[];
   diets: Diet[];
-  max_spice: number | null;
-  dislikes: string[];
-  likes: string[];
+  /** Hard rules in the diner's own words: "mango", "cilantro"; "halal", "no alcohol". */
+  other_allergies?: string[];
+  other_diets?: string[];
+  preferences?: Preference[];
+  /** Tastes and preferences in their own words; the AI reads it, the rules don't. */
+  notes: string;
 }
 
 export interface PlanItem {
@@ -80,7 +104,16 @@ export interface PlanItem {
   quantity: number;
   edible_by: string[];
   reason: string | null;
+  server_question?: string | null; // AI plans: one question for the server, rule-checked
+  status?: DinerStatusMap; // backend per-diner status: the only source for card marks (QA r15)
+  veg_tag?: VegTag | null; // backend vegetarian/vegan tag (QA r16)
+  spice_label?: string | null; // backend spice tag, the one source (2026-10-10)
+  heat_note?: string | null; // backend "Too spicy for …"
 }
+
+export type DinerStatus = { status: "ok" | "needs_confirm" | "no"; reason: string | null; taste?: "too_spicy" | "a_little_spicy" | null };
+export type DinerStatusMap = Record<string, DinerStatus>;
+export type VegTag = "vegetarian" | "vegan" | "ask_vegetarian" | "ask_vegan";
 
 export interface Check {
   name: string;
@@ -98,16 +131,18 @@ export interface Plan {
   variety_score: number;
   checks: Check[];
   confirm_with_staff: string[];
+  summary?: string | null;
 }
 
 export interface Relaxation {
-  kind: "budget" | "allergy" | "diet" | "coverage" | "portions" | string;
+  kind: "budget" | "allergy" | "diet" | "coverage" | string;
   description: string;
   diner_id: string | null;
   new_value: number | null;
 }
 
 export interface Conflict {
+  code?: string;
   message: string;
   relaxations: Relaxation[];
 }
@@ -117,15 +152,33 @@ export interface PlanRequest {
   diner_ids?: string[];
   diners?: DinerProfile[];
   budget_per_person: number;
+  budget_total?: number;
   tax_rate?: number;
   tip_rate?: number;
-  min_dishes_per_person?: number;
   locked_dish_ids?: string[];
   excluded_dish_ids?: string[];
   menu_override?: Menu;
-  dish_count_target?: number;
   style_preference?: string;
   explain?: boolean;
+  /** "What should change?": the AI revises `current` per the chips and words. */
+  feedback?: PlanFeedback;
+}
+
+export type FeedbackChip = "less_spicy" | "more_seafood" | "more_veggies" | "cheaper" | "more_filling" | "something_different";
+
+export interface PlanFeedback {
+  chips: FeedbackChip[];
+  text: string;
+  current: { dish_id: string; quantity: number }[];
+}
+
+/** AI single-dish swap: only that dish changes; "failed" offers the manual pick. */
+export interface SwapResponse {
+  kind: "plan" | "failed";
+  plan?: Plan | null;
+  new_dish_id?: string | null;
+  message: string;
+  source_note?: string | null;
 }
 
 export interface PlanResponse {
@@ -133,14 +186,16 @@ export interface PlanResponse {
   plan?: Plan | null;
   conflict?: Conflict | null;
   subtotal_cap: number;
+  source?: "ai" | "rules" | "mock";
+  source_note?: string | null;
+  change_note?: string | null; // refinement: what changed, checked against the real changes
+  changes?: string[];
 }
 
 export interface DiningSettings {
   budget: number;
   tax: number;
   tip: number;
-  minDishes: number;
-  dishCount: number;
   style: "balanced" | "lighter" | "favorites";
 }
 
@@ -148,5 +203,21 @@ export interface DishEligibility {
   edible_by: string[];
   blocked_for: Record<string, string[]>;
   questions: string[];
+  status?: DinerStatusMap;
+  veg_tag?: VegTag | null;
+  spice_label?: string | null;
+  heat_note?: string | null;
+  for_whom?: string[];
+  assessments?: Record<string, {status: "conflict" | "requires_confirmation" | "validated_under_known_data"; reasons: string[]}>;
 }
 export type Eligibility = Record<string, DishEligibility>;
+
+export interface PreparedInput {
+  menu_id: string; input_text: string; input_sha256: string; source_url: string;
+  retrieved_at: string; preparation: string;
+}
+export interface ExtractionResponse {
+  menu: Menu; provider: string; mode: "prepared_replay" | "live";
+  input_sha256: string; source_url: string | null; retrieved_at: string | null; notice: string;
+}
+export interface ProfileSnapshot { profile: DinerProfile; revision: number; created_at?: string }

@@ -1,0 +1,342 @@
+{
+ "restaurant": "CHILI",
+ "url": "https://chilinyc.com/new-york-midtown-manhattan-chili-food-menu",
+ "retrieved": "2026-10-02",
+ "note": "Regular dinner menu as listed on the restaurant's own site; lunch and happy-hour prices excluded. Selection of up to 40 dishes; names, prices and printed descriptions/tags copied as listed.",
+ "dishes": [
+  {
+   "section": "Cold Appetizers",
+   "name_zh": null,
+   "name_en": "Mr. and Mrs. Smith",
+   "description": "sliced beef and tripe seasoned with chili oil, cilantro and peanuts",
+   "tags": [],
+   "price": 16.0
+  },
+  {
+   "section": "Cold Appetizers",
+   "name_zh": null,
+   "name_en": "Mouth Watering Chicken",
+   "description": "poached chicken with house special sauce, sesame, and peanuts",
+   "tags": [],
+   "price": 14.0
+  },
+  {
+   "section": "Cold Appetizers",
+   "name_zh": null,
+   "name_en": "Szechuan Cold Noodle",
+   "description": "cold noodles with sesame, peanuts, and scallion",
+   "tags": [],
+   "price": 12.0
+  },
+  {
+   "section": "Cold Appetizers",
+   "name_zh": null,
+   "name_en": "Cucumber Salad",
+   "description": "diced cucumber with house-made garlic dressing GF V",
+   "tags": [],
+   "price": 12.0
+  },
+  {
+   "section": "Cold Appetizers",
+   "name_zh": null,
+   "name_en": "Pork in Garlic Dressing",
+   "description": "sliced pork mixed with house special garlic sauce, chili oil and soy sauce",
+   "tags": [],
+   "price": 15.0
+  },
+  {
+   "section": "Cold Appetizers",
+   "name_zh": null,
+   "name_en": "Mung Bean Jelly",
+   "description": "mung bean noodles, garlic, peppercorns, sesame, soy and chili sauce V",
+   "tags": [],
+   "price": 12.0
+  },
+  {
+   "section": "Cold Appetizers",
+   "name_zh": null,
+   "name_en": "Five Spice Beef",
+   "description": "sliced beef shank marinated with five different spices GF",
+   "tags": [],
+   "price": 14.0
+  },
+  {
+   "section": "Cold Appetizers",
+   "name_zh": "漩汁秋葵",
+   "name_en": "Poached Okra",
+   "description": null,
+   "tags": [],
+   "price": 14.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": null,
+   "name_en": "Beef Pancake Wrap",
+   "description": "hand-kneaded crispy scallion pancake wrapped around tender braised beef shank with our special sauce spread, onion, and cilantro",
+   "tags": [],
+   "price": 16.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": null,
+   "name_en": "Scallion Pancakes (6 pcs)",
+   "description": null,
+   "tags": [
+    "V"
+   ],
+   "price": 10.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": null,
+   "name_en": "Crystal Shrimp Dumplings (5 pcs)",
+   "description": null,
+   "tags": [],
+   "price": 12.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": null,
+   "name_en": "Vegetable Pot Stickers (6 pcs)",
+   "description": null,
+   "tags": [
+    "V"
+   ],
+   "price": 12.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": null,
+   "name_en": "Pork Pot Stickers (6 pcs)",
+   "description": null,
+   "tags": [],
+   "price": 12.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": null,
+   "name_en": "Pork Dumplings in Chili Oil (6 pcs)",
+   "description": null,
+   "tags": [],
+   "price": 12.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": null,
+   "name_en": "Spicy Wonton (6 pcs)",
+   "description": null,
+   "tags": [
+    "pork"
+   ],
+   "price": 12.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": null,
+   "name_en": "Wonton Soup",
+   "description": null,
+   "tags": [
+    "pork"
+   ],
+   "price": 12.0
+  },
+  {
+   "section": "Dim Sum",
+   "name_zh": null,
+   "name_en": "Dan Dan Noodles",
+   "description": "noodles with minced pork, sesame paste",
+   "tags": [],
+   "price": 12.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": null,
+   "name_en": "Chungking Spicy Chicken",
+   "description": "stir-fried diced chicken with red chili peppers",
+   "tags": [],
+   "price": 28.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": null,
+   "name_en": "Pickled Fish Stew",
+   "description": "fillets of sole with pickled cabbage, chili peppers, cilantro and peppercorn GF",
+   "tags": [],
+   "price": 38.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": null,
+   "name_en": "Braised Tofu with Crab Meat",
+   "description": "stewed crab roe and tofu",
+   "tags": [],
+   "price": 35.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": null,
+   "name_en": "Shredded Beef with Green Chili",
+   "description": null,
+   "tags": [],
+   "price": 28.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": null,
+   "name_en": "Tea Smoked Duck",
+   "description": "1/2 bone-in duck GF",
+   "tags": [],
+   "price": 35.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": null,
+   "name_en": "Red Style Chungking Braised Fish Stew",
+   "description": "fillets of sole with chili oil, peppercorn and bean sprout",
+   "tags": [],
+   "price": 38.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": null,
+   "name_en": "Fragrant Fish Fillet",
+   "description": "fillet of sole with seasonal vegetables and green chili pepper, soy sauce",
+   "tags": [],
+   "price": 26.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": null,
+   "name_en": "Kung Fu Shrimp",
+   "description": "black tiger prawn with peanut, dried chili, peppercorn  GF",
+   "tags": [],
+   "price": 36.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": null,
+   "name_en": "Shredded Pork in Garlic Sauce",
+   "description": "stir-fried pork with bamboo shoots, wood ear and bell peppers",
+   "tags": [],
+   "price": 24.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": null,
+   "name_en": "Twice Cooked Pork",
+   "description": "sliced pork belly, smoked tofu, leek and chili peppers",
+   "tags": [],
+   "price": 24.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": null,
+   "name_en": "Spicy Cumin Lamb",
+   "description": "lamb with cumin, chili peppers, onion and cilantro",
+   "tags": [],
+   "price": 32.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": null,
+   "name_en": "Ma Po Tofu",
+   "description": "braised tofu with garlic and spicy chili sauce, peppercorn  V",
+   "tags": [],
+   "price": 22.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": null,
+   "name_en": "Kung Pao Chicken",
+   "description": "stir-fried diced chicken with peanuts, peppercorn and chili peppers",
+   "tags": [],
+   "price": 25.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": "宫保虾仁",
+   "name_en": "Kung Pao Shrimp",
+   "description": null,
+   "tags": [],
+   "price": 34.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": null,
+   "name_en": "Fried Rice with Preserved Vegetable",
+   "description": null,
+   "tags": [],
+   "price": 15.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": "虾炒饭",
+   "name_en": "Shrimp Fried Rice",
+   "description": null,
+   "tags": [],
+   "price": 20.0
+  },
+  {
+   "section": "Entrée",
+   "name_zh": null,
+   "name_en": "White Rice",
+   "description": null,
+   "tags": [],
+   "price": 2.0
+  },
+  {
+   "section": "Vegetables",
+   "name_zh": null,
+   "name_en": "Eggplant in Garlic Sauce",
+   "description": null,
+   "tags": [],
+   "price": 19.0
+  },
+  {
+   "section": "Vegetables",
+   "name_zh": null,
+   "name_en": "Bok Choy with Garlic",
+   "description": null,
+   "tags": [
+    "GF"
+   ],
+   "price": 18.0
+  },
+  {
+   "section": "Vegetables",
+   "name_zh": null,
+   "name_en": "Sautéed Potato Shreds",
+   "description": null,
+   "tags": [],
+   "price": 18.0
+  },
+  {
+   "section": "Vegetables",
+   "name_zh": null,
+   "name_en": "Sautéed String Beans",
+   "description": null,
+   "tags": [
+    "GF"
+   ],
+   "price": 21.0
+  },
+  {
+   "section": "Vegetables",
+   "name_zh": null,
+   "name_en": "Sautéed Chinese Broccoli",
+   "description": null,
+   "tags": [
+    "GF"
+   ],
+   "price": 18.0
+  },
+  {
+   "section": "Vegetables",
+   "name_zh": null,
+   "name_en": "Dry-pot Cabbage",
+   "description": null,
+   "tags": [],
+   "price": 19.0
+  }
+ ]
+}

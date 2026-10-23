@@ -1,0 +1,590 @@
+{
+ "0589b26a1c2a7a2b82ae79ad": {
+  "course": "staple",
+  "name": "Pineapple Fried Rice (Vegetable)"
+ },
+ "0b8041f0b4214946a6fe8f14": {
+  "course": "staple",
+  "name": "Lo Mein (Combo)"
+ },
+ "0c7d6949bdf985cae5c9d986": {
+  "course": "hot_main",
+  "name": "String Beans w/Garlic Sauce"
+ },
+ "0ed87583da1c50f0876900e8": {
+  "course": "side",
+  "name": "Sichuan Crispy Eggplant"
+ },
+ "0fcb763c304c9ab6daf17362": {
+  "course": "side",
+  "name": "Crispy Noodles"
+ },
+ "109db82c33bba2dcc13ba7df": {
+  "course": "hot_main",
+  "name": "Walnut Shrimp"
+ },
+ "12b30882a4c6597ab7402fcf": {
+  "course": "hot_main",
+  "name": "Goon Bo w/Chicken"
+ },
+ "151a4ca5da5c5f279af6dfa5": {
+  "course": "hot_main",
+  "name": "Dry-Braised Tomato Shrimp"
+ },
+ "16579fe95f7e5ed444410d30": {
+  "course": "hot_main",
+  "name": "Scramble Egg & Chopped Tomato"
+ },
+ "17f4ac200d1808eecb0b5c59": {
+  "course": "staple",
+  "name": "Pineapple Fried Rice (Chicken)"
+ },
+ "1a22695d415cd74ccfacd97a": {
+  "course": "hot_main",
+  "name": "Scrambled Eggs with Shrimp"
+ },
+ "1bdbe1dd3aadda577987ed29": {
+  "course": "hot_main",
+  "name": "Twice Cooked Pork Belly"
+ },
+ "1db1dcc577d5d03107ef98a2": {
+  "course": "hot_main",
+  "name": "Goon Bo w/Scallops"
+ },
+ "1e6cfbd06485508e37a5f9d9": {
+  "course": "hot_main",
+  "name": "Szechuan Chicken"
+ },
+ "1fad810cfac0465b9d6953d1": {
+  "course": "hot_main",
+  "name": "Thousand Layer Tofu"
+ },
+ "23a593774438f22cf3303348": {
+  "course": "hot_main",
+  "name": "Fried Wonton w/Garlic Sauce"
+ },
+ "24ba15d07f62ca6938215840": {
+  "course": "side",
+  "name": "Mandarin Spare Ribs"
+ },
+ "24dccdf736c0bfead45e60f4": {
+  "course": "hot_main",
+  "name": "Shredded Beef Szechuan Style"
+ },
+ "2563fdd8f54ff551c4118bb8": {
+  "course": "staple",
+  "name": "Pineapple Fried Rice (Beef)"
+ },
+ "25fcb829227a4b268ca5a3de": {
+  "course": "hot_main",
+  "name": "Organic Cauliflower in Drywok Flavored with Sliced Pork"
+ },
+ "268b483a2e35f6fa24f51186": {
+  "course": "hot_main",
+  "name": "Mongolian (Tofu)"
+ },
+ "280a66adbe73250e315a9ef4": {
+  "course": "hot_main",
+  "name": "Chicken with Red Dried Chili"
+ },
+ "2cd0fe74b34cd1f31412944e": {
+  "course": "hot_main",
+  "name": "General Tso's Chicken"
+ },
+ "2f545217a2903a91b1efe9c6": {
+  "course": "hot_main",
+  "name": "Braised Pork Belly"
+ },
+ "321085c754f8746c62e90a99": {
+  "course": "hot_main",
+  "name": "Fluke Fish Filet (Salt & Pepper)"
+ },
+ "3300d77371fbdb8701e98e60": {
+  "course": "hot_main",
+  "name": "Cumin (Lamb)"
+ },
+ "331033005d288ecb676761aa": {
+  "course": "hot_main",
+  "name": "Cumin (Shrimp)"
+ },
+ "35aee25277837693fd603e3b": {
+  "course": "hot_main",
+  "name": "Cumin (Chicken)"
+ },
+ "3716e0c57cb0f814d476f68f": {
+  "course": "hot_main",
+  "name": "Yu Xiang (Beef)"
+ },
+ "3810013fbf8f55c1ea2aa256": {
+  "course": "side",
+  "name": "Roast Duck"
+ },
+ "38804655e2573863bc3e0f32": {
+  "course": "hot_main",
+  "name": "Wok Organic Cauliflower with Pork Belly"
+ },
+ "38dcc52ff43bab2edd2ba9df": {
+  "course": "hot_main",
+  "name": "Beef with Broccoli"
+ },
+ "3920db5a5fe917dabf749575": {
+  "course": "hot_main",
+  "name": "Sichuan Boiled Beef in Chili Oil (Fluke Fish)"
+ },
+ "39c4f2f5afde40e3104750bb": {
+  "course": "hot_main",
+  "name": "Broccoli (Tofu)"
+ },
+ "3b72d1b22e43605a4b021421": {
+  "course": "side",
+  "name": "Chicken Truffle Soup Dumplings (4)"
+ },
+ "3d1c1b66fa0039ca71148ba0": {
+  "course": "hot_main",
+  "name": "Kung Pao Chicken (Spicy)"
+ },
+ "4225e9b6f6eb2c06b4b84787": {
+  "course": "hot_main",
+  "name": "General Tso's (Tofu)"
+ },
+ "43a0f6c8a2a9841bb1355f10": {
+  "course": "hot_main",
+  "name": "Sautéed Sliced Wintermelon with Spam"
+ },
+ "448c0fd6ff8b74f27db59950": {
+  "course": "hot_main",
+  "name": "Chicken w/Curry Sauce"
+ },
+ "453becbdbfd76ffdc4e55fdc": {
+  "course": "hot_main",
+  "name": "Kung Pao Beef (Spicy)"
+ },
+ "474e784e03340b4da5625018": {
+  "course": "hot_main",
+  "name": "Hunan Beef"
+ },
+ "48f263b8675e90d2038920ce": {
+  "course": "staple",
+  "name": "Hong Kong Rice Noodle"
+ },
+ "4a02a3f145b428acc21ab873": {
+  "course": "hot_main",
+  "name": "Beef w/Garlic Sauce"
+ },
+ "4b66e81d56269c9433999b3d": {
+  "course": "hot_main",
+  "name": "Kung Pao Tofu (Spicy)"
+ },
+ "4c2f1d3c16a0963d9a50417e": {
+  "course": "hot_main",
+  "name": "Chongqing Chili Chicken"
+ },
+ "4d74a681251c5505d74f409f": {
+  "course": "hot_main",
+  "name": "Wok Braised Beef Brisket"
+ },
+ "4e51760aca22fe03c453b76c": {
+  "course": "staple",
+  "name": "Lo Mein (Shrimp)"
+ },
+ "5046a6634c075f675a90f0e7": {
+  "course": "hot_main",
+  "name": "Cumin (Beef)"
+ },
+ "53c0d589324998af81d0e428": {
+  "course": "hot_main",
+  "name": "Stir-fried String Beans"
+ },
+ "545b383a0684d836fafbce8d": {
+  "course": "hot_main",
+  "name": "Mapo Tofu"
+ },
+ "5abaf916227985aa36cca549": {
+  "course": "hot_main",
+  "name": "Goon Bo w/Shrimp"
+ },
+ "5c7e12a789f9ff3266a970dc": {
+  "course": "hot_main",
+  "name": "Braised Fish Fillet with Chinese Sauerkraut"
+ },
+ "5cb339ce9a884c7be0aaa430": {
+  "course": "hot_main",
+  "name": "Broccoli (Beef)"
+ },
+ "5dcdbfe2c62d9b5baece81ca": {
+  "course": "hot_main",
+  "name": "Three Cup Chicken"
+ },
+ "5ec8e423c2bdbafa9c2975b8": {
+  "course": "staple",
+  "name": "Lo Mein (Vegetable)"
+ },
+ "61e771be847f923ca2ca1724": {
+  "course": "hot_main",
+  "name": "Squid w/Eggplant & Spicy Sauce"
+ },
+ "648f95238016dee46c415f9d": {
+  "course": "hot_main",
+  "name": "Spicy Crispy Sea Bass Hunan Style"
+ },
+ "65331b309105ecb68656e8ea": {
+  "course": "staple",
+  "name": "Fried Rice (Beef)"
+ },
+ "68c01c481d8354b0d9384e24": {
+  "course": "staple",
+  "name": "Dan Dan Noodles"
+ },
+ "69d03e63f6edfb5f60fc08bc": {
+  "course": "staple",
+  "name": "Lo Mein (Chicken)"
+ },
+ "6af3f95154f3fc58db37e894": {
+  "course": "hot_main",
+  "name": "Broccoli (Chicken)"
+ },
+ "6c3cd0d681a531f2083106ba": {
+  "course": "hot_main",
+  "name": "General Tso's (Chicken)"
+ },
+ "6ff608f459f825af4d12f9da": {
+  "course": "hot_main",
+  "name": "Szechuan Crabs"
+ },
+ "72319ed8fa86dba908f2dd68": {
+  "course": "hot_main",
+  "name": "Yu Xiang Eggplant"
+ },
+ "733b26624f0500e2b2c81634": {
+  "course": "hot_main",
+  "name": "Mandarin Braised Pork Belly"
+ },
+ "78579a95b673fda9a7882fac": {
+  "course": "hot_main",
+  "name": "Hunan Crispy Sliced Pork"
+ },
+ "78e0b05971b6f0ed216f72ad": {
+  "course": "hot_main",
+  "name": "Fried Tofu w/Garlic Sauce"
+ },
+ "79033522ddbbff3a6783adf9": {
+  "course": "hot_main",
+  "name": "Creamy Prawn with Walnut"
+ },
+ "79e5d2a5a3527e6f7a2b04c7": {
+  "course": "hot_main",
+  "name": "Stir-fried Shredded Potatoes"
+ },
+ "7fe183535b9565b18a7891c1": {
+  "course": "hot_main",
+  "name": "Sesame Beef"
+ },
+ "813a95112b10fca0f1763aec": {
+  "course": "hot_main",
+  "name": "Sautéed Sliced Eggplant with Chili"
+ },
+ "81787970efdcf9c55bc30834": {
+  "course": "hot_main",
+  "name": "Crispy Pork in Sweet & Sour Sauce"
+ },
+ "847f1925eb5384300213e142": {
+  "course": "side",
+  "name": "Classic Soup Dumplings (4)"
+ },
+ "8747e4928fe6459f57689b2d": {
+  "course": "hot_main",
+  "name": "Crabs w/Hot Curry Sauce"
+ },
+ "88964cda5bc3bbf56d77cc87": {
+  "course": "side",
+  "name": "Berkshire Pork & Shrimp Shumai (3)"
+ },
+ "891961876f66b32b68f9fefc": {
+  "course": "hot_main",
+  "name": "Sliced Chicken w/Baby Corn"
+ },
+ "8cfd4a1eb57e7a253d100940": {
+  "course": "side",
+  "name": "Vegetable Dumplings (4) (Pan Fried)"
+ },
+ "8eb79ca62efb02b0bd161761": {
+  "course": "hot_main",
+  "name": "Mapo Tofu"
+ },
+ "8efac24314b02358a71358a7": {
+  "course": "staple",
+  "name": "Fried Rice (Combo)"
+ },
+ "91111f84e96f46b8b25c02c8": {
+  "course": "hot_main",
+  "name": "Goon Bo w/Beef"
+ },
+ "918a79b9d0665a5e12d88dbc": {
+  "course": "staple",
+  "name": "Fried Rice (Shrimp)"
+ },
+ "935ef616aba20a006b65a8ad": {
+  "course": "staple",
+  "name": "Chengdu Fried Rice"
+ },
+ "982ffb2c4f827c3d4001df01": {
+  "course": "hot_main",
+  "name": "Broccoli with Garlic Sauce"
+ },
+ "9b7192e89312c0df36b05953": {
+  "course": "staple",
+  "name": "Yang Chow Fried Rice (Shrimp, Spam, Scrambled Eggs, Mushroom)"
+ },
+ "9bebd0685cfcbd4f2ca182eb": {
+  "course": "hot_main",
+  "name": "Fluke Fish Filet (Steamed w/ Ginger Scallion)"
+ },
+ "9d4f00a8332a84b9de1980c2": {
+  "course": "hot_main",
+  "name": "Mongolian (Beef)"
+ },
+ "a44848f11ec47c1e18e59e87": {
+  "course": "hot_main",
+  "name": "Yu Xiang (Shrimp)"
+ },
+ "a4e5938cd8139494621c613c": {
+  "course": "hot_main",
+  "name": "Chinese Sausage & Flat Beans"
+ },
+ "a5fd00db8bea3b39564a2b58": {
+  "course": "side",
+  "name": "Mandarin Pot Stickers (4)"
+ },
+ "a704dd5bf2f6603d6ecc3d62": {
+  "course": "hot_main",
+  "name": "Fried Fish Filet Szechuan Style"
+ },
+ "a727efb3afce25181cb56a2b": {
+  "course": "hot_main",
+  "name": "Organic Cauliflower Stir Fry"
+ },
+ "aad98bc96ca95da5708d02f4": {
+  "course": "hot_main",
+  "name": "Hunan Wild Mushroom (w/ Pork Belly)"
+ },
+ "aaebb841c65d1a26c56a4824": {
+  "course": "hot_main",
+  "name": "Mixed Vegetable & Tofu"
+ },
+ "ab0e8fe4960941811d0b44cb": {
+  "course": "hot_main",
+  "name": "Sautéed Potato, Green Pepper & Eggplant"
+ },
+ "acbc60aad20f32944f5959de": {
+  "course": "staple",
+  "name": "BBQ Pork Fried Rice"
+ },
+ "ad25de6247c28b967f0e9d02": {
+  "course": "hot_main",
+  "name": "Home Style Tofu w/Meat"
+ },
+ "ad6028c562a0d953d0c23a64": {
+  "course": "hot_main",
+  "name": "Fluke Fish Filet (Sweet & Sour)"
+ },
+ "adffa0da26565b3c7c319a9c": {
+  "course": "hot_main",
+  "name": "Broccoli (Shrimp)"
+ },
+ "ae3bbe23df2f357228c8be06": {
+  "course": "staple",
+  "name": "Pineapple Fried Rice (Shrimp)"
+ },
+ "aea262785412630402b56493": {
+  "course": "staple",
+  "name": "Fried Rice (Vegetable)"
+ },
+ "b183bfb612c3c0737cb71578": {
+  "course": "hot_main",
+  "name": "Beef w/Hot Curry Sauce"
+ },
+ "b367fba1210bcd0c0462ab63": {
+  "course": "hot_main",
+  "name": "Kung Pao Shrimp (Spicy)"
+ },
+ "b3fa173f9b63a4ddd2ed25a2": {
+  "course": "hot_main",
+  "name": "Chinese Pea Leaves (regular stir fry)"
+ },
+ "b5cecdf9eb4cc2000513ffca": {
+  "course": "side",
+  "name": "Sichuan Wonton (5)"
+ },
+ "b5f3e983dca2fe9abfc05667": {
+  "course": "hot_main",
+  "name": "Sesame (Chicken)"
+ },
+ "b6a3166def5efbfbbb27c216": {
+  "course": "side",
+  "name": "Vegetable Dumplings (4) (Steamed)"
+ },
+ "ba69be404a75f009bd598d04": {
+  "course": "hot_main",
+  "name": "Szechuan Orange Flavored Beef"
+ },
+ "ba81eb09be696c59de73fe19": {
+  "course": "hot_main",
+  "name": "Sichuan Boiled Beef in Chili Oil (Sliced Beef)"
+ },
+ "bd9e77d794fb4e8cb6645003": {
+  "course": "hot_main",
+  "name": "Goon Bo w/Duck"
+ },
+ "c0b6cc15446d9b206ab97261": {
+  "course": "hot_main",
+  "name": "Yu Xiang (Pork)"
+ },
+ "c12046e5bd3e3a14c48251c8": {
+  "course": "hot_main",
+  "name": "Mongolian (Shrimp)"
+ },
+ "c16e1b3ce9d1b67739d0c0ba": {
+  "course": "hot_main",
+  "name": "Sautéed Bok Choy"
+ },
+ "c1739769fa1672a44c74fda5": {
+  "course": "hot_main",
+  "name": "Tomato & Egg"
+ },
+ "c1f282111771570128289f71": {
+  "course": "hot_main",
+  "name": "Sautéed Chinese Bacon with Garlic Sprouts"
+ },
+ "c240e2740488ab1428249dac": {
+  "course": "hot_main",
+  "name": "Stir-fried Cabbage"
+ },
+ "c66619065f1078fe0d968384": {
+  "course": "hot_main",
+  "name": "Yu Xiang (Tofu)"
+ },
+ "c7d4349a9915b20d2a3a02f6": {
+  "course": "hot_main",
+  "name": "Sliced Chicken w/Garlic Sauce"
+ },
+ "c8db4679e931f50a229a26b7": {
+  "course": "hot_main",
+  "name": "Chinese Pea Leaves (garlic stir fry)"
+ },
+ "c918dd624530546e1cf40108": {
+  "course": "hot_main",
+  "name": "Scallops w/Garlic Sauce"
+ },
+ "cbf1393b97ea03289d86db82": {
+  "course": "staple",
+  "name": "Braised Beef Noodles"
+ },
+ "cd413bb52b9ad0058dd0ed9f": {
+  "course": "hot_main",
+  "name": "Sesame (Tofu)"
+ },
+ "cd67937bee0c105389bed773": {
+  "course": "hot_main",
+  "name": "Fluke Fish Filet (Hunan Fermented Chili)"
+ },
+ "ce16c135814e0082f1206fca": {
+  "course": "hot_main",
+  "name": "Kung Pao Chicken"
+ },
+ "ce564f6def7a0f3a3c94abc0": {
+  "course": "hot_main",
+  "name": "Sautéed Cumin Flavor Sliced Lamb"
+ },
+ "cef3fce6e9a2046014f7cac9": {
+  "course": "hot_main",
+  "name": "Sautéed Pork with Hot Pepper"
+ },
+ "cf0eb98a8413f66cbeba67ca": {
+  "course": "hot_main",
+  "name": "Shrimp w/Garlic Sauce"
+ },
+ "d1c529bd24ace71285f101f6": {
+  "course": "hot_main",
+  "name": "Yu Xiang (Chicken)"
+ },
+ "d4050aa60ec27c23cfafa323": {
+  "course": "hot_main",
+  "name": "Wok Fried String Bean"
+ },
+ "d47ea1e953709bc4bd64dd2c": {
+  "course": "hot_main",
+  "name": "Shredded Pork with Garlic Sauce"
+ },
+ "d9328bee096514fe53028030": {
+  "course": "hot_main",
+  "name": "Squid w/Garlic Sauce"
+ },
+ "d9e8c92b42c1e92bb717869a": {
+  "course": "hot_main",
+  "name": "General Tso's Chicken"
+ },
+ "dafe7794ef0e8f709096c9f3": {
+  "course": "hot_main",
+  "name": "Sliced Chicken w/Eggplant & Spicy Sauce"
+ },
+ "de62305bb5b2e7beef7c47b5": {
+  "course": "hot_main",
+  "name": "Eggplant w/Garlic Sauce"
+ },
+ "e5504ddbf2e5ae5f25124b92": {
+  "course": "staple",
+  "name": "Fried Rice (Chicken)"
+ },
+ "e720f3dffc986506acdb6f47": {
+  "course": "staple",
+  "name": "Pineapple Fried Rice (Combo)"
+ },
+ "e7ae0bc6a6738bda35772336": {
+  "course": "side",
+  "name": "Green Tea Chicken Wings (5)"
+ },
+ "f1c8c5a7dea56717029f54dc": {
+  "course": "staple",
+  "name": "Lo Mein (Beef)"
+ },
+ "f3f9701e73cb72aa91179267": {
+  "course": "hot_main",
+  "name": "Beef w/Eggplant & Spicy Sauce"
+ },
+ "f594416e10f8fb05d7fc856c": {
+  "course": "hot_main",
+  "name": "Fish Filet in Chili Oil"
+ },
+ "f5a4d3619a19878e4911d44a": {
+  "course": "hot_main",
+  "name": "Goon Bo w/Chicken & Shrimp Ding"
+ },
+ "f5cffc8306d7e82532e0aafd": {
+  "course": "hot_main",
+  "name": "Lobster- Szechuan Style"
+ },
+ "f5f16f435adb4775b234e060": {
+  "course": "hot_main",
+  "name": "Szechuan Shrimp"
+ },
+ "f6a55054ad5b19c0b1b13dfa": {
+  "course": "hot_main",
+  "name": "Squid w/Baby Corn"
+ },
+ "f7f930488ebe6e89fe281c70": {
+  "course": "hot_main",
+  "name": "Mongolian (Chicken)"
+ },
+ "f8230868cc37ffb4768e12ed": {
+  "course": "hot_main",
+  "name": "Country Style Pork & Chili"
+ },
+ "f99224ffa1beca397b74a9a0": {
+  "course": "hot_main",
+  "name": "Cumin (Tofu)"
+ },
+ "fab84709c4f79731adb14c1b": {
+  "course": "side",
+  "name": "Chicken Lettuce Wraps"
+ }
+}

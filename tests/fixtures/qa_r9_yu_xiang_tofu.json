@@ -1,0 +1,153 @@
+{
+ "dish": {
+  "id": "yu_xiang_tofu",
+  "name_zh": "豆腐",
+  "name_en": "Yu Xiang (Tofu)",
+  "price": 18,
+  "description_raw": "豆腐 Yu Xiang (Tofu) Bamboo | Celery | Bell Pepper | Mushroom 笋|芹菜|灯笼椒|蘑菇",
+  "category": "stir_fry",
+  "cooking_method": null,
+  "spice_level": 2,
+  "portion": null,
+  "main_ingredients": [
+   {
+    "name": "tofu",
+    "tier": "inferred",
+    "note": "AI, from the dish name"
+   },
+   {
+    "name": "bamboo shoots",
+    "tier": "inferred",
+    "note": "AI, from the dish name"
+   },
+   {
+    "name": "celery",
+    "tier": "inferred",
+    "note": "AI, from the dish name"
+   },
+   {
+    "name": "bell pepper",
+    "tier": "inferred",
+    "note": "AI, from the dish name"
+   },
+   {
+    "name": "mushroom",
+    "tier": "inferred",
+    "note": "AI, from the dish name"
+   },
+   {
+    "name": "soy sauce",
+    "tier": "inferred",
+    "note": "AI, from the dish name"
+   },
+   {
+    "name": "pork",
+    "tier": "unknown",
+    "note": "AI, from the dish name"
+   }
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "tier": "inferred",
+    "confidence": 0.8,
+    "reason": "usually contain soy (tofu and soy sauce)"
+   },
+   {
+    "allergen": "wheat",
+    "tier": "inferred",
+    "confidence": 0.8,
+    "reason": "usually contain wheat (soy sauce)"
+   },
+   {
+    "allergen": "fish",
+    "tier": "unknown",
+    "confidence": 0.4,
+    "reason": "may contain fish (commonly hidden in dishes like this)"
+   }
+  ],
+  "reviewed_allergens": [
+   "shellfish",
+   "peanut",
+   "tree_nut",
+   "egg",
+   "dairy",
+   "sesame"
+  ],
+  "is_vegetarian": true,
+  "is_vegan": true,
+  "contains_pork": false,
+  "contains_beef": false,
+  "confirm_with_staff": [
+   "Yu Xiang (Tofu): ask whether it uses pork."
+  ],
+  "family_id": "yu_xiang_pork",
+  "family_name": "Yu Xiang Pork",
+  "variant": "Tofu",
+  "menu_marks": [],
+  "menu_spice": null,
+  "menu_section": null,
+  "custom_flags": []
+ },
+ "diners": [
+  {
+   "id": "alice",
+   "name": "Alice",
+   "allergies": [
+    "peanut"
+   ],
+   "diets": [],
+   "other_allergies": [],
+   "other_diets": [],
+   "preferences": [],
+   "notes": "Loves tofu"
+  },
+  {
+   "id": "ben",
+   "name": "Ben",
+   "allergies": [],
+   "diets": [
+    "vegetarian"
+   ],
+   "other_allergies": [],
+   "other_diets": [],
+   "preferences": [
+    "no_spicy"
+   ],
+   "notes": ""
+  },
+  {
+   "id": "cai",
+   "name": "Cai",
+   "allergies": [
+    "shellfish"
+   ],
+   "diets": [
+    "no_pork"
+   ],
+   "other_allergies": [],
+   "other_diets": [],
+   "preferences": [],
+   "notes": ""
+  },
+  {
+   "id": "mia",
+   "name": "Mia",
+   "allergies": [
+    "sesame"
+   ],
+   "diets": [],
+   "other_allergies": [
+    "cilantro"
+   ],
+   "other_diets": [
+    "halal"
+   ],
+   "preferences": [
+    "mild"
+   ],
+   "notes": "Loves noodles"
+  }
+ ],
+ "r9_question": "Does the Yu Xiang tofu contain pork, fish, or cilantro, since Ben avoids pork and fish, and Mia avoids cilantro and non-halal items? Also, is there any pork in it (for Ben and Cai)?"
+}

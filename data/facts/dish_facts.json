@@ -1,0 +1,9109 @@
+{
+ "00339c4aae89376277c4c60b": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "tree_nut",
+   "wheat"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "possible",
+    "why": "oyster sauce"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "99e362709aab84689c71ced7",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "bok choy"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "oil"
+   },
+   {
+    "certainty": "possible",
+    "name": "chicken stock"
+   },
+   {
+    "certainty": "possible",
+    "name": "oyster sauce"
+   }
+  ],
+  "name": "Sautéed Bok Choy",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "possible",
+  "vegetarian": "possible",
+  "words": [],
+  "zh": "青丘素菜钵"
+ },
+ "006fe11d77f465dc482d8faa": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "0660943862529eff834c58cd",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "wood ear mushroom"
+   },
+   {
+    "certainty": "likely",
+    "name": "fermented chili"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "cilantro"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Wood Ear Mushroom with Fermented Chili",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [
+   "cilantro",
+   "scallion"
+  ],
+  "zh": "山椒木耳"
+ },
+ "00f4fff390b2ac3ee08f5dca": {
+  "absent": [
+   "dairy",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "soy",
+   "tree_nut",
+   "wheat"
+  ],
+  "allergens": [
+   {
+    "allergen": "fish",
+    "certainty": "likely",
+    "why": "fluke fish"
+   },
+   {
+    "allergen": "egg",
+    "certainty": "possible",
+    "why": "egg wash for frying"
+   }
+  ],
+  "alt": "2898fe2681bbfb97ed0ef7de",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "fluke fish filet"
+   },
+   {
+    "certainty": "likely",
+    "name": "salt and pepper mix"
+   },
+   {
+    "certainty": "likely",
+    "name": "starch"
+   },
+   {
+    "certainty": "possible",
+    "name": "jalapeno"
+   },
+   {
+    "certainty": "possible",
+    "name": "egg"
+   }
+  ],
+  "name": "Fluke Fish Filet (Salt & Pepper)",
+  "pork": "no",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "龙利鱼片椒盐"
+ },
+ "01b9a672f52338a23b593dc7": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce and doubanjiang"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "24bdf025abb9d0419b339b54",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "organic cauliflower"
+   },
+   {
+    "certainty": "likely",
+    "name": "pork belly"
+   },
+   {
+    "certainty": "likely",
+    "name": "red bell pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "doubanjiang"
+   }
+  ],
+  "name": "Wok Organic Cauliflower with Pork Belly",
+  "pork": "yes",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "bell",
+   "pepper",
+   "red",
+   "scallion"
+  ],
+  "zh": "干锅花菜"
+ },
+ "03c8847da324b04ac8cbaba7": {
+  "absent": [
+   "dairy",
+   "egg",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "fish",
+    "certainty": "likely",
+    "why": "fish filet"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce in base"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce in base"
+   }
+  ],
+  "alt": "c8b5b8d7f874fad5cfe0b49a",
+  "beef": "no",
+  "category": "braise_or_stew",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "fish fillet"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili oil"
+   },
+   {
+    "certainty": "likely",
+    "name": "szechuan peppercorn"
+   },
+   {
+    "certainty": "likely",
+    "name": "bean sprouts"
+   },
+   {
+    "certainty": "likely",
+    "name": "napa cabbage"
+   },
+   {
+    "certainty": "possible",
+    "name": "chicken stock"
+   }
+  ],
+  "name": "Fish Filet in Chili Oil",
+  "pork": "no",
+  "spice": 3,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "江北水煮鱼"
+ },
+ "04acb4c273fa4660ba7f07cb": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "2bee99a0b0890988c0d85538",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "string beans"
+   },
+   {
+    "certainty": "possible",
+    "name": "pork"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "preserved vegetable"
+   }
+  ],
+  "name": "Stir-fried String Beans",
+  "pork": "possible",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "possible",
+  "words": [],
+  "zh": "干煸四季豆"
+ },
+ "05edc75e1a3e0b2ecb1b82b3": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "c3cb1ed7959cc0c461513d17",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "broccoli"
+   },
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic brown sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "oyster sauce"
+   }
+  ],
+  "name": "Broccoli (Shrimp)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "brown",
+   "garlic",
+   "sauce"
+  ],
+  "zh": "芥兰虾"
+ },
+ "06e2f61f7b5a1731811efae4": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "wrapper"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "6e2e3fc0903796d934a155aa",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "possible",
+    "name": "pork"
+   },
+   {
+    "certainty": "likely",
+    "name": "cabbage"
+   },
+   {
+    "certainty": "likely",
+    "name": "carrot"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat flour wrapper"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Shanghai Crispy Spring Rolls (4Pc)",
+  "pork": "possible",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "possible",
+  "words": [],
+  "zh": "上海春卷"
+ },
+ "07fce2b2811fc06592157eee": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "e5628d9e135b355ac24c8d78",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "tomato chili sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "broccoli"
+   },
+   {
+    "certainty": "likely",
+    "name": "basil"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   }
+  ],
+  "name": "Dry-Braised Tomato Shrimp",
+  "pork": "no",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "basil",
+   "broccoli",
+   "chili",
+   "sauce"
+  ],
+  "zh": "干烧茄汁虾"
+ },
+ "0ac6ec505b6b3b2c0b349a14": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "peanut",
+    "certainty": "likely",
+    "why": "peanuts"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "1435a049d2a4bbd91aeda178",
+  "beef": "yes",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "beef"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "peanut"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili peppers"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Kung Pao (Beef)",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "peanut",
+   "scallion"
+  ],
+  "zh": "宫保牛"
+ },
+ "0b8056a8220b6060baab82c8": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "tofu and soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce/coating"
+   }
+  ],
+  "alt": "2cf83544adb764b10d49119a",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "tofu"
+   },
+   {
+    "certainty": "likely",
+    "name": "broccoli"
+   },
+   {
+    "certainty": "likely",
+    "name": "spicy brown sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "General Tso's (Tofu)",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [
+   "broccoli",
+   "brown",
+   "sauce",
+   "spicy"
+  ],
+  "zh": "左宗豆腐"
+ },
+ "0bd94c829cc752d3aa8ed0c3": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "peanut",
+    "certainty": "likely",
+    "why": "peanuts"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "e99124b6ad5b229c86421fc8",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "peanut"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili peppers"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Kung Pao (Chicken, Spicy)",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "peanut",
+   "scallion"
+  ],
+  "zh": "宫保鸡"
+ },
+ "0d47d37af26fc575d003dce7": {
+  "absent": [
+   "dairy",
+   "egg",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "fish",
+    "certainty": "likely",
+    "why": "fluke fish"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "tofu skin and soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "7bebeb2ada247993637bbfbb",
+  "beef": "no",
+  "category": "braise_or_stew",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "fluke fish"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili oil"
+   },
+   {
+    "certainty": "likely",
+    "name": "sichuan peppercorn"
+   },
+   {
+    "certainty": "likely",
+    "name": "cabbage"
+   },
+   {
+    "certainty": "likely",
+    "name": "wood ear mushroom"
+   },
+   {
+    "certainty": "likely",
+    "name": "dried tofu skin"
+   },
+   {
+    "certainty": "likely",
+    "name": "celery"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "chicken stock"
+   }
+  ],
+  "name": "Sichuan Boiled Beef in Chili Oil (Fluke Fish)",
+  "pork": "no",
+  "spice": 3,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "cabbage",
+   "celery",
+   "dried",
+   "ear",
+   "mushroom",
+   "peppercorn",
+   "skin",
+   "sliced",
+   "wood"
+  ],
+  "zh": "鱼片"
+ },
+ "0f262837d00e7e0593e43d09": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "soy",
+   "tree_nut",
+   "wheat"
+  ],
+  "allergens": [],
+  "alt": "9df51ade4084d83239a0eb17",
+  "beef": "no",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "rice"
+   },
+   {
+    "certainty": "likely",
+    "name": "water"
+   }
+  ],
+  "name": "Steamed White Rice",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [],
+  "zh": "白饭"
+ },
+ "13040bab8072c0bd5b1dc068": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "tofu skin and soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "e9038f3aeb84a95bf17f7f19",
+  "beef": "yes",
+  "category": "braise_or_stew",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "sliced beef"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili oil"
+   },
+   {
+    "certainty": "likely",
+    "name": "sichuan peppercorn"
+   },
+   {
+    "certainty": "likely",
+    "name": "cabbage"
+   },
+   {
+    "certainty": "likely",
+    "name": "wood ear mushroom"
+   },
+   {
+    "certainty": "likely",
+    "name": "dried tofu skin"
+   },
+   {
+    "certainty": "likely",
+    "name": "celery"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "chicken stock"
+   }
+  ],
+  "name": "Sichuan Boiled Beef in Chili Oil (Sliced Beef)",
+  "pork": "no",
+  "spice": 3,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "cabbage",
+   "celery",
+   "dried",
+   "ear",
+   "mushroom",
+   "peppercorn",
+   "skin",
+   "wood"
+  ],
+  "zh": "牛肉片"
+ },
+ "13673ba564cd493f57acebbd": {
+  "absent": [
+   "dairy",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "soy",
+   "tree_nut",
+   "wheat"
+  ],
+  "allergens": [
+   {
+    "allergen": "fish",
+    "certainty": "likely",
+    "why": "fluke fish"
+   },
+   {
+    "allergen": "egg",
+    "certainty": "possible",
+    "why": "egg wash for frying"
+   }
+  ],
+  "alt": "51e8aa9fec0d6b441ac4d3bc",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "fluke fish filet"
+   },
+   {
+    "certainty": "likely",
+    "name": "sweet and sour sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "bell pepper"
+   },
+   {
+    "certainty": "possible",
+    "name": "pineapple"
+   },
+   {
+    "certainty": "likely",
+    "name": "starch"
+   },
+   {
+    "certainty": "possible",
+    "name": "egg"
+   }
+  ],
+  "name": "Fluke Fish Filet (Sweet & Sour)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "龙利鱼片糖醋"
+ },
+ "13a9da6b25200ad5cd770d73": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "batter and soy sauce"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "egg",
+    "certainty": "possible",
+    "why": "batter"
+   }
+  ],
+  "alt": "8b3aaaa7825e8a1df0cb379e",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat flour batter"
+   },
+   {
+    "certainty": "possible",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "sugar"
+   },
+   {
+    "certainty": "likely",
+    "name": "vinegar"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili pepper"
+   }
+  ],
+  "name": "General Tso's Chicken",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "左宗棠鸡"
+ },
+ "1481eebaa7b1b8afba302b3d": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "tofu and soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "8f5ebc3b1f53ef6bc34146da",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "tofu"
+   },
+   {
+    "certainty": "likely",
+    "name": "bamboo shoots"
+   },
+   {
+    "certainty": "likely",
+    "name": "celery"
+   },
+   {
+    "certainty": "likely",
+    "name": "bell pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "mushroom"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic garlic sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Yu Xiang (Tofu)",
+  "pork": "possible",
+  "spice": 1,
+  "v": "7",
+  "vegan": "possible",
+  "vegetarian": "possible",
+  "words": [
+   "bamboo",
+   "bell",
+   "celery",
+   "mushroom",
+   "pepper"
+  ],
+  "zh": "豆腐"
+ },
+ "18b81a9261f3d53b8ada4a33": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce and hoisin"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce and hoisin"
+   }
+  ],
+  "alt": "d2d30a3b5c6796718aa4aac2",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "bell pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "hoisin sauce"
+   }
+  ],
+  "name": "Mongolian (Chicken)",
+  "pork": "no",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "bell",
+   "pepper",
+   "scallion"
+  ],
+  "zh": "蒙古鸡"
+ },
+ "1945e5a9d2a9233af1093f43": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "peanut",
+    "certainty": "likely",
+    "why": "peanuts"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "tofu and soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "4e8d6216f979a9e0b156ab2d",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "tofu"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "peanut"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili peppers"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Kung Pao (Tofu)",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [
+   "peanut",
+   "scallion"
+  ],
+  "zh": "宫保豆腐"
+ },
+ "1a4189317dea78a203f032c4": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp"
+   },
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "fried rice egg"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "dfe84c1c5862b7752b660c36",
+  "beef": "no",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "rice"
+   },
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "vegetables"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Fried Rice (Shrimp)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "炒饭虾"
+ },
+ "1a9f46c364e462fc19c4f1fd": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy glaze"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy glaze"
+   }
+  ],
+  "alt": "d872671223818732346f25c0",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chicken wings"
+   },
+   {
+    "certainty": "likely",
+    "name": "green tea"
+   },
+   {
+    "certainty": "likely",
+    "name": "honey chili soy glaze"
+   }
+  ],
+  "name": "Green Tea Chicken Wings (5)",
+  "pork": "no",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "chili",
+   "glaze",
+   "honey",
+   "soy"
+  ],
+  "zh": "茶香鸡翅"
+ },
+ "1aff7c4ac441067f0209f580": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce and black beans"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "4ffcafe48f16075c1fd27ef5",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "pork"
+   },
+   {
+    "certainty": "likely",
+    "name": "hot pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "fermented black beans"
+   }
+  ],
+  "name": "Sautéed Pork with Hot Pepper",
+  "pork": "yes",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "山海辣椒小炒肉"
+ },
+ "1e62d76e6005070e4674478a": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce and chili paste"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "2dff7416e13fb223ba144c5b",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "eggplant"
+   },
+   {
+    "certainty": "possible",
+    "name": "pork"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili paste"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Sautéed Sliced Eggplant with Chili",
+  "pork": "possible",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "possible",
+  "words": [],
+  "zh": "山海烧茄子"
+ },
+ "1f0e70fe7ec8b2a1195caf16": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce and chili paste"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "795e72a0d5460c6d525480bf",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "pork"
+   },
+   {
+    "certainty": "likely",
+    "name": "wood ear mushroom"
+   },
+   {
+    "certainty": "likely",
+    "name": "bamboo shoots"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "vinegar"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili paste"
+   }
+  ],
+  "name": "Shredded Pork with Garlic Sauce",
+  "pork": "yes",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "鱼香肉丝"
+ },
+ "210cdc7ed616ede98ab2bd59": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "sesame",
+    "certainty": "likely",
+    "why": "sesame seeds"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "peanut",
+    "certainty": "possible",
+    "why": "some kitchens add peanuts"
+   }
+  ],
+  "alt": "463a93551eba7a1aa0024b45",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "jalapeno"
+   },
+   {
+    "certainty": "likely",
+    "name": "chinese celery"
+   },
+   {
+    "certainty": "likely",
+    "name": "cilantro"
+   },
+   {
+    "certainty": "likely",
+    "name": "sesame seeds"
+   },
+   {
+    "certainty": "likely",
+    "name": "sichuan peppercorn"
+   },
+   {
+    "certainty": "likely",
+    "name": "dried chili"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "peanut"
+   }
+  ],
+  "name": "Chongqing Chili Chicken",
+  "pork": "no",
+  "spice": 3,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "celery",
+   "chinese",
+   "cilantro",
+   "jalapeno",
+   "seed",
+   "sesame"
+  ],
+  "zh": "辣子鸡"
+ },
+ "214bc936020b1627c6dd7ec3": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "soy",
+   "tree_nut",
+   "wheat"
+  ],
+  "allergens": [
+   {
+    "allergen": "sesame",
+    "certainty": "likely",
+    "why": "white sesame seeds and oil"
+   }
+  ],
+  "alt": "17aba579743ffedcce0d04db",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "spinach"
+   },
+   {
+    "certainty": "likely",
+    "name": "sesame"
+   },
+   {
+    "certainty": "likely",
+    "name": "sesame oil"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "salt"
+   }
+  ],
+  "name": "Spinach with White Sesame",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [],
+  "zh": "芝麻菠菜"
+ },
+ "23d3a79cb4a0eca9b96c1663": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce and tofu"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "shellfish",
+    "certainty": "possible",
+    "why": "oyster sauce"
+   }
+  ],
+  "alt": "55eb9d7329e32deccd7557a1",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "broccoli"
+   },
+   {
+    "certainty": "likely",
+    "name": "tofu"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic brown sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "oyster sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "chicken stock"
+   }
+  ],
+  "name": "Broccoli (Tofu)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "possible",
+  "vegetarian": "possible",
+  "words": [
+   "brown",
+   "garlic",
+   "sauce"
+  ],
+  "zh": "芥兰豆腐"
+ },
+ "25beb2449ce12e5cbae458cf": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "chinese black beans and soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "72f678da8c5e6b33bb3ff984",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "pork belly"
+   },
+   {
+    "certainty": "likely",
+    "name": "green chili pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "ginger"
+   },
+   {
+    "certainty": "likely",
+    "name": "chinese black bean"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   }
+  ],
+  "name": "Country Style Pork & Chili",
+  "pork": "yes",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "bean",
+   "belly",
+   "black",
+   "chinese",
+   "garlic",
+   "ginger",
+   "green",
+   "pepper"
+  ],
+  "zh": "全家福小炒肉"
+ },
+ "2705e59b4ea41eecc0c0c188": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce/coating"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "likely",
+    "why": "sesame sauce and seeds"
+   }
+  ],
+  "alt": "aaf1d23857a292d50e69e523",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "broccoli"
+   },
+   {
+    "certainty": "likely",
+    "name": "brown sesame sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "sesame seeds"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Sesame (Chicken)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "broccoli",
+   "brown",
+   "sauce"
+  ],
+  "zh": "芝麻鸡"
+ },
+ "28a6f06dbfc8edf7632465d4": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "wheat noodles and soy sauce"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "a4e04ee22f8e4f85da126102",
+  "beef": "possible",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "wheat noodles"
+   },
+   {
+    "certainty": "likely",
+    "name": "vegetables"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Lo Mein (Vegetable)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "possible",
+  "vegetarian": "possible",
+  "words": [],
+  "zh": "炒面蔬菜"
+ },
+ "2ae28f38732aefab668c2167": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce and char siu marinade"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "egg"
+   }
+  ],
+  "alt": "888db473067e2f4eb546504f",
+  "beef": "no",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "rice"
+   },
+   {
+    "certainty": "likely",
+    "name": "char siu pork"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "carrot"
+   },
+   {
+    "certainty": "likely",
+    "name": "green beans"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "BBQ Pork Fried Rice",
+  "pork": "yes",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "bean",
+   "carrot",
+   "char",
+   "egg",
+   "green",
+   "scallion",
+   "siu"
+  ],
+  "zh": "叉烧炒饭"
+ },
+ "2cade912ca12327599cfe24e": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "soy",
+   "tree_nut",
+   "wheat"
+  ],
+  "allergens": [
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "scrambled eggs"
+   }
+  ],
+  "alt": "232c9d015027c22306a43240",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "tomato"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "oil"
+   },
+   {
+    "certainty": "likely",
+    "name": "salt"
+   }
+  ],
+  "name": "Scramble Egg & Chopped Tomato",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "yes",
+  "words": [],
+  "zh": "山海番茄炒鸡蛋"
+ },
+ "2de424e1f62b33b2ee92ca6d": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "sesame",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp"
+   },
+   {
+    "allergen": "peanut",
+    "certainty": "likely",
+    "why": "peanuts"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "8e9011c35c4b86fa6d72006c",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "peanut"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili peppers"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Kung Pao (Shrimp, Spicy)",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "peanut",
+   "scallion"
+  ],
+  "zh": "宫保虾"
+ },
+ "38da692bbe9b5f5e6aa930cb": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "soy",
+   "wheat"
+  ],
+  "allergens": [
+   {
+    "allergen": "tree_nut",
+    "certainty": "possible",
+    "why": "traditional toppings may include nuts"
+   }
+  ],
+  "alt": "650f942667b05b3c4d1700fa",
+  "beef": "no",
+  "category": "dessert",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "glutinous rice"
+   },
+   {
+    "certainty": "likely",
+    "name": "red bean paste"
+   },
+   {
+    "certainty": "likely",
+    "name": "dried fruits"
+   },
+   {
+    "certainty": "possible",
+    "name": "nuts"
+   },
+   {
+    "certainty": "likely",
+    "name": "sugar"
+   }
+  ],
+  "name": "Eight Treasure Sticky Rice",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [],
+  "zh": "八宝糯米饭"
+ },
+ "391dbcfa2b05ce9ff8cfd763": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "sesame",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp"
+   },
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "egg"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "8f557490f7cbc38d4cac2a28",
+  "beef": "yes",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "rice"
+   },
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "beef"
+   },
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "pineapple"
+   },
+   {
+    "certainty": "likely",
+    "name": "basil"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "carrot"
+   },
+   {
+    "certainty": "likely",
+    "name": "green peas"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Pineapple Fried Rice (Combo)",
+  "pork": "possible",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "混合"
+ },
+ "3a2141452d24cbd827b89b3b": {
+  "absent": [
+   "fish",
+   "peanut",
+   "sesame",
+   "soy",
+   "wheat"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "prawn"
+   },
+   {
+    "allergen": "tree_nut",
+    "certainty": "likely",
+    "why": "walnut"
+   },
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "mayonnaise"
+   },
+   {
+    "allergen": "dairy",
+    "certainty": "possible",
+    "why": "condensed milk or mayonnaise"
+   }
+  ],
+  "alt": "25be0986494a6149656baa4c",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "prawn"
+   },
+   {
+    "certainty": "likely",
+    "name": "walnut"
+   },
+   {
+    "certainty": "likely",
+    "name": "mayonnaise"
+   },
+   {
+    "certainty": "possible",
+    "name": "condensed milk"
+   },
+   {
+    "certainty": "likely",
+    "name": "sugar"
+   }
+  ],
+  "name": "Creamy Prawn with Walnut",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "奶油核桃虾"
+ },
+ "3cc327ca21a8927ccc7768fa": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "peanut",
+    "certainty": "likely",
+    "why": "peanuts"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "13c8dce162d4f7d41142f10c",
+  "beef": "yes",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "beef"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "peanut"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili peppers"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Kung Pao (Beef, Spicy)",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "peanut",
+   "scallion"
+  ],
+  "zh": "宫保牛"
+ },
+ "3f5fde5c2be220abbb271a46": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "egg ribbons"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "tofu and soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "54815993579b5566bf5f9d00",
+  "beef": "no",
+  "category": "soup",
+  "ingredients": [
+   {
+    "certainty": "possible",
+    "name": "pork"
+   },
+   {
+    "certainty": "likely",
+    "name": "tofu"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "wood ear mushroom"
+   },
+   {
+    "certainty": "likely",
+    "name": "vinegar"
+   },
+   {
+    "certainty": "likely",
+    "name": "white pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "chicken stock"
+   }
+  ],
+  "name": "Hot and Sour Soup (Per Person)",
+  "pork": "possible",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "酸辣汤"
+ },
+ "45b7649548d1395e3190cec2": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "tofu, doubanjiang, and soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "79657059c0504c65151e7d2b",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "tofu"
+   },
+   {
+    "certainty": "likely",
+    "name": "black bean chili sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "doubanjiang"
+   },
+   {
+    "certainty": "likely",
+    "name": "sichuan peppercorn"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "likely",
+    "name": "minced pork"
+   }
+  ],
+  "name": "Mapo Tofu",
+  "pork": "yes",
+  "spice": 3,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "bean",
+   "black",
+   "chili",
+   "sauce"
+  ],
+  "zh": "麻婆豆腐"
+ },
+ "4a1b47e1be8cf6be7071024b": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "egg"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "00f6b9a3a9ed80f76a1f2991",
+  "beef": "no",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "rice"
+   },
+   {
+    "certainty": "likely",
+    "name": "preserved mustard greens"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "pork"
+   }
+  ],
+  "name": "Chengdu Fried Rice",
+  "pork": "possible",
+  "spice": 1,
+  "v": "7",
+  "vegan": "possible",
+  "vegetarian": "possible",
+  "words": [
+   "chinese",
+   "egg",
+   "pickle",
+   "scallion"
+  ],
+  "zh": "成都炒饭"
+ },
+ "4acd9752828488e07fff885e": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "soy",
+   "tree_nut",
+   "wheat"
+  ],
+  "allergens": [],
+  "alt": "ab6f5c5e5dcb2e63be20d9fd",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chinese pea leaves"
+   },
+   {
+    "certainty": "likely",
+    "name": "oil"
+   },
+   {
+    "certainty": "likely",
+    "name": "salt"
+   },
+   {
+    "certainty": "possible",
+    "name": "chicken stock"
+   }
+  ],
+  "name": "Chinese Pea Leaves (regular stir fry)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "possible",
+  "vegetarian": "possible",
+  "words": [],
+  "zh": "豆苗清炒"
+ },
+ "4c0792d060dc62d6833287d9": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "peanut",
+    "certainty": "likely",
+    "why": "peanuts"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "7037d825f6105bce6868d97d",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "peanut"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "vinegar"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   }
+  ],
+  "name": "Kung Pao Chicken",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "宫保鸡丁"
+ },
+ "4ea3442a02ffe8a4011e512f": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "sesame",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp"
+   },
+   {
+    "allergen": "peanut",
+    "certainty": "likely",
+    "why": "peanuts"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "e422f63c0546435dfb964b16",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "peanut"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili peppers"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Kung Pao (Shrimp)",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "peanut",
+   "scallion"
+  ],
+  "zh": "宫保虾"
+ },
+ "5630cb1091343c508a779a5d": {
+  "absent": [
+   "dairy",
+   "egg",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut",
+   "wheat"
+  ],
+  "allergens": [
+   {
+    "allergen": "fish",
+    "certainty": "likely",
+    "why": "fish fillet"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "76a4e5fd199e07c04ea6c39b",
+  "beef": "no",
+  "category": "braise_or_stew",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "fish fillet"
+   },
+   {
+    "certainty": "likely",
+    "name": "chinese sauerkraut"
+   },
+   {
+    "certainty": "likely",
+    "name": "pickle pepper"
+   },
+   {
+    "certainty": "possible",
+    "name": "chicken stock"
+   }
+  ],
+  "name": "Braised Fish Fillet with Chinese Sauerkraut",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "特色酸菜鱼"
+ },
+ "567fca4a27693ade1b148dc6": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "15fb8c80c5a933b6324de389",
+  "beef": "yes",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "beef"
+   },
+   {
+    "certainty": "likely",
+    "name": "bamboo shoots"
+   },
+   {
+    "certainty": "likely",
+    "name": "celery"
+   },
+   {
+    "certainty": "likely",
+    "name": "bell pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "mushroom"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic garlic sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Yu Xiang (Beef)",
+  "pork": "possible",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "bamboo",
+   "bell",
+   "celery",
+   "mushroom",
+   "pepper"
+  ],
+  "zh": "牛"
+ },
+ "574ee2d5be36fa9c8e06a659": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce, tofu, and hoisin"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce and hoisin"
+   }
+  ],
+  "alt": "1dbaf8cec5d1a38adb79bc65",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "tofu"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "bell pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "hoisin sauce"
+   }
+  ],
+  "name": "Mongolian (Tofu)",
+  "pork": "no",
+  "spice": 1,
+  "v": "7",
+  "vegan": "possible",
+  "vegetarian": "possible",
+  "words": [
+   "bell",
+   "pepper",
+   "scallion"
+  ],
+  "zh": "蒙古豆腐"
+ },
+ "576b87b75011b5e8934e5c3f": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "eb115b28b8bd4e7a89fae16e",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "potato"
+   },
+   {
+    "certainty": "likely",
+    "name": "green pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "eggplant"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   }
+  ],
+  "name": "Sautéed Potato, Green Pepper & Eggplant",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [],
+  "zh": "地三鲜"
+ },
+ "5795c24fc713d42e6d78a094": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "fried rice egg"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "d04f6821f8cd463d725cffe5",
+  "beef": "no",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "rice"
+   },
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "vegetables"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Fried Rice (Chicken)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "炒饭鸡"
+ },
+ "5a239ff5b3838b72832a5577": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "tofu skin and soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "likely",
+    "why": "sesame oil"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "966a468d272c16c1de95e740",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "celery"
+   },
+   {
+    "certainty": "likely",
+    "name": "tofu skin"
+   },
+   {
+    "certainty": "likely",
+    "name": "sesame oil"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Celery & Tofu Skin",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [
+   "oil",
+   "sesame"
+  ],
+  "zh": "西芹拌腐竹"
+ },
+ "5c4140814fe5e075d2780e35": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "peanut",
+    "certainty": "likely",
+    "why": "peanuts"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "5484b38ac8f5a080a4ded6ea",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "peanut"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili peppers"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Kung Pao (Chicken)",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "peanut",
+   "scallion"
+  ],
+  "zh": "宫保鸡"
+ },
+ "5d342b10973b2e50b4c7762d": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "peanut",
+    "certainty": "likely",
+    "why": "peanuts"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "tofu and soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "da91ebe3d005f7c4c3c76421",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "tofu"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "peanut"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili peppers"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Kung Pao (Tofu, Spicy)",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [
+   "peanut",
+   "scallion"
+  ],
+  "zh": "宫保豆腐"
+ },
+ "5e843110e5362bca93851d9a": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "189524ab38c4b480a8bb6279",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "cucumber"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "vinegar"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "sesame oil"
+   },
+   {
+    "certainty": "possible",
+    "name": "chili oil"
+   }
+  ],
+  "name": "Cucumber Salad with Garlic Sauce",
+  "pork": "no",
+  "spice": 1,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [],
+  "zh": "绝味黄瓜"
+ },
+ "5fb56772626b4a9c7630868f": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "soy",
+   "tree_nut",
+   "wheat"
+  ],
+  "allergens": [
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "egg"
+   }
+  ],
+  "alt": "12f69a06b0a7f18df2d1f881",
+  "beef": "no",
+  "category": "soup",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "chicken broth"
+   },
+   {
+    "certainty": "likely",
+    "name": "cornstarch"
+   },
+   {
+    "certainty": "possible",
+    "name": "scallion"
+   }
+  ],
+  "name": "Egg Drop Soup",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "possible",
+  "words": [],
+  "zh": "蛋花汤"
+ },
+ "5fdfa219374f44a19ecca6cb": {
+  "absent": [
+   "dairy",
+   "egg",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "fish",
+    "certainty": "likely",
+    "why": "fluke fish"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "5b7f4d2371b9c1a8cab543f1",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "fluke fish filet"
+   },
+   {
+    "certainty": "likely",
+    "name": "hunan fermented chili"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   }
+  ],
+  "name": "Fluke Fish Filet (Hunan Fermented Chili)",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "龙利鱼片湖南香辣"
+ },
+ "62a56b01dde29842e4eda7d1": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "egg",
+    "certainty": "possible",
+    "why": "batter"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "batter"
+   }
+  ],
+  "alt": "1c6604061e1904fe52827317",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "pork"
+   },
+   {
+    "certainty": "likely",
+    "name": "starch coating"
+   },
+   {
+    "certainty": "possible",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "vinegar"
+   },
+   {
+    "certainty": "likely",
+    "name": "sugar"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Crispy Pork in Sweet & Sour Sauce",
+  "pork": "yes",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "锅包肉"
+ },
+ "66a4bb0203c2e6e7be5a1082": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce and dried tofu"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "15d3f84f994e15dde00e34b1",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "dried tofu"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili oil"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "vegetable oil"
+   }
+  ],
+  "name": "Spicy Dried Tofu",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [],
+  "zh": "钱来山秘制湘干"
+ },
+ "674d1cc3972e2613af1e7f10": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "preserved egg is duck egg"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "55d35a78f08152802af3b764",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "preserved egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili peppers"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "vinegar"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   }
+  ],
+  "name": "Preserved Egg with Green and Red Peppers",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "双椒皮蛋"
+ },
+ "6798260081f7152cbf971457": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "fbb5fd2e902e5e87c9ebecb7",
+  "beef": "yes",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "sirloin steak"
+   },
+   {
+    "certainty": "likely",
+    "name": "cilantro"
+   },
+   {
+    "certainty": "likely",
+    "name": "red bell pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   }
+  ],
+  "name": "Hunan Beef",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "bell",
+   "chili",
+   "cilantro",
+   "pepper",
+   "red",
+   "sirloin",
+   "steak"
+  ],
+  "zh": "小炒黄牛肉"
+ },
+ "68138d424c60f47ac1a08d6c": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "egg"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "eea31f5332430a51383b4688",
+  "beef": "no",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "rice"
+   },
+   {
+    "certainty": "likely",
+    "name": "pineapple"
+   },
+   {
+    "certainty": "likely",
+    "name": "basil"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "carrot"
+   },
+   {
+    "certainty": "likely",
+    "name": "green peas"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Pineapple Fried Rice (Vegetable)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "possible",
+  "vegetarian": "yes",
+  "words": [],
+  "zh": "菠萝"
+ },
+ "69aac84f651cc5cb38873b90": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "2617ea7d020a0c6826a2c5e3",
+  "beef": "yes",
+  "category": "braise_or_stew",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "beef brisket"
+   },
+   {
+    "certainty": "likely",
+    "name": "potato"
+   },
+   {
+    "certainty": "likely",
+    "name": "carrot"
+   },
+   {
+    "certainty": "likely",
+    "name": "red pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "mushroom"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "likely",
+    "name": "star anise"
+   }
+  ],
+  "name": "Wok Braised Beef Brisket",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "carrot",
+   "mushroom",
+   "pepper",
+   "potato",
+   "red",
+   "scallion"
+  ],
+  "zh": "砂锅土豆炖牛肉"
+ },
+ "6a4066044bd0e56549febae4": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "4488a0826a03432717dc9b49",
+  "beef": "yes",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "rice noodles"
+   },
+   {
+    "certainty": "likely",
+    "name": "beef"
+   },
+   {
+    "certainty": "likely",
+    "name": "bean sprouts"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "basil"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "oil"
+   }
+  ],
+  "name": "Hong Kong Rice Noodle",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "basil",
+   "bean",
+   "beef",
+   "scallion",
+   "sprout"
+  ],
+  "zh": "干炒牛河"
+ },
+ "6d0f6e3e07ee01c4399618e0": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut",
+   "wheat"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "tofu and possible soy sauce"
+   }
+  ],
+  "alt": "65ca4183cb8c066baff96778",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "mixed vegetables"
+   },
+   {
+    "certainty": "likely",
+    "name": "tofu"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic white sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "chicken stock"
+   }
+  ],
+  "name": "Mixed Vegetable & Tofu",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "possible",
+  "vegetarian": "possible",
+  "words": [],
+  "zh": "蔬菜豆腐煲"
+ },
+ "6df9fcadf57e790b78e83ea4": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "spring roll wrapper"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce in filling"
+   }
+  ],
+  "alt": "0e25f3ed41b785c6597e5291",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "cabbage"
+   },
+   {
+    "certainty": "likely",
+    "name": "carrot"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat wrapper"
+   },
+   {
+    "certainty": "likely",
+    "name": "sweet chili sauce"
+   }
+  ],
+  "name": "Vegetable Spring Roll (3)",
+  "pork": "no",
+  "spice": 1,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [
+   "chili",
+   "sauce",
+   "sweet"
+  ],
+  "zh": "素春卷"
+ },
+ "6dfac9d26267f084f9946d2f": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "wonton wrapper"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "262f1e44808e6be527c772e8",
+  "beef": "no",
+  "category": "other",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "pork"
+   },
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat wrapper"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili oil broth"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Sichuan Wonton (5)",
+  "pork": "yes",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "broth",
+   "chili",
+   "oil",
+   "pork",
+   "shrimp"
+  ],
+  "zh": "红油抄手"
+ },
+ "6f2daede7596169641ac41ef": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "sesame",
+    "certainty": "likely",
+    "why": "sesame paste"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "8e14732f66007d2b831ed143",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "napa cabbage"
+   },
+   {
+    "certainty": "likely",
+    "name": "sesame paste"
+   },
+   {
+    "certainty": "likely",
+    "name": "aged vinegar"
+   },
+   {
+    "certainty": "likely",
+    "name": "honey"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Emperor's Cabbage",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [
+   "aged",
+   "honey",
+   "organic",
+   "paste",
+   "sesame",
+   "vinegar"
+  ],
+  "zh": "乾隆白菜"
+ },
+ "6fdd7aaef31dbea09444eba2": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "egg"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "2cfcaeb7c9681a836109d478",
+  "beef": "yes",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "rice"
+   },
+   {
+    "certainty": "likely",
+    "name": "beef"
+   },
+   {
+    "certainty": "likely",
+    "name": "pineapple"
+   },
+   {
+    "certainty": "likely",
+    "name": "basil"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "carrot"
+   },
+   {
+    "certainty": "likely",
+    "name": "green peas"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Pineapple Fried Rice (Beef)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "牛"
+ },
+ "6fe989fbb78073686a155833": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil or seeds"
+   },
+   {
+    "allergen": "peanut",
+    "certainty": "possible",
+    "why": "crushed peanuts garnish"
+   }
+  ],
+  "alt": "2f4e5ee8bc5581323b506b81",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "cucumber"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili oil"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame"
+   },
+   {
+    "certainty": "possible",
+    "name": "peanut"
+   }
+  ],
+  "name": "Cucumber Salad (Spicy Chili Oil)",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [],
+  "zh": "香辣红油"
+ },
+ "70344ee7f5ab4386ae3f1fe0": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "98bb4bf735628d8b42be218a",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "cumin"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili peppers"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Cumin (Shrimp)",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "孜然虾"
+ },
+ "73493ab73eb8e4b090ac5456": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce/coating"
+   }
+  ],
+  "alt": "c529f4b64101a19e5c01e9cd",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "broccoli"
+   },
+   {
+    "certainty": "likely",
+    "name": "spicy brown sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "General Tso's (Chicken)",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "broccoli",
+   "brown",
+   "sauce",
+   "spicy"
+  ],
+  "zh": "左宗鸡"
+ },
+ "74c21a6d2fb7f6ef9a4275a0": {
+  "absent": [
+   "fish",
+   "peanut",
+   "sesame",
+   "soy",
+   "wheat"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp"
+   },
+   {
+    "allergen": "tree_nut",
+    "certainty": "likely",
+    "why": "walnut"
+   },
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "mayo"
+   },
+   {
+    "allergen": "dairy",
+    "certainty": "possible",
+    "why": "condensed milk in mayo sauce"
+   }
+  ],
+  "alt": "2eafa48ff30a9e5210947f7d",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "broccoli"
+   },
+   {
+    "certainty": "likely",
+    "name": "roasted walnut"
+   },
+   {
+    "certainty": "likely",
+    "name": "wasabi mayo"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "possible",
+    "name": "condensed milk"
+   }
+  ],
+  "name": "Walnut Shrimp",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "broccoli",
+   "mayo",
+   "roasted",
+   "wasabi"
+  ],
+  "zh": "核桃虾"
+ },
+ "761649bbb0b904bb381a44bc": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "wheat noodles and soy sauce"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "d89e8369e0da15eb4fbc7954",
+  "beef": "yes",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "wheat noodles"
+   },
+   {
+    "certainty": "likely",
+    "name": "beef"
+   },
+   {
+    "certainty": "likely",
+    "name": "beef broth"
+   },
+   {
+    "certainty": "likely",
+    "name": "chinese pea shoots"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "spices"
+   }
+  ],
+  "name": "Braised Beef Noodles",
+  "pork": "no",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "chinese",
+   "pea",
+   "shoot"
+  ],
+  "zh": "牛肉面"
+ },
+ "765715af53d3a05337ed8e5a": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp"
+   },
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "fried rice egg"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "29ac9c358513eb9f9ba0862a",
+  "beef": "yes",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "rice"
+   },
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "beef"
+   },
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "vegetables"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Fried Rice (Combo)",
+  "pork": "possible",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "炒饭混合"
+ },
+ "7e73935fd87cb4bc039602ba": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "sweet soy glaze"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy glaze/coating"
+   }
+  ],
+  "alt": "1e37a1e3600d61149a460bed",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "eggplant"
+   },
+   {
+    "certainty": "likely",
+    "name": "starch coating"
+   },
+   {
+    "certainty": "likely",
+    "name": "sweet soy glaze"
+   },
+   {
+    "certainty": "likely",
+    "name": "cilantro"
+   }
+  ],
+  "name": "Sichuan Crispy Eggplant",
+  "pork": "no",
+  "spice": 1,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [
+   "cilantro",
+   "glaze",
+   "soy",
+   "sweet"
+  ],
+  "zh": "川香风味茄子"
+ },
+ "7fb973f0b1153c725b4d2d96": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "wheat noodles and soy sauce"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "shellfish",
+    "certainty": "possible",
+    "why": "oyster sauce"
+   },
+   {
+    "allergen": "egg",
+    "certainty": "possible",
+    "why": "egg noodles"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "60da2209afc4fc9782e530af",
+  "beef": "yes",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "wheat noodles"
+   },
+   {
+    "certainty": "likely",
+    "name": "beef"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "vegetables"
+   },
+   {
+    "certainty": "possible",
+    "name": "oyster sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Lo Mein (Beef)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "炒面牛"
+ },
+ "80359f9fd7e4377cff7dfd0a": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "97da360ac7a4f959bbef26cb",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chinese bacon"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic sprouts"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "chili peppers"
+   }
+  ],
+  "name": "Sautéed Chinese Bacon with Garlic Sprouts",
+  "pork": "yes",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "蒜苗腊肉"
+ },
+ "80e232f414ddd5ad77243231": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "wheat noodles and soy sauce"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp and oyster sauce"
+   },
+   {
+    "allergen": "egg",
+    "certainty": "possible",
+    "why": "egg noodles"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "8ed2d6e2660f4c39e244405b",
+  "beef": "yes",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "wheat noodles"
+   },
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "beef"
+   },
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "vegetables"
+   },
+   {
+    "certainty": "possible",
+    "name": "oyster sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Lo Mein (Combo)",
+  "pork": "possible",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "炒面混合"
+ },
+ "831ca644ff1fc14915dc8179": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "likely",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "d338bac6e230f3e100dad0a0",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "cucumber"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "sesame oil"
+   },
+   {
+    "certainty": "likely",
+    "name": "vinegar"
+   }
+  ],
+  "name": "Cucumber Salad (Garlic)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [],
+  "zh": "蒜香"
+ },
+ "89147908b34d6681a695bcdc": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce and preserved vegetables"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "f0fa3f59183144f01c5e5816",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "string beans"
+   },
+   {
+    "certainty": "likely",
+    "name": "chengdu bean sprout"
+   },
+   {
+    "certainty": "likely",
+    "name": "chinese pickles"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili"
+   },
+   {
+    "certainty": "likely",
+    "name": "sichuan peppercorn"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "likely",
+    "name": "minced pork"
+   }
+  ],
+  "name": "Wok Fried String Bean",
+  "pork": "yes",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "chengdu",
+   "chili",
+   "chinese",
+   "peppercorn",
+   "pickle",
+   "sichuan",
+   "sprout"
+  ],
+  "zh": "干煸四季豆"
+ },
+ "8d8ccf463089ccf386e3fac1": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce and chili paste"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "a2e91251d337963bc3b0a0e7",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "eggplant"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "ginger"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili paste"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "minced pork"
+   }
+  ],
+  "name": "Yu Xiang Eggplant",
+  "pork": "possible",
+  "spice": 2,
+  "v": "7",
+  "vegan": "possible",
+  "vegetarian": "possible",
+  "words": [
+   "garlic",
+   "ginger",
+   "sauce",
+   "spicy"
+  ],
+  "zh": "鱼香茄子"
+ },
+ "93378ad5b5f25257eb92a3a9": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "shellfish",
+    "certainty": "possible",
+    "why": "oyster sauce"
+   }
+  ],
+  "alt": "a83e1cbdbfe2718f36e467a3",
+  "beef": "yes",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "beef"
+   },
+   {
+    "certainty": "likely",
+    "name": "broccoli"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "oyster sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   }
+  ],
+  "name": "Beef with Broccoli",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "芥兰牛"
+ },
+ "93f724c3e944cf3d1630caaa": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce and tofu"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "b73f4cddeae3c24c77d77768",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "tofu"
+   },
+   {
+    "certainty": "likely",
+    "name": "cumin"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili peppers"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Cumin (Tofu)",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "possible",
+  "vegetarian": "possible",
+  "words": [],
+  "zh": "孜然豆腐"
+ },
+ "96d929348c13b3dd37143dce": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "peanut",
+    "certainty": "possible",
+    "why": "peanut garnish"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame paste"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "13afb3fc743322572da88aa9",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili oil"
+   },
+   {
+    "certainty": "possible",
+    "name": "peanut"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame paste"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "vinegar"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   }
+  ],
+  "name": "Mouth-watering Chicken",
+  "pork": "no",
+  "spice": 3,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "红油口水鸡"
+ },
+ "975995523c223622c45fbff5": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "fried rice egg"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "847500b9e2fbb84c98dced7b",
+  "beef": "yes",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "rice"
+   },
+   {
+    "certainty": "likely",
+    "name": "beef"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "vegetables"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Fried Rice (Beef)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "炒饭牛"
+ },
+ "9880ba2b8a3b9c3064c93ecc": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "7714101f23fa359111a5d51b",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "broccoli"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "vinegar"
+   },
+   {
+    "certainty": "likely",
+    "name": "sugar"
+   },
+   {
+    "certainty": "possible",
+    "name": "chili paste"
+   }
+  ],
+  "name": "Broccoli with Garlic Sauce",
+  "pork": "no",
+  "spice": 1,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [],
+  "zh": "鱼香芥兰"
+ },
+ "9cfa7aa2c860d34dd8d52227": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp in wonton"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "wonton wrapper"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "6f6ebd8434506ed643d3cf09",
+  "beef": "no",
+  "category": "soup",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "pork"
+   },
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "chicken broth"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat wrapper"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Wonton Soup",
+  "pork": "yes",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "broth",
+   "chicken",
+   "pork",
+   "shrimp"
+  ],
+  "zh": "馄饨汤"
+ },
+ "9fb70ebd29b589fa0d4dc628": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "tofu and soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "71dd17f47e931af3148623a6",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "thousand layer tofu"
+   },
+   {
+    "certainty": "likely",
+    "name": "pork belly"
+   },
+   {
+    "certainty": "likely",
+    "name": "jalapeno"
+   },
+   {
+    "certainty": "likely",
+    "name": "red bell pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "chinese celery"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   }
+  ],
+  "name": "Thousand Layer Tofu",
+  "pork": "yes",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "bell",
+   "belly",
+   "celery",
+   "chinese",
+   "jalapeno",
+   "pepper",
+   "pork",
+   "red"
+  ],
+  "zh": "千叶豆腐"
+ },
+ "a0b30010cee2b762eb2387cb": {
+  "absent": [
+   "dairy",
+   "egg",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "fish",
+    "certainty": "likely",
+    "why": "fluke fish"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "9201f90895eed564bc556e88",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "fluke fish filet"
+   },
+   {
+    "certainty": "likely",
+    "name": "ginger"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "likely",
+    "name": "hot oil"
+   }
+  ],
+  "name": "Fluke Fish Filet (Steamed w/ Ginger Scallion)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "龙利鱼片姜葱豉油"
+ },
+ "a3d5ccf09fc9ce095777964e": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "eca9324ebdd033bad2fe0137",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "bamboo shoots"
+   },
+   {
+    "certainty": "likely",
+    "name": "celery"
+   },
+   {
+    "certainty": "likely",
+    "name": "bell pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "mushroom"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic garlic sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Yu Xiang (Chicken)",
+  "pork": "possible",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "bamboo",
+   "bell",
+   "celery",
+   "mushroom",
+   "pepper"
+  ],
+  "zh": "鸡"
+ },
+ "a3f9fb5eb492ca0ef385b387": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "soy",
+   "tree_nut",
+   "wheat"
+  ],
+  "allergens": [],
+  "alt": "27c65de6d6ad3a3e532e9dae",
+  "beef": "no",
+  "category": "dessert",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "pumpkin"
+   },
+   {
+    "certainty": "likely",
+    "name": "glutinous rice flour"
+   },
+   {
+    "certainty": "likely",
+    "name": "sugar"
+   },
+   {
+    "certainty": "likely",
+    "name": "oil"
+   }
+  ],
+  "name": "Pumpkin Cake (3)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [],
+  "zh": "南瓜糕"
+ },
+ "a57d797b83fc718fce581d20": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "wrapper"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "tofu/soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "b3e64ab7b7a04de40dea78a0",
+  "beef": "no",
+  "category": "other",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "cabbage"
+   },
+   {
+    "certainty": "likely",
+    "name": "mushroom"
+   },
+   {
+    "certainty": "possible",
+    "name": "tofu"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat wrapper"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Vegetable Dumplings (4) (Pan Fried)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [
+   "steamed"
+  ],
+  "zh": "素饺煎"
+ },
+ "a59c7458f0267febe6992cf7": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut",
+   "wheat"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "possible soy sauce"
+   }
+  ],
+  "alt": "1417949635738805e217d9a0",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "organic cauliflower"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "chicken stock"
+   }
+  ],
+  "name": "Organic Cauliflower Stir Fry",
+  "pork": "possible",
+  "spice": 0,
+  "v": "7",
+  "vegan": "possible",
+  "vegetarian": "possible",
+  "words": [],
+  "zh": "清炒花菜"
+ },
+ "a5fdc0f5be6bd5c1545eabc6": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "possible",
+    "why": "squid ink source/cross-contact"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "wrapper"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "6e4a6a0ffe75b3430f4846dd",
+  "beef": "no",
+  "category": "other",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "black truffle"
+   },
+   {
+    "certainty": "likely",
+    "name": "ginger"
+   },
+   {
+    "certainty": "likely",
+    "name": "squid ink"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat wrapper"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Chicken Truffle Soup Dumplings (4)",
+  "pork": "possible",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "black",
+   "dough",
+   "ginger",
+   "ink",
+   "squid"
+  ],
+  "zh": "黑松露鸡肉小笼包"
+ },
+ "a6733abd4ec32529623c6e57": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "796098480dbefcfadcade714",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "cabbage"
+   },
+   {
+    "certainty": "likely",
+    "name": "dried chili pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "vinegar"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "pork fat"
+   }
+  ],
+  "name": "Stir-fried Cabbage",
+  "pork": "possible",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "possible",
+  "words": [],
+  "zh": "炝炒包菜"
+ },
+ "a9e6c2e7120b30577392bd98": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "a61aed7ce4d4fe4c518614e7",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "bamboo shoots"
+   },
+   {
+    "certainty": "likely",
+    "name": "celery"
+   },
+   {
+    "certainty": "likely",
+    "name": "bell pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "mushroom"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic garlic sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Yu Xiang (Shrimp)",
+  "pork": "possible",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "bamboo",
+   "bell",
+   "celery",
+   "mushroom",
+   "pepper"
+  ],
+  "zh": "虾"
+ },
+ "aa63d678b77b33b2d851dbe2": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "egg white"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "9f18b0bd71d3493bd1dd8c12",
+  "beef": "yes",
+  "category": "soup",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "beef"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg white"
+   },
+   {
+    "certainty": "likely",
+    "name": "cilantro"
+   },
+   {
+    "certainty": "likely",
+    "name": "beef broth"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "West Lake Beef Soup",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "cilantro",
+   "egg",
+   "ground",
+   "white"
+  ],
+  "zh": "西湖牛肉羹"
+ },
+ "afa9a143654477b9c40f9236": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "wrapper"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "tofu/soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "a47e74447d7092238f322313",
+  "beef": "no",
+  "category": "other",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "cabbage"
+   },
+   {
+    "certainty": "likely",
+    "name": "mushroom"
+   },
+   {
+    "certainty": "possible",
+    "name": "tofu"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat wrapper"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Vegetable Dumplings (4) (Steamed)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [
+   "fried",
+   "pan"
+  ],
+  "zh": "素饺蒸"
+ },
+ "b0f61533ddcf06bbd6aaf1a3": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "541cea4e0827e651e08bdc6c",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "pork"
+   },
+   {
+    "certainty": "likely",
+    "name": "bamboo shoots"
+   },
+   {
+    "certainty": "likely",
+    "name": "celery"
+   },
+   {
+    "certainty": "likely",
+    "name": "bell pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "mushroom"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic garlic sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "vinegar"
+   }
+  ],
+  "name": "Yu Xiang (Pork)",
+  "pork": "yes",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "bamboo",
+   "bell",
+   "celery",
+   "mushroom",
+   "pepper"
+  ],
+  "zh": "猪"
+ },
+ "b20bbdbe81539d7640effc30": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "1ed82da22ba67ffa881d3825",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "pork belly"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili oil"
+   },
+   {
+    "certainty": "likely",
+    "name": "sugar"
+   }
+  ],
+  "name": "Sliced Pork Belly with Garlic Sauce",
+  "pork": "yes",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "祗山晾衣白肉"
+ },
+ "b2619e8a150b54aacedaf33f": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "peanut",
+    "certainty": "possible",
+    "why": "peanut garnish in dry chili chicken"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "f5280792c47e0d21f132f158",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "dried chili pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "szechuan peppercorn"
+   },
+   {
+    "certainty": "possible",
+    "name": "peanut"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Chicken with Red Dried Chili",
+  "pork": "no",
+  "spice": 3,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "歌乐山辣子鸡"
+ },
+ "b2b9ffc498e5e041d7211fe6": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame chili oil"
+   }
+  ],
+  "alt": "c0d0f443e50efe04dbcd6ceb",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "wild mushrooms"
+   },
+   {
+    "certainty": "likely",
+    "name": "pork belly"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame chili oil"
+   },
+   {
+    "certainty": "possible",
+    "name": "ginger scallion oil"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   }
+  ],
+  "name": "Hunan Wild Mushroom (w/ Pork Belly)",
+  "pork": "yes",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "chili",
+   "ginger",
+   "oil",
+   "scallion",
+   "sesame"
+  ],
+  "zh": "干锅鹿茸菌"
+ },
+ "b4f73ce5255df5e4918f8950": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "63310d435b2161b741926d54",
+  "beef": "no",
+  "category": "braise_or_stew",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "pork belly"
+   },
+   {
+    "certainty": "likely",
+    "name": "japanese pumpkin"
+   },
+   {
+    "certainty": "likely",
+    "name": "chinese five spice"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "likely",
+    "name": "rock sugar"
+   }
+  ],
+  "name": "Mandarin Braised Pork Belly",
+  "pork": "yes",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "chinese",
+   "five",
+   "japanese",
+   "pumpkin",
+   "spice"
+  ],
+  "zh": "金瓜红烧肉"
+ },
+ "b9c1a5ec8b6bb9da83c455fe": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "shellfish",
+    "certainty": "possible",
+    "why": "oyster sauce"
+   }
+  ],
+  "alt": "815e1b2c8c2389644c7b5241",
+  "beef": "yes",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "broccoli"
+   },
+   {
+    "certainty": "likely",
+    "name": "beef"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic brown sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "oyster sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "chicken stock"
+   }
+  ],
+  "name": "Broccoli (Beef)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "brown",
+   "garlic",
+   "sauce"
+  ],
+  "zh": "芥兰牛"
+ },
+ "ba25606f1c8eb55578d6926e": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "ecd7330f04c86b65d166f976",
+  "beef": "no",
+  "category": "braise_or_stew",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "pork spare ribs"
+   },
+   {
+    "certainty": "likely",
+    "name": "sweet and sour sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Mandarin Spare Ribs",
+  "pork": "yes",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "sour",
+   "sweet"
+  ],
+  "zh": "桂花小排"
+ },
+ "bb083513fdc94a78ef4008c5": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "doubanjiang and soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "doubanjiang and soy sauce"
+   }
+  ],
+  "alt": "4524d0da7358cfc388b76bb8",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "pork belly"
+   },
+   {
+    "certainty": "likely",
+    "name": "leeks"
+   },
+   {
+    "certainty": "likely",
+    "name": "jalapeno"
+   },
+   {
+    "certainty": "likely",
+    "name": "doubanjiang"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "fermented black bean"
+   }
+  ],
+  "name": "Twice Cooked Pork Belly",
+  "pork": "yes",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "jalapeno",
+   "leek"
+  ],
+  "zh": "回锅肉"
+ },
+ "bb53110e6616f811ce9e29de": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "78c771240012be4b1c590d40",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "cumin"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili peppers"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Cumin (Chicken)",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "孜然鸡"
+ },
+ "bbccb336cb768b7086761a2f": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "tofu and soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "0119c49a3b3cbb4d60a2d1a1",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "tofu"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili oil"
+   },
+   {
+    "certainty": "likely",
+    "name": "bean sprouts"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Chili-Oil Firm Tofu",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [
+   "aged",
+   "bean",
+   "sizzling",
+   "sprout"
+  ],
+  "zh": "油泼老豆腐"
+ },
+ "c1376bdfded3ff076a941e32": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "ginger dressing"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "ginger dressing"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "ginger dressing"
+   }
+  ],
+  "alt": "9313fc6afdb54f7ed6629b28",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "green salad"
+   },
+   {
+    "certainty": "likely",
+    "name": "ginger dressing"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Ginger Salad",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [
+   "dressing",
+   "green"
+  ],
+  "zh": "姜汁沙拉"
+ },
+ "c190b19c8e80c6a56fd9019c": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "chinese sausage and soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "d104dddad0c371e779721bdf",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chinese sausage"
+   },
+   {
+    "certainty": "likely",
+    "name": "flat beans"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   }
+  ],
+  "name": "Chinese Sausage & Flat Beans",
+  "pork": "yes",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "chili",
+   "garlic"
+  ],
+  "zh": "腊味炒扁豆"
+ },
+ "c5c8a8f7f6a3649ab4bb55b0": {
+  "absent": [
+   "dairy",
+   "egg",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "soy",
+   "tree_nut",
+   "wheat"
+  ],
+  "allergens": [
+   {
+    "allergen": "fish",
+    "certainty": "likely",
+    "why": "fluke filet and fish broth"
+   }
+  ],
+  "alt": "31d4d30d2d2776a5f055ab75",
+  "beef": "no",
+  "category": "soup",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "fluke filet"
+   },
+   {
+    "certainty": "likely",
+    "name": "chinese sour cabbage"
+   },
+   {
+    "certainty": "likely",
+    "name": "fish broth"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "possible",
+    "name": "chili oil"
+   }
+  ],
+  "name": "Famous Chengdu Fish Soup",
+  "pork": "no",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "cabbage",
+   "chinese",
+   "filet",
+   "fluke",
+   "sour"
+  ],
+  "zh": "酸菜鱼片汤"
+ },
+ "c858b87683f905d274469fa8": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "7377cf2f587fcc802b9f2cc6",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "lamb"
+   },
+   {
+    "certainty": "likely",
+    "name": "cumin"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili peppers"
+   },
+   {
+    "certainty": "likely",
+    "name": "onion"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Sautéed Cumin Flavor Sliced Lamb",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "孜然黑山羊"
+ },
+ "cde70a2df507462361d73c36": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "wrapper"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "c9a50127aebf288f712a713b",
+  "beef": "no",
+  "category": "other",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "pork"
+   },
+   {
+    "certainty": "likely",
+    "name": "ginger"
+   },
+   {
+    "certainty": "likely",
+    "name": "pork aspik broth"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat wrapper"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Classic Soup Dumplings (4)",
+  "pork": "yes",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "berkshire",
+   "ginger",
+   "pork"
+  ],
+  "zh": "小笼包"
+ },
+ "d1fb5944ab1e847d3bb0d2df": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "4dbc703ad2d1d84d9124adad",
+  "beef": "no",
+  "category": "braise_or_stew",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "pork belly"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "sugar"
+   },
+   {
+    "certainty": "likely",
+    "name": "rice wine"
+   },
+   {
+    "certainty": "likely",
+    "name": "spices"
+   }
+  ],
+  "name": "Braised Pork Belly",
+  "pork": "yes",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "岷山红烧肉"
+ },
+ "d4438fabf390929a017f2c78": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "soy",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "wheat flour"
+   }
+  ],
+  "alt": "7e4918177b602e177905f23f",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "wheat flour"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "oil"
+   },
+   {
+    "certainty": "possible",
+    "name": "lard"
+   }
+  ],
+  "name": "Scallion Pancake",
+  "pork": "possible",
+  "spice": 0,
+  "v": "7",
+  "vegan": "possible",
+  "vegetarian": "possible",
+  "words": [],
+  "zh": "葱油饼"
+ },
+ "d5ea5a57e43cd7d3009a76e5": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "egg ribbons"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "tofu and soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "5aa770d745681420c7faec2b",
+  "beef": "no",
+  "category": "soup",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "tofu"
+   },
+   {
+    "certainty": "likely",
+    "name": "wood ear mushroom"
+   },
+   {
+    "certainty": "likely",
+    "name": "bamboo shoots"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "chicken broth"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "vinegar"
+   },
+   {
+    "certainty": "likely",
+    "name": "white pepper"
+   },
+   {
+    "certainty": "possible",
+    "name": "pork"
+   }
+  ],
+  "name": "Hot & Sour Soup",
+  "pork": "possible",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "酸辣汤"
+ },
+ "d6b32479c814639fee0af251": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "87fe4b6ee0df7b974ed060d8",
+  "beef": "yes",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "beef"
+   },
+   {
+    "certainty": "likely",
+    "name": "cumin"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili peppers"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Cumin (Beef)",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "孜然牛"
+ },
+ "d6b9d00ec5236ffde137b97e": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce and hoisin"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce and hoisin"
+   }
+  ],
+  "alt": "1ccd90997f1474376afae93e",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "bell pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "hoisin sauce"
+   }
+  ],
+  "name": "Mongolian (Shrimp)",
+  "pork": "no",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "bell",
+   "pepper",
+   "scallion"
+  ],
+  "zh": "蒙古虾"
+ },
+ "d9295568f2527c9a3922db5c": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "peanut",
+    "certainty": "possible",
+    "why": "cross-contamination possibility"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "spam ingredients"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "spam ingredients"
+   }
+  ],
+  "alt": "87f2f55c4872a2f61d8a1dbf",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "winter melon"
+   },
+   {
+    "certainty": "likely",
+    "name": "spam"
+   },
+   {
+    "certainty": "possible",
+    "name": "chicken stock"
+   },
+   {
+    "certainty": "likely",
+    "name": "salt"
+   }
+  ],
+  "name": "Sautéed Sliced Wintermelon with Spam",
+  "pork": "yes",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "火腿冬瓜片"
+ },
+ "d94bec624c96db1a3700903a": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "tofu and soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce/coating"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "likely",
+    "why": "sesame sauce and seeds"
+   }
+  ],
+  "alt": "8c0f635a2e9392ff105ee9ec",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "tofu"
+   },
+   {
+    "certainty": "likely",
+    "name": "broccoli"
+   },
+   {
+    "certainty": "likely",
+    "name": "brown sesame sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "sesame seeds"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Sesame (Tofu)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [
+   "broccoli",
+   "brown",
+   "sauce"
+  ],
+  "zh": "芝麻豆腐"
+ },
+ "dba7ecb599f1e690bd0ffc43": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "soy",
+   "tree_nut",
+   "wheat"
+  ],
+  "allergens": [],
+  "alt": "351c4f67f47fff022b106c6d",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "potato"
+   },
+   {
+    "certainty": "likely",
+    "name": "vinegar"
+   },
+   {
+    "certainty": "possible",
+    "name": "chili peppers"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   }
+  ],
+  "name": "Stir-fried Shredded Potatoes",
+  "pork": "no",
+  "spice": 1,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [],
+  "zh": "酸辣土豆丝"
+ },
+ "dba93f3cbdfd664e594b893d": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "dumpling wrapper"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "f8c7cd0a109d30d2fc978e38",
+  "beef": "no",
+  "category": "other",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "pork"
+   },
+   {
+    "certainty": "likely",
+    "name": "cabbage"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat wrapper"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Mandarin Pot Stickers (4)",
+  "pork": "yes",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "berkshire",
+   "cabbage",
+   "pork"
+  ],
+  "zh": "生煎锅贴"
+ },
+ "e2e02a1e19a5673994f62f9c": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "likely",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "49cb9a7ad058e17a94aa9661",
+  "beef": "no",
+  "category": "braise_or_stew",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "basil"
+   },
+   {
+    "certainty": "likely",
+    "name": "ginger"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "likely",
+    "name": "rice wine"
+   },
+   {
+    "certainty": "likely",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Three Cup Chicken",
+  "pork": "no",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "basil",
+   "ginger",
+   "sauce",
+   "soy"
+  ],
+  "zh": "三杯鸡"
+ },
+ "e43a8a4a2529d79beebfb5e1": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "soy",
+   "tree_nut",
+   "wheat"
+  ],
+  "allergens": [],
+  "alt": "f0116ea620739e242e6e7883",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chinese pea leaves"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "oil"
+   },
+   {
+    "certainty": "possible",
+    "name": "chicken stock"
+   }
+  ],
+  "name": "Chinese Pea Leaves (garlic stir fry)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "possible",
+  "vegetarian": "possible",
+  "words": [],
+  "zh": "豆苗蒜蓉"
+ },
+ "e7659232a56f8b74a37d71a4": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "wheat noodles and soy sauce"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "shellfish",
+    "certainty": "possible",
+    "why": "oyster sauce"
+   },
+   {
+    "allergen": "egg",
+    "certainty": "possible",
+    "why": "egg noodles"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "479e5fee24a249821779f45b",
+  "beef": "no",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "wheat noodles"
+   },
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "vegetables"
+   },
+   {
+    "certainty": "possible",
+    "name": "oyster sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Lo Mein (Chicken)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "炒面鸡"
+ },
+ "e89a8d574ed64dac1148f9d2": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "sesame",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp"
+   },
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "scrambled eggs"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "4a80dfefdda8a2c26c13c29b",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "rice"
+   },
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "spam"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "mushroom"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Yang Chow Fried Rice (Shrimp, Spam, Scrambled Eggs, Mushroom)",
+  "pork": "yes",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "扬州炒饭"
+ },
+ "e9b5ecf678645527e8c5c011": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "crab"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "wrapper"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "677345a747f049b53c13a201",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "pork"
+   },
+   {
+    "certainty": "likely",
+    "name": "crab"
+   },
+   {
+    "certainty": "likely",
+    "name": "gelatin"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat flour wrapper"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Crab with Pork Soup Dumplings (6Pc)",
+  "pork": "yes",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "蟹粉小笼包"
+ },
+ "ea2727ac1dde3123b8a809af": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "wheat noodles and soy sauce"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp and oyster sauce"
+   },
+   {
+    "allergen": "egg",
+    "certainty": "possible",
+    "why": "egg noodles"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "2c40b6b6b572b501891c416c",
+  "beef": "no",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "wheat noodles"
+   },
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "vegetables"
+   },
+   {
+    "certainty": "possible",
+    "name": "oyster sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Lo Mein (Shrimp)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "炒面虾"
+ },
+ "ea7316f6cdd00efdd9d6595d": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "sesame",
+   "soy",
+   "tree_nut",
+   "wheat"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp"
+   },
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "scrambled eggs"
+   }
+  ],
+  "alt": "e689dafd9cb365937b514f88",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "oil"
+   }
+  ],
+  "name": "Scrambled Eggs with Shrimp",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "滑蛋虾仁"
+ },
+ "ea79b587c776a825b1cc1848": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "5311f95dd7a4ab3cbc34bd60",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "zucchini"
+   },
+   {
+    "certainty": "likely",
+    "name": "garlic"
+   },
+   {
+    "certainty": "likely",
+    "name": "aged vinegar"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Chilled Zucchini in Tangy Sauce",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "yes",
+  "vegetarian": "yes",
+  "words": [
+   "aged",
+   "garlic",
+   "vinegar"
+  ],
+  "zh": "捞汁西葫芦"
+ },
+ "ecf11bd8d6a6cb49049fbf54": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "shellfish",
+    "certainty": "possible",
+    "why": "oyster sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "1d1164cb6e5a3c632f2a381c",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "onion"
+   },
+   {
+    "certainty": "likely",
+    "name": "lettuce"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "oyster sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Chicken Lettuce Wraps",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "onion"
+  ],
+  "zh": "鸡松"
+ },
+ "edd5ec869ae8856e60e76f06": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "soy",
+   "tree_nut",
+   "wheat"
+  ],
+  "allergens": [
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "egg"
+   }
+  ],
+  "alt": "e779b5c11830de5fcf874f24",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "tomato"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "possible",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "sugar"
+   }
+  ],
+  "name": "Tomato & Egg",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "yes",
+  "words": [],
+  "zh": "番茄拉丝黄金蛋"
+ },
+ "ede10bbfff2b3041d36aa1aa": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "wrapper"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "likely",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "a4773143f52fc475b6bd6232",
+  "beef": "no",
+  "category": "cold_appetizer",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "pork"
+   },
+   {
+    "certainty": "likely",
+    "name": "cabbage"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat flour wrapper"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Pork Potstickers (6Pc)",
+  "pork": "yes",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "锅贴"
+ },
+ "ef00fef93cb6b4c62ea184cc": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "a3e68c58a2fe771fef6b1570",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "lamb"
+   },
+   {
+    "certainty": "likely",
+    "name": "cumin"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili peppers"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Cumin (Lamb)",
+  "pork": "no",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "孜然羊"
+ },
+ "ef01d6585b55b6e7f2013bfb": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "sesame",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp"
+   },
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "egg"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "6789d783b516154c9e080a70",
+  "beef": "no",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "rice"
+   },
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "pineapple"
+   },
+   {
+    "certainty": "likely",
+    "name": "basil"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "carrot"
+   },
+   {
+    "certainty": "likely",
+    "name": "green peas"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Pineapple Fried Rice (Shrimp)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "虾"
+ },
+ "f0fb57ced9387982ad6dc32e": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "shellfish",
+    "certainty": "likely",
+    "why": "shrimp"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "wrapper"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "1772ea2842089a17b015b84d",
+  "beef": "no",
+  "category": "other",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "pork"
+   },
+   {
+    "certainty": "likely",
+    "name": "shrimp"
+   },
+   {
+    "certainty": "likely",
+    "name": "ginger"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat wrapper"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Berkshire Pork & Shrimp Shumai (3)",
+  "pork": "yes",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "ginger",
+   "rock"
+  ],
+  "zh": "黑豚虾肉烧卖"
+ },
+ "f2c10c1aacb903f4840cdf90": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "noodles"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "likely",
+    "why": "sesame paste"
+   },
+   {
+    "allergen": "peanut",
+    "certainty": "possible",
+    "why": "peanut garnish"
+   }
+  ],
+  "alt": "760bcd0f797c6c2c1975b0e1",
+  "beef": "no",
+  "category": "other",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "noodles"
+   },
+   {
+    "certainty": "likely",
+    "name": "pork"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili oil"
+   },
+   {
+    "certainty": "likely",
+    "name": "sesame paste"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "possible",
+    "name": "peanut"
+   }
+  ],
+  "name": "Dan Dan Noodles",
+  "pork": "yes",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "chili",
+   "pork",
+   "scallion",
+   "sesame",
+   "sichuan"
+  ],
+  "zh": "担担面"
+ },
+ "f2eab6bc5e5d6d927fc41d15": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce and hoisin"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce and hoisin"
+   }
+  ],
+  "alt": "1862156b236acfe9111b71a6",
+  "beef": "yes",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "beef"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "bell pepper"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "wheat"
+   },
+   {
+    "certainty": "possible",
+    "name": "hoisin sauce"
+   }
+  ],
+  "name": "Mongolian (Beef)",
+  "pork": "no",
+  "spice": 1,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "bell",
+   "pepper",
+   "scallion"
+  ],
+  "zh": "蒙古牛"
+ },
+ "f4ed1a43f91482f0f2720fd7": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "shellfish",
+    "certainty": "possible",
+    "why": "oyster sauce"
+   }
+  ],
+  "alt": "fdb31d0f2c976f9dfde10f00",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "broccoli"
+   },
+   {
+    "certainty": "likely",
+    "name": "brown garlic sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "possible",
+    "name": "oyster sauce"
+   }
+  ],
+  "name": "Broccoli (Chicken)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [
+   "brown",
+   "garlic",
+   "sauce"
+  ],
+  "zh": "芥兰鸡"
+ },
+ "f5fbff66e3a9668ce1c9f233": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "fried rice egg"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "675ee6d349c2390f8e7a1207",
+  "beef": "no",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "rice"
+   },
+   {
+    "certainty": "likely",
+    "name": "vegetables"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   },
+   {
+    "certainty": "likely",
+    "name": "msg"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Fried Rice (Vegetable)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "possible",
+  "vegetarian": "yes",
+  "words": [],
+  "zh": "炒饭蔬菜"
+ },
+ "f72daaa21fe131c575e4269e": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "egg"
+   },
+   {
+    "allergen": "soy",
+    "certainty": "possible",
+    "why": "soy sauce"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "possible",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "af0dc4c2f7e020d159216bd5",
+  "beef": "no",
+  "category": "staple",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "rice"
+   },
+   {
+    "certainty": "likely",
+    "name": "chicken"
+   },
+   {
+    "certainty": "likely",
+    "name": "pineapple"
+   },
+   {
+    "certainty": "likely",
+    "name": "basil"
+   },
+   {
+    "certainty": "likely",
+    "name": "scallion"
+   },
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "carrot"
+   },
+   {
+    "certainty": "likely",
+    "name": "green peas"
+   },
+   {
+    "certainty": "possible",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Pineapple Fried Rice (Chicken)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "鸡"
+ },
+ "f7338e1759bbf5980a2712b7": {
+  "absent": [
+   "dairy",
+   "egg",
+   "fish",
+   "peanut",
+   "sesame",
+   "shellfish",
+   "tree_nut"
+  ],
+  "allergens": [
+   {
+    "allergen": "soy",
+    "certainty": "likely",
+    "why": "soy sauce and paste"
+   },
+   {
+    "allergen": "wheat",
+    "certainty": "likely",
+    "why": "soy sauce"
+   }
+  ],
+  "alt": "d60605755076f925cfd1f986",
+  "beef": "no",
+  "category": "stir_fry",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "cauliflower"
+   },
+   {
+    "certainty": "likely",
+    "name": "pork"
+   },
+   {
+    "certainty": "likely",
+    "name": "leek"
+   },
+   {
+    "certainty": "likely",
+    "name": "chili paste"
+   },
+   {
+    "certainty": "likely",
+    "name": "soy sauce"
+   }
+  ],
+  "name": "Organic Cauliflower in Drywok Flavored with Sliced Pork",
+  "pork": "yes",
+  "spice": 2,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "no",
+  "words": [],
+  "zh": "干锅有机花菜"
+ },
+ "fdc2e44baebaaa34fc327658": {
+  "absent": [
+   "dairy",
+   "fish",
+   "peanut",
+   "shellfish",
+   "soy",
+   "tree_nut",
+   "wheat"
+  ],
+  "allergens": [
+   {
+    "allergen": "egg",
+    "certainty": "likely",
+    "why": "egg drop"
+   },
+   {
+    "allergen": "sesame",
+    "certainty": "possible",
+    "why": "sesame oil"
+   }
+  ],
+  "alt": "4cb3c5968db179bf1767b247",
+  "beef": "no",
+  "category": "soup",
+  "ingredients": [
+   {
+    "certainty": "likely",
+    "name": "egg"
+   },
+   {
+    "certainty": "likely",
+    "name": "seaweed"
+   },
+   {
+    "certainty": "likely",
+    "name": "chicken stock"
+   },
+   {
+    "certainty": "likely",
+    "name": "salt"
+   },
+   {
+    "certainty": "possible",
+    "name": "sesame oil"
+   }
+  ],
+  "name": "Egg Drop with Seaweed Soup (Per Person)",
+  "pork": "no",
+  "spice": 0,
+  "v": "7",
+  "vegan": "no",
+  "vegetarian": "possible",
+  "words": [],
+  "zh": "紫菜蛋花汤"
+ }
+}

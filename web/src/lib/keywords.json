@@ -1,0 +1,314 @@
+{
+  "_about": "One keyword list for allergens and meat, used by plan/dish_facts.py (printed words and floor), plan/edibility.py and web/src/lib/dietary.ts (a copy kept identical by tests/test_keywords.py). 'en' entries are regex fragments matched as whole words, case-insensitive; 'zh' entries are regex fragments matched anywhere. 'negatable' concepts skip 'no pork', 'vegetarian chicken' and the like.",
+  "shellfish": {
+    "en": [
+      "shrimps?",
+      "prawns?",
+      "crabs?",
+      "crabmeat",
+      "crawfish",
+      "crayfish",
+      "lobsters?",
+      "langoustines?",
+      "scallops?",
+      "clams?",
+      "oysters?",
+      "oyster sauce",
+      "mussels?",
+      "cockles?",
+      "whelks?",
+      "conch",
+      "abalone",
+      "squids?",
+      "calamari",
+      "octopus",
+      "cuttlefish",
+      "xo",
+      "xo sauce",
+      "seafood",
+      "shellfish"
+    ],
+    "zh": [
+      "虾",
+      "蝦",
+      "蟹",
+      "扇贝",
+      "扇貝",
+      "干贝",
+      "干貝",
+      "瑶柱",
+      "蚝",
+      "蠔",
+      "螺",
+      "鱿鱼",
+      "魷魚",
+      "章鱼",
+      "章魚",
+      "墨鱼",
+      "墨魚",
+      "花枝",
+      "蛤",
+      "蚬",
+      "蜆",
+      "青口",
+      "鲍鱼",
+      "鮑魚",
+      "海鲜",
+      "海鮮"
+    ]
+  },
+  "fish": {
+    "en": [
+      "fish(?![- ]?fragrant)",
+      "fish sauce",
+      "fluke",
+      "sole",
+      "sea ?bass",
+      "salmon",
+      "cod",
+      "anchov\\w*",
+      "dace",
+      "tilapia",
+      "flounder",
+      "tuna",
+      "eel",
+      "mackerel",
+      "snapper",
+      "halibut",
+      "carp",
+      "catfish",
+      "pomfret",
+      "bonito"
+    ],
+    "zh": [
+      "(?<!鱿)(?<!魷)(?<!章)(?<!墨)(?<!鲍)(?<!鮑)(?<!娃)鱼(?!香)",
+      "(?<!魷)(?<!章)(?<!墨)(?<!鮑)魚(?!香)",
+      "鱼露",
+      "魚露",
+      "鳗",
+      "鰻"
+    ]
+  },
+  "peanut": {
+    "en": [
+      "peanuts?",
+      "peanut sauce",
+      "satay",
+      "groundnuts?"
+    ],
+    "zh": [
+      "花生",
+      "沙爹",
+      "沙嗲"
+    ]
+  },
+  "tree_nut": {
+    "en": [
+      "walnuts?",
+      "cashews?",
+      "almonds?",
+      "pine ?nuts?",
+      "pecans?",
+      "pistachios?",
+      "hazelnuts?",
+      "macadamias?"
+    ],
+    "zh": [
+      "核桃",
+      "腰果",
+      "杏仁",
+      "松子",
+      "榛子"
+    ]
+  },
+  "sesame": {
+    "en": [
+      "sesame",
+      "tahini"
+    ],
+    "zh": [
+      "芝麻",
+      "香油",
+      "麻酱",
+      "麻醬"
+    ]
+  },
+  "egg": {
+    "en": [
+      "eggs?(?! ?rolls?)",
+      "egg whites?",
+      "egg yolks?",
+      "mayo",
+      "mayonnaise"
+    ],
+    "zh": [
+      "蛋"
+    ]
+  },
+  "dairy": {
+    "en": [
+      "(?<!coconut )(?<!soy )(?<!soybean )(?<!peanut )(?<!almond )milk",
+      "butter(?! ?nut)",
+      "cream",
+      "cheese",
+      "yogurt",
+      "ghee"
+    ],
+    "zh": [
+      "牛奶",
+      "奶油",
+      "芝士",
+      "奶酪",
+      "炼乳",
+      "煉乳"
+    ]
+  },
+  "soy": {
+    "en": [
+      "tofu",
+      "bean ?curd",
+      "soy",
+      "soya",
+      "soy sauce",
+      "edamame",
+      "miso",
+      "hoisin"
+    ],
+    "zh": [
+      "豆腐",
+      "腐竹",
+      "酱油",
+      "醬油",
+      "豆豉",
+      "黄豆",
+      "黃豆",
+      "毛豆"
+    ]
+  },
+  "wheat": {
+    "en": [
+      "soy sauce",
+      "hoisin",
+      "wheat",
+      "flour",
+      "gluten",
+      "seitan"
+    ],
+    "zh": [
+      "酱油",
+      "醬油",
+      "面粉",
+      "麵粉",
+      "面筋",
+      "麵筋"
+    ]
+  },
+  "pork": {
+    "negatable": true,
+    "en": [
+      "pork",
+      "bacon",
+      "ham",
+      "lard",
+      "sausages?",
+      "spare ?ribs?",
+      "ribs?",
+      "char ?siu",
+      "pig'?s?",
+      "trotters?",
+      "spam",
+      "luncheon meat",
+      "lap ?cheong",
+      "lap ?chong",
+      "cha ?siu",
+      "pancetta",
+      "prosciutto",
+      "chorizo",
+      "pepperoni",
+      "salami"
+    ],
+    "zh": [
+      "猪",
+      "豬",
+      "叉烧",
+      "叉燒",
+      "腊肉",
+      "臘肉",
+      "腊味",
+      "臘味",
+      "五花",
+      "排骨",
+      "火腿",
+      "腊肠",
+      "臘腸",
+      "肉末",
+      "肉丝",
+      "肉絲",
+      "肉片",
+      "肉碎",
+      "午餐肉",
+      "猪油",
+      "豬油"
+    ]
+  },
+  "beef": {
+    "negatable": true,
+    "en": [
+      "beef",
+      "steak",
+      "oxtail",
+      "brisket",
+      "veal",
+      "tripe",
+      "tallow"
+    ],
+    "zh": [
+      "牛(?!奶)"
+    ]
+  },
+  "meat": {
+    "negatable": true,
+    "en": [
+      "chicken",
+      "duck",
+      "lamb",
+      "mutton",
+      "goose",
+      "frog",
+      "quail",
+      "bone marrow",
+      "meat",
+      "meats"
+    ],
+    "zh": [
+      "(?<!素)(?:鸡|雞)(?!蛋)",
+      "(?<!素)(?:鸭|鴨)",
+      "羊",
+      "鹅",
+      "鵝",
+      "(?<!素)(?<!果)肉(?!桂)"
+    ]
+  },
+  "stock": {
+    "en": [
+      "broth",
+      "stock",
+      "gelatin",
+      "gelatine",
+      "bone broth",
+      "meat stock"
+    ],
+    "zh": [
+      "高汤",
+      "高湯",
+      "骨汤",
+      "骨湯",
+      "鸡汤",
+      "雞湯",
+      "鸡汁",
+      "雞汁",
+      "鸡粉",
+      "雞粉"
+    ]
+  }
+}

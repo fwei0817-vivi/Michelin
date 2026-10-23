@@ -12,28 +12,74 @@ import json
 import os
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
+from michelin import llm
 from michelin.explain import explain
+from michelin.meal import PeopleAction, apply_people_action
+from michelin.model import ExtractionRequest, ExtractionResponse
+from michelin.plan import ai_swap, ai_text, dish_facts, llm_planner, refine, spice
 from michelin.plan.budget import subtotal_cap, totals
-from michelin.plan.edibility import blocking_allergens, blocking_diets, edible_by, open_questions
-from michelin.plan.optimizer import solve
-from michelin.plan.portions import required_range, total_units
+from michelin.plan.edibility import (
+    assessment,
+    diner_status,
+    edible_by,
+    for_whom,
+    open_questions,
+    veg_tag,
+)
 from michelin.plan.score import variety_score
-from michelin.schemas import Check, Conflict, DinerProfile, Menu, Plan, PlanItem, TableRequest
+from michelin.plan.validation import validate_order
+from michelin.profiles import ProfileStore
+from michelin.schemas import (
+    MAX_MENU_DISHES,
+    Check,
+    Conflict,
+    DinerProfile,
+    Menu,
+    Plan,
+    PlanItem,
+    TableRequest,
+    validate_money,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 MENU_DIR = Path(os.environ.get("MICHELIN_MENU_DIR", ROOT / "data/menus"))
 PROFILE_DIR = Path(os.environ.get("MICHELIN_PROFILE_DIR", ROOT / "data/profiles"))
+PROFILE_DB = Path(os.environ.get("MICHELIN_PROFILE_DB", ROOT / "data/local/profiles.sqlite3"))
 WEB_DIST = Path(os.environ.get("MICHELIN_WEB_DIST", ROOT / "web/dist"))
 FIXTURE_DIR = ROOT / "data/fixtures"
 MOCK = os.environ.get("MICHELIN_MOCK", "") not in ("", "0", "false")
 
 app = FastAPI(title="Michelin", version="0.1.0")
+
+
+@app.on_event("startup")
+def _migrate_saved_people() -> None:
+    """Saved people from before the free-text taste note get a new revision in that shape."""
+    import logging
+
+    try:
+        n = ProfileStore(PROFILE_DB).migrate()
+        if n:
+            logging.getLogger("michelin").info("Migrated %d saved people to taste notes", n)
+    except Exception:
+        logging.getLogger("michelin").warning("Saved-people migration failed", exc_info=True)
+
+
+@app.post("/api/meal/people")
+def meal_people(request: PeopleAction):
+    try:
+        diners = apply_people_action(request)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return {"diners": diners, "recommendation_invalidated": True}
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # the frontend may be hosted separately
@@ -79,21 +125,30 @@ class PlanRequest(BaseModel):
     menu_id: str
     diner_ids: list[str] = Field(default_factory=list)  # saved profiles, by id
     diners: list[DinerProfile] = Field(default_factory=list)  # edited or ad-hoc, sent inline
-    budget_per_person: float = Field(gt=0)
+    budget_per_person: float = Field(gt=0, allow_inf_nan=False)
+    budget_total: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    _budget_cents = field_validator("budget_per_person", "budget_total")(validate_money)
     tax_rate: float = Field(default=0.08875, ge=0, le=0.3)
     tip_rate: float = Field(default=0.18, ge=0, le=0.4)
-    min_dishes_per_person: int = Field(default=2, ge=1)
+    # Accepted from older clients and ignored: the AI decides how many dishes (2026-10-09).
+    min_dishes_per_person: int | None = Field(default=None, ge=1, le=40)
     locked_dish_ids: list[str] = Field(default_factory=list)
     excluded_dish_ids: list[str] = Field(default_factory=list)
     menu_override: Menu | None = None
     dish_count_target: int | None = Field(default=None, ge=1, le=20)
     style_preference: str = Field(default="balanced", pattern="^(balanced|lighter|favorites)$")
     explain: bool = False  # ask the LLM stage for one-line reasons
+    # "What should change?": the AI revises feedback.current (bypassing the plan cache).
+    feedback: refine.Feedback | None = None
 
     @model_validator(mode="after")
     def _someone_is_eating(self) -> PlanRequest:
         if not self.diner_ids and not self.diners:
             raise ValueError("diner_ids or diners must name at least one diner")
+        if len({p.id for p in self.diners}) != len(self.diners):
+            raise ValueError("Inline diner IDs must be unique")
+        if len(set(self.diner_ids) | {p.id for p in self.diners}) > 6:
+            raise ValueError("At most six diners are supported")
         return self
 
 
@@ -102,6 +157,10 @@ class PlanResponse(BaseModel):
     plan: Plan | None = None
     conflict: Conflict | None = None
     subtotal_cap: float
+    source: str = "ai"  # "ai" (LLM chose, rules checked) | "rules" (fallback) | "mock" (demo)
+    source_note: str | None = None
+    change_note: str | None = None  # refinement: one line on what changed (checked)
+    changes: list[str] = Field(default_factory=list)  # refinement: the computed changes
 
 
 # ---------------------------------------------------------------------------
@@ -111,7 +170,15 @@ class PlanResponse(BaseModel):
 
 @app.get("/api/health")
 def health() -> dict:
-    return {"ok": True, "mock": MOCK}
+    import shutil
+
+    from michelin.parse import vision
+
+    # How a menu photo is read: OpenRouter, the free Gemini key, local OCR, or not at all.
+    photo = llm.provider() if vision.configured() else "ocr" if shutil.which("tesseract") else None
+
+    planner = "mock" if MOCK else llm.provider()  # "openrouter" | "gemini" | None
+    return {"ok": True, "mock": MOCK, "photo": photo, "planner": planner}
 
 
 @app.get("/api/menus", response_model=list[MenuSummary])
@@ -133,17 +200,78 @@ def get_menu(slug: str) -> Menu:
     menus = load_menus()
     if slug not in menus:
         raise HTTPException(404, f"unknown menu {slug!r}")
-    return menus[slug]
+    return dish_facts.prepare(menus[slug])
 
 
 @app.get("/api/profiles", response_model=list[DinerProfile])
-def list_profiles() -> list[DinerProfile]:
-    return list(load_profiles().values())
+def list_profiles(x_profile_scope: str | None = Header(default=None)) -> list[DinerProfile]:
+    return list(_profiles(x_profile_scope).values())
 
 
-def _resolve_diners(req: PlanRequest) -> list[DinerProfile]:
+def _scope(scope):
+    import re
+
+    if not scope or not re.fullmatch(r"[A-Za-z0-9_-]{1,100}", scope):
+        raise HTTPException(422, "Supply X-Profile-Scope (1–100 letters, digits, _ or -).")
+    return scope
+
+
+def _profiles(scope):
+    return load_profiles() if scope is None else ProfileStore(PROFILE_DB).list(_scope(scope))
+
+
+class ProfileWrite(BaseModel):
+    profile: DinerProfile
+    # None = save as the person's current record (create or replace); an int keeps the
+    # optimistic check for callers that edit a specific revision.
+    expected_revision: int | None = Field(default=None, ge=0, strict=True)
+
+
+@app.post("/api/profiles", status_code=201)
+def create_profile(profile: DinerProfile, x_profile_scope: str | None = Header(default=None)):
+    return _save_profile(profile, 0, x_profile_scope)
+
+
+def _save_profile(profile, revision, scope):
+    try:
+        revision = ProfileStore(PROFILE_DB).save(_scope(scope), profile, revision)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return {"profile": profile, "revision": revision}
+
+
+@app.get("/api/profiles/{person_id}/history")
+def profile_history(person_id: str, x_profile_scope: str | None = Header(default=None)):
+    rows = ProfileStore(PROFILE_DB).history(_scope(x_profile_scope), person_id)
+    if not rows:
+        raise HTTPException(404, "Unknown person in this scope")
+    return rows
+
+
+@app.get("/api/profiles/{person_id}")
+def get_profile(person_id: str, x_profile_scope: str | None = Header(default=None)):
+    return profile_history(person_id, x_profile_scope)[-1]
+
+
+@app.put("/api/profiles/{person_id}")
+def update_profile(
+    person_id: str, body: ProfileWrite, x_profile_scope: str | None = Header(default=None)
+):
+    if person_id != body.profile.id or body.expected_revision == 0:
+        raise HTTPException(422, "Keep the person ID stable; omit the revision or supply it.")
+    return _save_profile(body.profile, body.expected_revision, x_profile_scope)
+
+
+@app.delete("/api/profiles/{person_id}")
+def delete_profile(person_id: str, x_profile_scope: str | None = Header(default=None)):
+    if not ProfileStore(PROFILE_DB).delete(_scope(x_profile_scope), person_id):
+        raise HTTPException(404, "Unknown person in this scope")
+    return {"deleted": True}
+
+
+def _resolve_diners(req: PlanRequest, scope: str | None = None) -> list[DinerProfile]:
     """Inline diners win over saved profiles with the same id; order follows the request."""
-    profiles = load_profiles()
+    profiles = _profiles(scope)
     inline = {d.id: d for d in req.diners}
     missing = [d for d in req.diner_ids if d not in profiles and d not in inline]
     if missing:
@@ -153,114 +281,550 @@ def _resolve_diners(req: PlanRequest) -> list[DinerProfile]:
     for d in list(req.diners) + [profiles[i] for i in req.diner_ids if i not in inline]:
         if d.id not in seen:
             seen.add(d.id)
+            if scope is not None and d.id in inline and d.id in profiles:
+                saved = profiles[d.id]
+                d = d.model_copy(
+                    update={
+                        key: getattr(saved, key)
+                        for key in ("notes",)
+                        if key not in d.model_fields_set
+                    }
+                )
             out.append(d)
     return out
 
 
-@app.post("/api/plan", response_model=PlanResponse)
-def plan(req: PlanRequest) -> PlanResponse:
+def _prepare(req: PlanRequest, x_profile_scope: str | None) -> tuple[Menu, TableRequest, float]:
+    """Menu, table request and menu-price cap for a plan or swap request (422/404 if unusable)."""
     menus = load_menus()
     if req.menu_override is None and req.menu_id not in menus:
         raise HTTPException(404, f"unknown menu {req.menu_id!r}")
     menu = req.menu_override or menus[req.menu_id]
+    if menu.currency != "USD":
+        raise HTTPException(422, "Only USD menus are supported.")
     if not menu.verified:
         raise HTTPException(422, "Review and verify the menu before planning.")
-    if len(menu.dishes) > 40 or len({d.id for d in menu.dishes}) != len(menu.dishes):
-        raise HTTPException(422, "Use up to 40 dishes with unique IDs.")
+    if len(menu.dishes) > MAX_MENU_DISHES or len({d.id for d in menu.dishes}) != len(menu.dishes):
+        raise HTTPException(422, f"Use up to {MAX_MENU_DISHES} dishes with unique IDs.")
     if any(d.price is None or d.price < 0 for d in menu.dishes):
         raise HTTPException(422, "Every dish needs a valid price before planning.")
     known = {d.id for d in menu.dishes}
     for dish_id in req.locked_dish_ids + req.excluded_dish_ids:
         if dish_id not in known:
             raise HTTPException(404, f"unknown dish {dish_id!r}")
+    diners = _resolve_diners(req, x_profile_scope)
+    # Only name, price and category are trusted; the AI's dish facts are filled in here,
+    # with answers for the table's own allergies and diets ("mango", "halal").
+    menu = dish_facts.prepare(menu, diners=diners)
 
     request = TableRequest(
         menu_id=req.menu_id,
-        diners=_resolve_diners(req),
+        diners=diners,
         budget_per_person=req.budget_per_person,
+        budget_total=req.budget_total,
         tax_rate=req.tax_rate,
         tip_rate=req.tip_rate,
-        min_dishes_per_person=req.min_dishes_per_person,
         locked_dish_ids=req.locked_dish_ids,
         excluded_dish_ids=req.excluded_dish_ids,
-        dish_count_target=req.dish_count_target,
         style_preference=req.style_preference,
     )
-    cap = subtotal_cap(req.budget_per_person, request.n_diners, req.tax_rate, req.tip_rate)
+    return menu, request, subtotal_cap(request.all_in_budget, 1, req.tax_rate, req.tip_rate)
 
+
+class SwapRequest(PlanRequest):
+    plan: Plan  # the current, checked plan; every dish but dish_id stays as is
+    dish_id: str | None = None  # the dish to replace; None adds new_dish_id instead
+    new_dish_id: str | None = None  # the user's own pick: no model call, same checks
+
+    @model_validator(mode="after")
+    def _something_to_do(self) -> SwapRequest:
+        if self.dish_id is None and self.new_dish_id is None:
+            raise ValueError("Name the dish to replace (dish_id) or the dish to add (new_dish_id)")
+        return self
+
+
+class SwapResponse(BaseModel):
+    kind: str  # "plan" | "failed"
+    plan: Plan | None = None
+    new_dish_id: str | None = None
+    message: str  # the AI's reason, or why no swap passed (offer the manual pick)
+    source_note: str | None = None
+
+
+def with_status(plan: Plan, menu: Menu, diners) -> Plan:
+    """Every plan the API returns carries each dish's per-diner status (QA r15)."""
+    return plan.model_copy(
+        update={
+            "items": [
+                i.model_copy(
+                    update={
+                        "status": diner_status(menu.dish(i.dish_id), diners),
+                        "veg_tag": veg_tag(menu.dish(i.dish_id), diners),
+                        "spice_label": spice.label(menu.dish(i.dish_id)),
+                        "heat_note": spice.heat_note(menu.dish(i.dish_id), diners),
+                    }
+                )
+                for i in plan.items
+            ]
+        }
+    )
+
+
+@app.post("/api/plan/swap", response_model=SwapResponse)
+def swap_dish(req: SwapRequest, x_profile_scope: str | None = Header(default=None)) -> SwapResponse:
+    """Single-dish swap: the AI's pick (one call, one retry) or the user's own pick (no call).
+    Either way only that dish changes and the whole order goes through the plan checks."""
+    menu, request, _ = _prepare(req, x_profile_scope)
+    ids = [i.dish_id for i in req.plan.items]
+    if req.dish_id is not None and req.dish_id not in ids:
+        raise HTTPException(404, f"{req.dish_id!r} is not in the plan")
+    if req.dish_id is not None and menu.dish(req.dish_id).category.value == "staple":
+        raise HTTPException(422, "Rice and other staples are added automatically.")
+    if not validate_order(menu, request, req.plan.items)["valid"]:
+        # The plan sent in must itself pass, so 'every other dish stays' keeps it valid.
+        raise HTTPException(409, "The current plan no longer passes the checks; update it first.")
+    if req.new_dish_id is not None:
+        request = ai_swap.picked(request, req.new_dish_id)  # an explicit pick un-removes it
+        out = ai_swap.manual(menu, request, req.plan, req.dish_id, req.new_dish_id)
+    else:
+        out = ai_swap.swap(menu, request, req.plan, req.dish_id)
+    if out.plan is None:
+        return SwapResponse(kind="failed", message=out.message)
+    after = request if req.dish_id is None else ai_swap._swap_request(request, req.dish_id)
+    report = validate_order(menu, after, out.plan.items)
+    if not report["valid"] or any(
+        getattr(out.plan, k) != v for k, v in report["totals"].items()
+    ):  # belt and braces: never return an order the rules reject
+        return SwapResponse(kind="failed", message="The swap did not pass the final check.")
+    retried = " after 1 correction" if out.attempts > 1 else ""
+    return SwapResponse(
+        kind="plan",
+        plan=with_status(out.plan, menu, after.diners),
+        new_dish_id=out.new_dish_id,
+        message=out.message,
+        source_note=f"Swap by {llm.label(out.model)}, checked by the rules{retried}."
+        if out.model
+        else "Your pick, checked by the rules.",
+    )
+
+
+@app.post("/api/plan", response_model=PlanResponse)
+def plan(req: PlanRequest, x_profile_scope: str | None = Header(default=None)) -> PlanResponse:
+    menu, request, cap = _prepare(req, x_profile_scope)
+
+    # Recommendations come from the LLM only; the rules below validate, never choose.
+    source, source_note = "mock" if MOCK else "ai", None
+    change_note, changes, kept = None, [], False
     if MOCK:
         result = _mock_solve(menu, request)
     else:
-        try:
-            result = solve(menu, request)
-        except TimeoutError as e:
-            raise HTTPException(503, str(e)) from e
-
+        outcome = llm_planner.plan(menu, request, feedback=req.feedback)
+        source_note = outcome.note
+        change_note, changes = outcome.change_note, outcome.changes
+        kept = outcome.kept
+        if outcome.fallback:
+            source = "rules"  # the AI's orders failed; the rules built this one
+        result = outcome.plan if outcome.plan is not None else outcome.conflict
     if isinstance(result, Conflict):
-        return PlanResponse(kind="conflict", conflict=result, subtotal_cap=cap)
-    if req.explain:
+        return PlanResponse(
+            kind="conflict",
+            conflict=result,
+            subtotal_cap=cap,
+            source=source,
+            source_note=source_note,
+        )
+    try:
+        result = Plan.model_validate(result)
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(502, "Planner returned malformed output.") from exc
+    before = result.model_dump(exclude={"items"})
+    original_items = [i.model_dump(exclude={"reason"}) for i in result.items]
+    if req.explain and source != "ai":  # AI plans keep the model's own reasons
         try:
             result = explain(result, menu, request)
         except NotImplementedError as e:
             raise HTTPException(501, f"explain not implemented: {e}") from e
-    return PlanResponse(kind="plan", plan=result, subtotal_cap=cap)
+        except Exception as e:
+            raise HTTPException(502, "Explanation failed; no order returned.") from e
+    try:
+        result = Plan.model_validate(result)
+        if before != result.model_dump(exclude={"items"}) or original_items != [
+            i.model_dump(exclude={"reason"}) for i in result.items
+        ]:
+            raise ValueError("Explanation altered the order")
+        report = validate_order(menu, request, result.items)
+        # The user's own order kept as is (QA r11): its failing checks are shown on the plan.
+        if not report["valid"] and not kept:
+            return PlanResponse(
+                kind="conflict",
+                subtotal_cap=cap,
+                conflict=Conflict(
+                    code="order_validation_failed",
+                    message="Order failed independent validation: "
+                    + "; ".join(r["detail"] for r in report["reasons"]),
+                ),
+            )
+        if any(getattr(result, k) != v for k, v in report["totals"].items()):
+            raise ValueError("Incorrect totals")
+        if any(
+            i.edible_by != edible_by(menu.dish(i.dish_id), request.diners) for i in result.items
+        ):
+            raise ValueError("Incorrect diner eligibility")
+    except (ValueError, TypeError, KeyError, AttributeError) as exc:
+        raise HTTPException(502, "Planner or explanation returned invalid output.") from exc
+    return PlanResponse(
+        kind="plan",
+        plan=with_status(result, menu, request.diners),
+        subtotal_cap=cap,
+        source=source,
+        source_note=source_note,
+        change_note=change_note,
+        changes=changes,
+    )
+
+
+@app.get("/api/model/prepared")
+def prepared_inputs():
+    """Known local inputs, not an extraction service or an OCR catalogue."""
+    from michelin.model import prepared_catalog
+
+    return [
+        {
+            key: row[key]
+            for key in (
+                "menu_id",
+                "input_text",
+                "input_sha256",
+                "source_url",
+                "retrieved_at",
+                "preparation",
+            )
+        }
+        for row in prepared_catalog()
+    ]
+
+
+@app.post("/api/menu/extract")
+def extract_menu(req: ExtractionRequest) -> ExtractionResponse:
+    from michelin.model import UnpreparedInput, extract, get_extraction_provider
+
+    try:
+        return extract(req, get_extraction_provider())
+    except UnpreparedInput as exc:
+        raise HTTPException(409, str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            502, "Extraction provider failed or returned malformed output; no menu accepted."
+        ) from exc
 
 
 class ParseRequest(BaseModel):
     text: str = Field(default="", max_length=100000)
     image_base64: str | None = Field(default=None, max_length=12000000)
+    # More pages of the same menu (photos or PDFs), read together and merged into one menu.
+    images_base64: list[str] = Field(default_factory=list, max_length=8)
+
+    @field_validator("images_base64")
+    @classmethod
+    def _page_size(cls, pages: list[str]) -> list[str]:
+        if any(len(p) > 12000000 for p in pages):
+            raise ValueError("Each page must be under 8 MB.")
+        return pages
 
 
-@app.post("/api/menu/parse")
-def parse_menu(req: ParseRequest) -> dict:
-    import base64
-    import binascii
+MAX_PDF_PAGES = 8
+
+
+def _pdf_pages(pdf: bytes) -> list[tuple[bytes, str]]:
+    """Each PDF page as a JPEG (poppler's pdftoppm, 110 dpi: legible, ~300 KB a page)."""
     import shutil
     import subprocess
     import tempfile
 
-    from michelin.parse import parse_text
+    binary = shutil.which("pdftoppm")
+    if not binary:
+        raise HTTPException(
+            422, "PDF menus need poppler-utils on this server. Upload photos of the pages instead."
+        )
+    with tempfile.TemporaryDirectory() as tmp:
+        source = Path(tmp) / "menu.pdf"
+        source.write_bytes(pdf)
+        try:
+            result = subprocess.run(
+                [
+                    binary,
+                    "-r",
+                    "110",
+                    "-jpeg",
+                    "-jpegopt",
+                    "quality=80",
+                    "-f",
+                    "1",
+                    "-l",
+                    str(MAX_PDF_PAGES),
+                    str(source),
+                    str(Path(tmp) / "page"),
+                ],
+                capture_output=True,
+                timeout=60,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            raise HTTPException(422, "The PDF took too long to open. Upload page photos instead.")
+        files = sorted(Path(tmp).glob("page*.jpg"))
+        if result.returncode or not files:
+            raise HTTPException(422, "The PDF could not be opened. Upload page photos instead.")
+        return [(f.read_bytes(), "image/jpeg") for f in files]
+
+
+def _pages(req: ParseRequest) -> list[tuple[bytes, str]]:
+    """Every uploaded page as (image bytes, mime): photos as they are, PDFs page by page."""
+    import base64
+    import binascii
+
+    pages: list[tuple[bytes, str]] = []
+    for encoded in [*([req.image_base64] if req.image_base64 else []), *req.images_base64]:
+        try:
+            data = base64.b64decode(encoded, validate=True)
+        except (ValueError, binascii.Error):
+            raise HTTPException(422, "The image could not be read.")
+        if data.startswith(b"%PDF"):
+            pages += _pdf_pages(data)
+            continue
+        mime = _image_mime(data)
+        if mime is None:
+            raise HTTPException(422, "Use PNG, JPEG, or WebP menu photos, or a PDF.")
+        pages.append((data, mime))
+    if len(pages) > MAX_PDF_PAGES:
+        raise HTTPException(422, f"Use up to {MAX_PDF_PAGES} pages for one menu.")
+    return pages
+
+
+def _uploads(req: ParseRequest) -> list[bytes]:
+    """The uploaded files' bytes, in order (the menu-read cache key)."""
+    import base64
+
+    return [
+        base64.b64decode(e)
+        for e in [*([req.image_base64] if req.image_base64 else []), *req.images_base64]
+    ]
+
+
+def _image_mime(image: bytes) -> str | None:
+    if image.startswith(b"\x89PNG"):
+        return "image/png"
+    if image.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if image.startswith(b"RIFF") and image[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
+def _parse_notice(
+    mode: str, facts: tuple[int, int], fallback: str | None = None, vision_model: str | None = None
+) -> str:
+    """Say which steps used a model, so the notice is true whether a model is on or off."""
+    parts = []
+    if fallback == "rate_limited":
+        parts.append("Gemini's free-tier rate limit was reached, so local OCR read the photo.")
+    elif fallback == "daily_limit":
+        parts.append("Today's free Gemini quota is used up, so local OCR read the photo.")
+    elif fallback == "failed":
+        parts.append("Gemini could not read the photo, so local OCR read it.")
+    if mode == "gemini":
+        parts.append(
+            f"Gemini ({llm.label(vision_model or llm.model('vision'))}) read the dish names "
+            "and prices."
+        )
+    elif mode == "local_ocr" and not fallback:
+        parts.append("Local OCR read the photo.")
+    elif mode == "local_text":
+        parts.append("The pasted text was split into dishes locally.")
+    found, total = facts
+    if total and found == total:
+        parts.append(
+            "The AI guessed each dish's likely ingredients and allergens from its name; "
+            "anything uncertain becomes a question for your server."
+        )
+    elif found:
+        parts.append(
+            f"The AI guessed likely ingredients and allergens for {found} of {total} dishes; "
+            "the rest stay unknown for allergies and diets, so ask your server about them."
+        )
+    elif llm.provider() is not None:
+        parts.append(
+            "The AI could not guess ingredients just now, so every dish is unknown for "
+            "allergies and diets. Try the import again in a minute."
+        )
+    else:
+        parts.append(
+            "No AI model was available to guess ingredients, so every dish is unknown for "
+            "allergies and diets until one is."
+        )
+    if mode != "gemini" and not found and llm.provider() is None and not fallback:
+        parts.append("No model API was called.")
+    parts.append("Check every row against the menu.")
+    return " ".join(parts)
+
+
+def _with_facts(dishes: list) -> tuple[list, tuple[int, int]]:
+    """Imported rows with the AI's dish facts (cached, so planning later reuses them)."""
+    menu = dish_facts.prepare(
+        Menu(
+            restaurant_id="import",
+            restaurant_name="import",
+            cuisine="",
+            source="import",
+            dishes=dishes,
+        )
+    )
+    return menu.dishes, dish_facts.coverage(menu)
+
+
+def _choices_notice(dishes: list, legend: str) -> str:
+    """' 3 dishes come with a choice (Kung Pao: Chicken, Beef, Shrimp, Tofu); each choice is
+    its own dish with its own price. Menu marks read: V Vegetarian, VP Vegetarian Possible.'"""
+    families: dict[str, list] = {}
+    for d in dishes:
+        if d.family_id:
+            families.setdefault(d.family_id, []).append(d)
+    out = ""
+    if families:
+        first = next(iter(families.values()))
+        example = f"{first[0].family_name}: {', '.join(d.variant for d in first)}"
+        n = len(families)
+        out += (
+            f" {n} {'dish comes' if n == 1 else 'dishes come'} with a choice ({example}); each "
+            "choice is listed as its own dish with its own price."
+        )
+    if legend and any(d.menu_marks or d.menu_spice for d in dishes):
+        out += f" Menu marks read from the legend: {legend.rstrip('.')}."
+    return out
+
+
+def _clash_notice(dishes) -> str:
+    n = sum(bool(getattr(d, "names_clash", None)) for d in dishes)
+    if not n:
+        return ""
+    return (
+        f" {n} dish{'es have' if n != 1 else ' has'} English and Chinese names that don't "
+        "match (a misread?); anyone with an allergy or diet is asked to check with the server."
+    )
+
+
+@app.post("/api/menu/parse")
+def parse_menu(req: ParseRequest) -> dict:
+    import logging
+    import shutil
+    import subprocess
+    import tempfile
+
+    from michelin import gemini
+    from michelin.parse import parse_text, vision
 
     text = req.text
-    if req.image_base64:
+    fallback = None  # why a configured Gemini photo read was not used
+    pages = _pages(req)
+    if pages and vision.configured():
+        try:
+            key = vision.read_key(_uploads(req))
+            if len(pages) == 1:
+                read = vision.read_menu_photo(*pages[0], key=key)
+            else:
+                read = vision.read_menu_pages(pages, key=key)
+            dishes, printed_name, used_model = read[:3]
+            legend = read[3] if len(read) > 3 else ""
+        except gemini.RateLimited as exc:
+            limited, limit_message = "daily_limit" if exc.daily else "rate_limited", str(exc)
+            dishes, printed_name, used_model, fallback = None, None, None, limited
+            legend = ""
+        except Exception as exc:  # noqa: BLE001 - any provider failure falls back below
+            logging.getLogger("michelin").warning(
+                "Gemini photo read failed: %s: %s", type(exc).__name__, str(exc)[:300]
+            )
+            dishes, printed_name, used_model, fallback = None, None, None, "failed"
+            legend = ""
+        dropped = max(0, len(dishes or []) - MAX_MENU_DISHES)
+        dishes = (dishes or [])[:MAX_MENU_DISHES] if dishes is not None else None
+        if dishes:
+            labeled, facts = _with_facts(dishes)
+            return {
+                "dishes": [d.model_dump() for d in labeled],
+                "text": "\n".join(f"{d.name_en} {d.price:.2f}" for d in dishes),
+                "restaurant_name": printed_name,
+                "mode": "gemini",
+                "legend": legend,
+                "notice": _parse_notice("gemini", facts, vision_model=used_model)
+                + (f" Read {len(pages)} pages as one menu." if len(pages) > 1 else "")
+                + _choices_notice(dishes, legend)
+                + vision.partial_note(len(dishes), key)
+                + vision.currency_note(key)
+                + _clash_notice(labeled)
+                + (
+                    f" The {'photo' if len(pages) == 1 else 'menu'} lists "
+                    f"{dropped + MAX_MENU_DISHES} dishes; only the first "
+                    f"{MAX_MENU_DISHES} were kept. Add any others by hand."
+                    if dropped
+                    else ""
+                ),
+            }
+        if dishes is not None:
+            raise HTTPException(422, "No dishes with prices were found. Try a clearer photo.")
+        if not shutil.which("tesseract"):
+            if fallback in ("rate_limited", "daily_limit"):
+                extra = "" if "paste" in limit_message else " Paste the menu text instead."
+                raise HTTPException(429, limit_message + extra)
+            raise HTTPException(
+                502, "Gemini could not read this photo. Try again, or paste the menu text."
+            )
+    if pages:
         binary = shutil.which("tesseract")
         if not binary:
             raise HTTPException(
                 503,
                 "Image reading is unavailable on this server. Paste menu text or add dishes manually.",
             )
-        try:
-            image = base64.b64decode(req.image_base64, validate=True)
-        except (ValueError, binascii.Error):
-            raise HTTPException(422, "The image could not be read.")
-        if not (
-            image.startswith((b"\x89PNG", b"\xff\xd8\xff"))
-            or (image.startswith(b"RIFF") and image[8:12] == b"WEBP")
-        ):
-            raise HTTPException(422, "Use a PNG, JPEG, or WebP menu image.")
-        try:
-            with tempfile.NamedTemporaryFile(suffix=".img") as source:
-                source.write(image)
-                source.flush()
-                result = subprocess.run(
-                    [binary, source.name, "stdout", "-l", "eng"],
-                    capture_output=True,
-                    text=True,
-                    timeout=25,
-                    check=False,
-                )
-            if result.returncode:
+        texts = []
+        for image, _mime in pages:
+            try:
+                with tempfile.NamedTemporaryFile(suffix=".img") as source:
+                    source.write(image)
+                    source.flush()
+                    result = subprocess.run(
+                        [binary, source.name, "stdout", "-l", "eng"],
+                        capture_output=True,
+                        text=True,
+                        timeout=25,
+                        check=False,
+                    )
+                if result.returncode:
+                    raise HTTPException(
+                        422, "The image could not be read. Try a clearer photo or paste the text."
+                    )
+                texts.append(result.stdout)
+            except subprocess.TimeoutExpired:
                 raise HTTPException(
-                    422, "The image could not be read. Try a clearer photo or paste the text."
+                    503, "Image reading took too long. Try a smaller photo or paste the text."
                 )
-            text = result.stdout
-        except subprocess.TimeoutExpired:
-            raise HTTPException(
-                503, "Image reading took too long. Try a smaller photo or paste the text."
-            )
+        text = "\n".join(texts)
     if not text.strip():
         raise HTTPException(422, "Paste menu text or choose an image first.")
-    return {"dishes": [d.model_dump() for d in parse_text(text)], "text": text}
+    mode = "local_ocr" if pages else "local_text"
+    labeled, facts = _with_facts(parse_text(text))
+    return {
+        "dishes": [d.model_dump() for d in labeled],
+        "text": text,
+        "mode": mode,
+        "notice": _parse_notice(mode, facts, fallback),
+    }
+
+
+@app.post("/api/menu/facts", response_model=Menu)
+def menu_facts(menu: Menu) -> Menu:
+    """The menu as name/price/category plus the AI's dish facts, for display."""
+    if len(menu.dishes) > MAX_MENU_DISHES:
+        raise HTTPException(422, f"Use up to {MAX_MENU_DISHES} dishes.")
+    return menu.model_copy(update={"dishes": dish_facts.prepare(menu).dishes})
 
 
 class EvaluateRequest(BaseModel):
@@ -270,25 +834,37 @@ class EvaluateRequest(BaseModel):
 
 @app.post("/api/menu/evaluate")
 def evaluate_menu(req: EvaluateRequest) -> dict:
+    menu = dish_facts.prepare(req.menu, diners=req.diners)
     return {
         d.id: {
             "edible_by": edible_by(d, req.diners),
             "blocked_for": {
-                p.id: [
-                    f"Contains or usually contains {a.value.replace('_', ' ')}"
-                    for a in blocking_allergens(d, p)
-                ]
-                + [
-                    f"Does not meet confirmed {diet.value.replace('_', ' ')} requirements"
-                    for diet in blocking_diets(d, p)
-                ]
+                p.id: assessment(d, p)["blocking"]
                 for p in req.diners
                 if p.id not in edible_by(d, [p])
             },
+            "assessments": {p.id: assessment(d, p) for p in req.diners},
             "questions": open_questions(d, req.diners),
+            "status": diner_status(d, req.diners),
+            "veg_tag": veg_tag(d, req.diners),
+            "spice_label": spice.label(d),
+            "heat_note": spice.heat_note(d, req.diners),
+            "for_whom": for_whom(d, req.diners),
         }
-        for d in req.menu.dishes
+        for d in menu.dishes
     }
+
+
+class OrderValidationRequest(BaseModel):
+    menu: Menu
+    request: TableRequest
+    items: list[PlanItem] = Field(max_length=40)
+
+
+@app.post("/api/order/validate")
+def order_validation(body: OrderValidationRequest):
+    menu = dish_facts.prepare(body.menu, diners=body.request.diners)
+    return validate_order(menu, body.request, body.items)
 
 
 # ---------------------------------------------------------------------------
@@ -328,17 +904,10 @@ def _mock_solve(menu: Menu, request: TableRequest) -> Plan | Conflict:
         )
 
     dishes = [menu.dish(i.dish_id) for i in items]
-    non_staple = [d for d in dishes if d.category.value != "staple"]
     t = totals(subtotal, n, request.tax_rate, request.tip_rate)
-    cap = subtotal_cap(request.budget_per_person, n, request.tax_rate, request.tip_rate)
-    lo, hi = required_range(n)
-    units = total_units(dishes)
+    cap = subtotal_cap(request.all_in_budget, 1, request.tax_rate, request.tip_rate)
 
-    short = [
-        p.name
-        for p in request.diners
-        if sum(1 for d in non_staple if p.id in edible_by(d, [p])) < request.min_dishes_per_person
-    ]
+    covered, cover_detail = ai_text.coverage_check(menu, request, items)  # QA r18
     checks = [
         Check(
             name="allergies",
@@ -350,22 +919,14 @@ def _mock_solve(menu: Menu, request: TableRequest) -> Plan | Conflict:
         ),
         Check(
             name="coverage",
-            passed=not short,
-            detail=(
-                f"Everyone can eat at least {request.min_dishes_per_person} dishes."
-                if not short
-                else f"Not enough for: {', '.join(short)}."
-            ),
+            passed=covered,
+            detail=cover_detail,
         ),
+        llm_planner.enough_check(menu, request, items),
         Check(
             name="budget",
             passed=subtotal <= cap + 1e-6,
             detail=f"Menu subtotal ${subtotal:.2f} against a cap of ${cap:.2f}; total ${t.total:.2f}.",
-        ),
-        Check(
-            name="portions",
-            passed=lo <= units <= hi,
-            detail=f"{units:.1f} portion units for {n} people (target {lo:.1f} to {hi:.1f}).",
         ),
     ]
     questions: list[str] = []

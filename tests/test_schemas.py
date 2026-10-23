@@ -14,14 +14,15 @@ def test_all_menus_validate_and_have_unique_ids():
         ids = [d.id for d in menu.dishes]
         assert len(ids) == len(set(ids)), f"duplicate dish ids in {path.name}"
         if menu.verified:
-            assert all(d.price is not None for d in menu.dishes), f"verified menu {path.name} has a missing price"
+            assert all(d.price is not None for d in menu.dishes), (
+                f"verified menu {path.name} has a missing price"
+            )
 
 
 def test_all_profiles_validate():
     for path in (ROOT / "data/profiles").glob("*.json"):
         for row in json.loads(path.read_text()):
             DinerProfile.model_validate(row)
-
 
 
 def test_fixtures_validate_and_reference_sample_menu():

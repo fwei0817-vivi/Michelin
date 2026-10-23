@@ -1,9 +1,18 @@
-"""Extract explicit name/price rows. Never guess ingredients or dietary flags."""
+"""Extract explicit name/price rows from menu text.
+
+`parse_text` never guesses: it returns names and prices only. Likely ingredients and
+allergen risks come from the AI (plan/dish_facts.py); the menu stays unverified until a
+person reviews it.
+"""
 
 import re
 import uuid
 
-from michelin.schemas import Dish
+from michelin.schemas import MAX_MENU_DISHES, Dish
+
+
+def generic_question(name: str) -> str:
+    return f"Confirm ingredients, allergens, and preparation for {name}."
 
 
 def parse_text(text: str) -> list[Dish]:
@@ -21,8 +30,6 @@ def parse_text(text: str) -> list[Dish]:
                 id=f"import_{uuid.uuid4().hex[:12]}",
                 name_en=name,
                 price=float(price),
-                description_raw=line,
-                confirm_with_staff=[f"Confirm ingredients, allergens, and preparation for {name}."],
             )
         )
-    return dishes[:40]
+    return dishes[:MAX_MENU_DISHES]
